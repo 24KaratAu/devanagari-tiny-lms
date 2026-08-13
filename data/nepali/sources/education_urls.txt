@@ -1,0 +1,2 @@
+# Nepali Education URLs — Manual Web Collection Source List
+# Add URLs one per line. Lines starting with '#' and blank lines are ignored.
