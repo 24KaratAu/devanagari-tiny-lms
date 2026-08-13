@@ -1,29 +1,25 @@
-
 __pycache__/
 *.py[cod]
 .venv/
 .env
 
-
 .ipynb_checkpoints/
-
 
 data/*/raw/*
 data/*/processed/*
 data/*/splits/*
-
+data/*/tmp/*
 
 !data/*/manifests/
 !data/*/manifests/**
 
+data/*/manifests/collector.lock
+data/*/manifests/reservations/
 
 *.bin
 *.safetensors
 *.pt
 *.pth
 
-
 logs/
 *.log
-
-

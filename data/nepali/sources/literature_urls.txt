@@ -1,2 +1,18 @@
 # Nepali Literature URLs — Manual Web Collection Source List
 # Add URLs one per line. Lines starting with '#' and blank lines are ignored.
+
+https://ne.wikipedia.org/wiki/नेपाली_साहित्य
+https://ne.wikipedia.org/wiki/लक्ष्मीप्रसाद_देवकोटा
+https://ne.wikipedia.org/wiki/भानुभक्त_आचार्य
+https://ne.wikipedia.org/wiki/मोतीराम_भट्ट
+https://ne.wikipedia.org/wiki/पारिजात_(साहित्यकार)
+https://ne.wikipedia.org/wiki/माधवप्रसाद_घिमिरे
+https://ne.wikipedia.org/wiki/मुना_मदन
+https://ne.wikipedia.org/wiki/लेकनाथ_पौड्याल
+https://ne.wikipedia.org/wiki/बालकृष्ण_सम
+https://ne.wikipedia.org/wiki/गुरुप्रसाद_मैनाली
+https://ne.wikipedia.org/wiki/रामायण_(भानुभक्तीय)
+https://ne.wikipedia.org/wiki/शिरिषको_फूल
+https://ne.wikipedia.org/wiki/बसन्ती
+https://ne.wikipedia.org/wiki/सेतो_बाघ
+https://ne.wikipedia.org/wiki/पग्लिएको_घाम

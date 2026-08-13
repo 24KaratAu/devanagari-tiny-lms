@@ -2,7 +2,7 @@
 Manifest Schema Migration & Normalization Script
 
 Normalizes records in data/nepali/manifests/manual_web.jsonl to ensure
-every record adheres to the standard schema:
+every record adheres to the standard schema and removes duplicate records:
   - doc_id
   - url
   - source
@@ -14,12 +14,17 @@ every record adheres to the standard schema:
   - text_path
   - raw_text_characters
   - clean_text_characters
+  - text_sha256
+  - devanagari_ratio
+  - latin_ratio
+  - digit_ratio
   - extraction_success
   - collection_status
 
 Idempotent: running multiple times produces identical schema without mutating data.
 """
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -39,32 +44,55 @@ STANDARD_KEYS = [
     "text_path",
     "raw_text_characters",
     "clean_text_characters",
+    "text_sha256",
+    "devanagari_ratio",
+    "latin_ratio",
+    "digit_ratio",
     "extraction_success",
     "collection_status",
 ]
 
 
-def normalize_record(record: dict) -> tuple[dict, bool]:
-    """Normalize a single manifest record to the standard schema.
+def compute_text_quality_metrics(text: str) -> dict:
+    total = len(text)
+    if total == 0:
+        return {
+            "text_sha256": hashlib.sha256(b"").hexdigest(),
+            "devanagari_ratio": 0.0,
+            "latin_ratio": 0.0,
+            "digit_ratio": 0.0,
+        }
 
-    Returns (normalized_record, modified_flag).
-    """
+    dev_chars = sum(1 for c in text if "\u0900" <= c <= "\u097F")
+    lat_chars = sum(1 for c in text if "a" <= c.lower() <= "z")
+    dig_chars = sum(1 for c in text if c.isdigit() or "\u0966" <= c <= "\u096F")
+    sha = hashlib.sha256(text.strip().encode("utf-8")).hexdigest()
+
+    return {
+        "text_sha256": sha,
+        "devanagari_ratio": round(dev_chars / total, 4),
+        "latin_ratio": round(lat_chars / total, 4),
+        "digit_ratio": round(dig_chars / total, 4),
+    }
+
+
+def normalize_record(record: dict) -> tuple[dict, bool]:
+    """Normalize a single manifest record to the standard schema."""
     modified = False
 
-    # 1. Determine clean_text_characters
+    text_path = Path(record.get("text_path", ""))
+    text_content = ""
+    if text_path.exists():
+        text_content = text_path.read_text(encoding="utf-8")
+
     clean_chars = record.get("clean_text_characters")
     if clean_chars is None:
         clean_chars = record.get("text_characters")
         if clean_chars is None:
-            text_p = Path(record.get("text_path", ""))
-            if text_p.exists():
-                clean_chars = len(text_p.read_text(encoding="utf-8"))
-            else:
-                clean_chars = 0
+            clean_chars = len(text_content)
         modified = True
     clean_chars = int(clean_chars)
 
-    # 2. Determine raw_text_characters
     raw_chars = record.get("raw_text_characters")
     if raw_chars is None:
         raw_p = Path(record.get("raw_html_path", ""))
@@ -82,7 +110,19 @@ def normalize_record(record: dict) -> tuple[dict, bool]:
         modified = True
     raw_chars = int(raw_chars)
 
-    # 3. Determine extraction_success
+    sha = record.get("text_sha256")
+    dev_ratio = record.get("devanagari_ratio")
+    lat_ratio = record.get("latin_ratio")
+    dig_ratio = record.get("digit_ratio")
+
+    if sha is None or dev_ratio is None or lat_ratio is None or dig_ratio is None:
+        q_metrics = compute_text_quality_metrics(text_content)
+        sha = q_metrics["text_sha256"]
+        dev_ratio = q_metrics["devanagari_ratio"]
+        lat_ratio = q_metrics["latin_ratio"]
+        dig_ratio = q_metrics["digit_ratio"]
+        modified = True
+
     ext_success = record.get("extraction_success")
     if ext_success is None:
         ext_success = clean_chars > 0
@@ -90,7 +130,6 @@ def normalize_record(record: dict) -> tuple[dict, bool]:
     else:
         ext_success = bool(ext_success)
 
-    # 4. Determine collection_status
     status = record.get("collection_status")
     if status is None:
         status = (
@@ -102,7 +141,6 @@ def normalize_record(record: dict) -> tuple[dict, bool]:
     else:
         status = str(status)
 
-    # Assemble in exact STANDARD_KEYS order
     new_record = {
         "doc_id": record.get("doc_id"),
         "url": record.get("url"),
@@ -115,6 +153,10 @@ def normalize_record(record: dict) -> tuple[dict, bool]:
         "text_path": record.get("text_path"),
         "raw_text_characters": raw_chars,
         "clean_text_characters": clean_chars,
+        "text_sha256": sha,
+        "devanagari_ratio": float(dev_ratio),
+        "latin_ratio": float(lat_ratio),
+        "digit_ratio": float(dig_ratio),
         "extraction_success": ext_success,
         "collection_status": status,
     }
@@ -135,16 +177,21 @@ def migrate_manifest(manifest_path: Path = MANIFEST_PATH):
 
     print(f"Manifest records before migration: {len(records_before)}")
 
+    seen_urls = set()
     normalized_records = []
     modified_count = 0
 
     for rec in records_before:
+        if rec.get("url") in seen_urls:
+            modified_count += 1
+            continue
+        seen_urls.add(rec.get("url"))
+
         norm_rec, was_mod = normalize_record(rec)
         normalized_records.append(norm_rec)
         if was_mod:
             modified_count += 1
 
-    # Write normalized JSONL
     temp_path = manifest_path.with_suffix(".tmp")
     with temp_path.open("w", encoding="utf-8") as f:
         for r in normalized_records:
@@ -152,7 +199,6 @@ def migrate_manifest(manifest_path: Path = MANIFEST_PATH):
 
     temp_path.replace(manifest_path)
 
-    # Re-read and validate
     records_after = [
         json.loads(line)
         for line in manifest_path.read_text(encoding="utf-8").splitlines()
@@ -175,8 +221,7 @@ def migrate_manifest(manifest_path: Path = MANIFEST_PATH):
     print(f"Non-standard schema records:       {len(non_standard)}")
 
     if (
-        len(records_before) == len(records_after)
-        and dup_urls == 0
+        dup_urls == 0
         and dup_ids == 0
         and len(non_standard) == 0
     ):

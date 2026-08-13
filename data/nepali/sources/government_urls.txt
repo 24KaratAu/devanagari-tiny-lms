@@ -1,2 +1,18 @@
 # Nepali Government URLs — Manual Web Collection Source List
 # Add URLs one per line. Lines starting with '#' and blank lines are ignored.
+
+https://ne.wikipedia.org/wiki/नेपाल_सरकार
+https://ne.wikipedia.org/wiki/प्रधानमन्त्री_तथा_मन्त्रिपरिषद्को_कार्यालय_(नेपाल)
+https://ne.wikipedia.org/wiki/गृह_मन्त्रालय_(नेपाल)
+https://ne.wikipedia.org/wiki/परराष्ट्र_मन्त्रालय_(नेपाल)
+https://ne.wikipedia.org/wiki/अर्थ_मन्त्रालय_(नेपाल)
+https://ne.wikipedia.org/wiki/शिक्षा,_विज्ञान_तथा_प्रविधि_मन्त्रालय_(नेपाल)
+https://ne.wikipedia.org/wiki/स्वास्थ्य_तथा_जनसंख्या_मन्त्रालय_(नेपाल)
+https://ne.wikipedia.org/wiki/नेपाल_कानुन_आयोग
+https://ne.wikipedia.org/wiki/नेपाल_राष्ट्र_बैंक
+https://ne.wikipedia.org/wiki/प्रतिनिधि_सभा_(नेपाल)
+https://ne.wikipedia.org/wiki/राष्ट्रिय_सभा
+https://ne.wikipedia.org/wiki/सर्वोच्च_अदालत_(नेपाल)
+https://ne.wikipedia.org/wiki/नेपालको_संविधान
+https://ne.wikipedia.org/wiki/लोक_सेवा_आयोग_(नेपाल)
+https://ne.wikipedia.org/wiki/अख्तियार_दुरुपयोग_अनुसन्धान_आयोग

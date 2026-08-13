@@ -1,2 +1,24 @@
 # Nepali News URLs — Manual Web Collection Source List
 # Add URLs one per line. Lines starting with '#' and blank lines are ignored.
+
+https://ne.wikipedia.org/wiki/नेपालका_समाचारपत्रहरू
+https://ne.wikipedia.org/wiki/गोरखापत्र
+https://ne.wikipedia.org/wiki/कान्तिपुर_(पत्रिका)
+https://ne.wikipedia.org/wiki/रातोपाटी
+https://ne.wikipedia.org/wiki/सेतोपाटी
+https://ne.wikipedia.org/wiki/बीबीसी_नेपाली
+https://ne.wikipedia.org/wiki/नेपाल_समाचारपत्र
+https://ne.wikipedia.org/wiki/अन्नपूर्ण_पोस्ट
+https://ne.wikipedia.org/wiki/नागरिक_(दैनिक)
+https://ne.wikipedia.org/wiki/नयाँ_पत्रिका
+https://ne.wikipedia.org/wiki/हिमाल_खबरपत्रिका
+https://ne.wikipedia.org/wiki/नेपाल_(पत्रिका)
+https://ne.wikipedia.org/wiki/इकान्तिपुर
+https://ne.wikipedia.org/wiki/अनलाइनखबर
+https://ne.wikipedia.org/wiki/रासस
+https://www.bbc.com/nepali
+https://gorkhapatraonline.com
+https://gorkhapatraonline.com/categories/national
+https://gorkhapatraonline.com/categories/economy
+https://gorkhapatraonline.com/categories/editorial
+https://nayapatrikadaily.com

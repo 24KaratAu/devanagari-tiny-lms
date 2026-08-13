@@ -1,2 +1,18 @@
 # Nepali Education URLs — Manual Web Collection Source List
 # Add URLs one per line. Lines starting with '#' and blank lines are ignored.
+
+https://ne.wikipedia.org/wiki/नेपालमा_शिक्षा
+https://ne.wikipedia.org/wiki/त्रिभुवन_विश्वविद्यालय
+https://ne.wikipedia.org/wiki/काठमाडौँ_विश्वविद्यालय
+https://ne.wikipedia.org/wiki/पोखरा_विश्वविद्यालय
+https://ne.wikipedia.org/wiki/पूर्वाञ्चल_विश्वविद्यालय
+https://ne.wikipedia.org/wiki/लुम्बिनी_बौद्ध_विश्वविद्यालय
+https://ne.wikipedia.org/wiki/कृषि_तथा_वन_विज्ञान_विश्वविद्यालय
+https://ne.wikipedia.org/wiki/मध्यपश्चिम_विश्वविद्यालय
+https://ne.wikipedia.org/wiki/सुदूरपश्चिम_विश्वविद्यालय
+https://ne.wikipedia.org/wiki/नेपाल_खुला_विश्वविद्यालय
+https://ne.wikipedia.org/wiki/नेपाल_संस्कृत_विश्वविद्यालय
+https://ne.wikipedia.org/wiki/राष्ट्रिय_परीक्षा_बोर्ड
+https://ne.wikipedia.org/wiki/विश्वविद्यालय_अनुदान_आयोग_(नेपाल)
+https://ne.wikipedia.org/wiki/त्रिभुवन_विश्वविद्यालय_इन्जिनियरिङ_अध्ययन_संस्थान
+https://ne.wikipedia.org/wiki/महाराजगञ्ज_चिकित्सा_क्याम्पस
