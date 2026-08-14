@@ -3,6 +3,7 @@ Production-Safe Nepali Manual Web Collector
 
 Features:
   - Process-safe atomic locking (CHECK -> RESERVE -> COLLECT -> COMMIT).
+  - Target stop limit (~1,000 unique accepted documents).
   - Stale reservation auto-recovery (prevents crashed processes from permanently blocking URLs).
   - Composite Nepali language identification (distinguishes Nepali from Hindi/Sanskrit/English).
   - Structured rejection logging with full metadata.
@@ -10,10 +11,12 @@ Features:
   - Full backward compatibility with existing 17-key manifest format + language audit fields.
 """
 
+import argparse
 import fcntl
 import hashlib
 import json
 import os
+import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -50,6 +53,7 @@ MIN_CLEAN_CHARACTERS = 200
 MIN_DEVANAGARI_CHARS = 100
 MIN_DEVANAGARI_RATIO = 0.35
 RESERVATION_STALE_TIMEOUT_SEC = 900  # 15 minutes
+DEFAULT_TARGET_ACCEPTED_DOCS = 1000
 
 SOURCE_METADATA_MAP = {
     "wikipedia_urls.txt": {
@@ -160,10 +164,7 @@ def load_committed_urls() -> set[str]:
 
 
 def check_and_clean_reservation(doc_id: str) -> tuple[bool, str]:
-    """Check if a URL doc_id is active-reserved or stale.
-
-    Returns (is_active_reserved, status_message).
-    """
+    """Check if a URL doc_id is active-reserved or stale."""
     RESERVATIONS_DIR.mkdir(parents=True, exist_ok=True)
     res_file = RESERVATIONS_DIR / f"{doc_id}.json"
     if not res_file.exists():
@@ -175,7 +176,6 @@ def check_and_clean_reservation(doc_id: str) -> tuple[bool, str]:
         reserved_at = datetime.fromisoformat(data.get("reserved_at"))
         elapsed = (datetime.now(timezone.utc) - reserved_at).total_seconds()
 
-        # Stale if older than timeout or process dead
         if elapsed > RESERVATION_STALE_TIMEOUT_SEC or not is_pid_alive(pid):
             res_file.unlink(missing_ok=True)
             return False, f"stale_reservation_recovered (pid={pid}, elapsed={elapsed:.0f}s)"
@@ -316,10 +316,10 @@ def save_rejection_entry(
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
-def process_single_url(entry: dict, session: requests.Session) -> str:
+def process_single_url(entry: dict, session: requests.Session, target_accepted: int = DEFAULT_TARGET_ACCEPTED_DOCS) -> str:
     """Process a single URL using atomic CHECK -> RESERVE -> COLLECT -> COMMIT workflow.
 
-    Returns status string: 'skipped', 'reserved', 'succeeded', 'rejected', 'failed'.
+    Returns status string: 'skipped', 'reserved', 'succeeded', 'rejected', 'failed', 'target_reached'.
     """
     url = entry["url"]
     source_type = entry["source_type"]
@@ -329,6 +329,11 @@ def process_single_url(entry: dict, session: requests.Session) -> str:
     # STEP 1: CHECK & RESERVE under ManifestLock
     with ManifestLock():
         committed_urls = load_committed_urls()
+
+        # Stop condition: check unique committed URLs count
+        if len(committed_urls) >= target_accepted and url not in committed_urls:
+            return "target_reached"
+
         if url in committed_urls:
             return "skipped"
 
@@ -365,7 +370,6 @@ def process_single_url(entry: dict, session: requests.Session) -> str:
 
         # STEP 4: ATOMIC COMMIT under ManifestLock
         with ManifestLock():
-            # Re-check committed in case another process committed during fetch
             if url in load_committed_urls():
                 clear_reservation(doc_id)
                 return "skipped"
@@ -383,7 +387,6 @@ def process_single_url(entry: dict, session: requests.Session) -> str:
                 clear_reservation(doc_id)
                 return "rejected"
 
-            # Write raw and clean files
             raw_path = raw_dir / f"{doc_id}.html"
             raw_path.write_text(html, encoding="utf-8")
 
@@ -428,6 +431,15 @@ def process_single_url(entry: dict, session: requests.Session) -> str:
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Nepali Manual Web Collector")
+    parser.add_argument(
+        "--target-accepted",
+        type=int,
+        default=DEFAULT_TARGET_ACCEPTED_DOCS,
+        help="Target number of unique accepted documents to stop collection",
+    )
+    args = parser.parse_args()
+
     MANIFEST_DIR.mkdir(parents=True, exist_ok=True)
 
     entries = load_source_entries()
@@ -436,6 +448,7 @@ def main():
 
     print(f"Total URLs found in source lists: {len(entries)}")
     print(f"Already committed (in manifest):  {len(already_collected)}")
+    print(f"Target accepted documents limit:  {args.target_accepted}")
     print()
 
     session = build_session()
@@ -447,30 +460,40 @@ def main():
     failed = 0
 
     for index, entry in enumerate(entries, start=1):
-        status = process_single_url(entry, session)
+        status = process_single_url(entry, session, target_accepted=args.target_accepted)
+        if status == "target_reached":
+            print(f"\n[STOP CONDITION] Reached target limit of ~{args.target_accepted} committed documents! Stopping collection.")
+            break
+
         if status == "skipped":
             skipped += 1
         elif status == "reserved":
             reserved += 1
         elif status == "succeeded":
             succeeded += 1
+            print(f"  [{index}/{len(entries)}] [{entry['source_type']}] OK: {entry['url']}")
         elif status == "rejected":
             rejected += 1
+            print(f"  [{index}/{len(entries)}] [{entry['source_type']}] REJECTED: {entry['url']}")
         elif status == "failed":
             failed += 1
+            print(f"  [{index}/{len(entries)}] [{entry['source_type']}] FAILED: {entry['url']}")
 
         if index < len(entries):
             time.sleep(REQUEST_DELAY)
 
-    print("=" * 50)
+    with ManifestLock():
+        final_committed = load_committed_urls()
+
+    print("\n" + "=" * 50)
     print("Nepali Manual Web Collection Summary")
     print("=" * 50)
     print(f"Total URLs in source lists: {len(entries)}")
-    print(f"Already committed (skip):   {skipped}")
-    print(f"Active reserved (skip):     {reserved}")
-    print(f"Successfully collected:     {succeeded}")
+    print(f"Already committed at start: {len(already_collected)}")
+    print(f"Newly collected (success):  {succeeded}")
     print(f"Rejected (quality/lang):    {rejected}")
     print(f"Failed:                     {failed}")
+    print(f"Final Committed Documents:  {len(final_committed)}")
     print("=" * 50)
 
 

@@ -23,3 +23,5 @@ data/*/manifests/reservations/
 
 logs/
 *.log
+
+doubts-answers.md
