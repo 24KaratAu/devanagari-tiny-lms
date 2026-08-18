@@ -1,0 +1,16 @@
+# Hindi Government & Educational Seed URLs
+https://pib.gov.in/indexhindi.aspx
+https://pib.gov.in/AllRelease.aspx?MenuId=2&Lang=1
+https://hi.vikaspedia.in/
+https://hi.vikaspedia.in/agriculture
+https://hi.vikaspedia.in/health
+https://hi.vikaspedia.in/education
+https://hi.vikaspedia.in/social-welfare
+https://hi.vikaspedia.in/energy
+https://hi.vikaspedia.in/e-governance
+https://rajbhasha.gov.in/
+https://ncert.nic.in/textbook.php
+https://swayam.gov.in/
+https://archive.org/details/digitallibraryofindia
+https://sansad.in/rs/hindi
+https://sansad.in/ls/hindi
