@@ -165,8 +165,18 @@ def normalize_text(text: str) -> str:
     return "\n".join(result).strip()
 
 
+MT_TAGS_PATTERN = re.compile(
+    r"\{\{\s*(?:अनुवाद|अशुद्ध\s*अनुवाद|मशीनी\s*अनुवाद|यांत्रिक\s*अनुवाद|अनुवाद\s*अधूरा|"
+    r"rough\s*translation|bad\s*translation|cleanup-translation|machine\s*translation|"
+    r"not\s*hindi|translate|translateme)[^}]*\}\}",
+    re.IGNORECASE,
+)
+
+
 def clean_article(text: str) -> str:
-    """Full cleaning pipeline for a single Wikipedia article."""
+    """Full cleaning pipeline for a single Wikipedia article. Returns empty if MT-flagged."""
+    if MT_TAGS_PATTERN.search(text):
+        return ""
     text = clean_wiki_markup(text)
     text = remove_non_content_sections(text)
     text = normalize_text(text)
