@@ -8,6 +8,7 @@ __pycache__/
 data/raw/
 data/raw/**
 data/*/raw/*
+data/*/cleaned/*
 data/*/processed/*
 data/*/splits/*
 data/*/tmp/*
@@ -18,12 +19,51 @@ data/*/tmp/*
 data/*/manifests/collector.lock
 data/*/manifests/reservations/
 
+# Bulky regenerable collection artefacts. Each is archived on Google Drive
+# (links in the README); the committed summaries are
+# data/hindi/manifests/manual_web_crawl/{state,crawl_summary}.json and
+# data/hindi/sources/frontier_stats.json.
+data/*/sources/frontier*.txt
+data/*/manifests/existing_manual_hashes.txt
+data/*/manifests/existing_manual_urls.txt
+data/*/manifests/manual_web_crawl/done.txt
+data/*/manifests/manual_web_crawl/rejected.jsonl
+data/*/manifests/manual_web_crawl/staging/
+
+# Model checkpoints and large binaries — the brief forbids committing these.
+# NOTE: *.model / *.vocab are deliberately NOT ignored; the SentencePiece
+# tokenizer files are ~570 KB and belong in the repo as Phase 1 deliverables.
 *.bin
 *.safetensors
 *.pt
 *.pth
+*.ckpt
+*.onnx
+*.gguf
+*.h5
+*.npy
+*.npz
+
+# Corpus archives and dumps
+*.gz
+*.bz2
+*.xz
+*.zip
+*.tar
+*.parquet
+*.arrow
+
+# Environments and editor/OS noise
+venv/
+env/
+.idea/
+.vscode/
+.DS_Store
+*.swp
 
 logs/
 *.log
 
 doubts-answers.md
+
+notebooks/remaining_hindi_manual_collection.ipynb

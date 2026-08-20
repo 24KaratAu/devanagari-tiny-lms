@@ -1,0 +1,204 @@
+{
+  "description": "Hindi manual web crawl (scripts/collect_hindi_manual_web.py). Full URL frontier, attempted-URL log, rejection log and dedup registry are archived on Google Drive under hindi/manifests/ (see README); this file is the committable summary.",
+  "frontier": {
+    "urls_discovered": 11112623,
+    "hosts_discovered": 19,
+    "discovery_seconds": 456.2,
+    "balanced_frontier_urls": 375539,
+    "per_host_discovered": {
+      "www.amarujala.com": 7966346,
+      "www.livehindustan.com": 2817821,
+      "www.indiatv.in": 83988,
+      "vikaspedia.in": 55745,
+      "hindi.pardaphash.com": 48169,
+      "www.patrika.com": 29896,
+      "hindi.moneycontrol.com": 29065,
+      "hindi.oneindia.com": 26818,
+      "www.thelallantop.com": 22755,
+      "www.bhaskar.com": 17312,
+      "www.punjabkesari.in": 4839,
+      "www.jagran.com": 2582,
+      "www.prabhatkhabar.com": 2560,
+      "www.dainiktribuneonline.com": 1956,
+      "hindi.news18.com": 1355,
+      "navbharattimes.indiatimes.com": 522,
+      "www.abplive.com": 501,
+      "www.naidunia.com": 393,
+      "hindi.webdunia.com": 0
+    }
+  },
+  "crawl": {
+    "urls_attempted": 87585,
+    "urls_preseeded_and_skipped": 14789,
+    "documents_accepted": 75002,
+    "clean_characters_accepted": 160170577,
+    "shards_written": 31,
+    "acceptance_rate": 0.8563
+  },
+  "rejections_by_reason": {
+    "robots_disallow": 5556,
+    "quality_filter": 4978,
+    "http_410": 915,
+    "no_extract": 335,
+    "http_404": 222,
+    "error_ReadTimeout": 81,
+    "langid_uncertain_hi": 51,
+    "error_ConnectionError": 51,
+    "duplicate": 23,
+    "http_503": 9,
+    "http_502": 5,
+    "langid_reject_ne_or_sa": 1
+  },
+  "per_host": {
+    "www.indiatv.in": {
+      "attempted": 14314,
+      "rejected": 86,
+      "accepted": 14228
+    },
+    "www.amarujala.com": {
+      "attempted": 14268,
+      "rejected": 1600,
+      "accepted": 12668
+    },
+    "www.livehindustan.com": {
+      "attempted": 14109,
+      "rejected": 1059,
+      "accepted": 13050
+    },
+    "hindi.pardaphash.com": {
+      "attempted": 11416,
+      "rejected": 1087,
+      "accepted": 10329
+    },
+    "hindi.moneycontrol.com": {
+      "attempted": 6797,
+      "rejected": 157,
+      "accepted": 6640
+    },
+    "www.patrika.com": {
+      "attempted": 6293,
+      "rejected": 13,
+      "accepted": 6280
+    },
+    "hindi.oneindia.com": {
+      "attempted": 5556,
+      "rejected": 5556,
+      "accepted": 0
+    },
+    "www.thelallantop.com": {
+      "attempted": 5489,
+      "rejected": 2040,
+      "accepted": 3449
+    },
+    "www.bhaskar.com": {
+      "attempted": 4150,
+      "rejected": 5,
+      "accepted": 4145
+    },
+    "hi.vikaspedia.in": {
+      "attempted": 1631,
+      "rejected": 497,
+      "accepted": 1134
+    },
+    "www.jagran.com": {
+      "attempted": 648,
+      "rejected": 26,
+      "accepted": 622
+    },
+    "www.prabhatkhabar.com": {
+      "attempted": 616,
+      "rejected": 21,
+      "accepted": 595
+    },
+    "www.dainiktribuneonline.com": {
+      "attempted": 472,
+      "rejected": 2,
+      "accepted": 470
+    },
+    "www.punjabkesari.in": {
+      "attempted": 369,
+      "rejected": 9,
+      "accepted": 360
+    },
+    "hindi.news18.com": {
+      "attempted": 321,
+      "rejected": 5,
+      "accepted": 316
+    },
+    "navbharattimes.indiatimes.com": {
+      "attempted": 140,
+      "rejected": 21,
+      "accepted": 119
+    },
+    "www.abplive.com": {
+      "attempted": 124,
+      "rejected": 7,
+      "accepted": 117
+    },
+    "mp.punjabkesari.in": {
+      "attempted": 101,
+      "rejected": 3,
+      "accepted": 98
+    },
+    "punjab.punjabkesari.in": {
+      "attempted": 98,
+      "rejected": 0,
+      "accepted": 98
+    },
+    "haryana.punjabkesari.in": {
+      "attempted": 98,
+      "rejected": 0,
+      "accepted": 98
+    },
+    "sports.punjabkesari.in": {
+      "attempted": 98,
+      "rejected": 2,
+      "accepted": 96
+    },
+    "himachal.punjabkesari.in": {
+      "attempted": 94,
+      "rejected": 1,
+      "accepted": 93
+    },
+    "bihar.punjabkesari.in": {
+      "attempted": 87,
+      "rejected": 1,
+      "accepted": 86
+    },
+    "www.naidunia.com": {
+      "attempted": 86,
+      "rejected": 17,
+      "accepted": 69
+    },
+    "up.punjabkesari.in": {
+      "attempted": 79,
+      "rejected": 1,
+      "accepted": 78
+    },
+    "nari.punjabkesari.in": {
+      "attempted": 77,
+      "rejected": 0,
+      "accepted": 77
+    },
+    "gallery.punjabkesari.in": {
+      "attempted": 43,
+      "rejected": 11,
+      "accepted": 32
+    },
+    "rajasthan.punjabkesari.in": {
+      "attempted": 6,
+      "rejected": 0,
+      "accepted": 6
+    },
+    "jammukashmir.punjabkesari.in": {
+      "attempted": 4,
+      "rejected": 0,
+      "accepted": 4
+    },
+    "uttarakhand.punjabkesari.in": {
+      "attempted": 1,
+      "rejected": 0,
+      "accepted": 1
+    }
+  }
+}

@@ -37,9 +37,15 @@ This project builds two completely independent, from-scratch decoder-only Transf
 ├── notebooks/                       # End-to-end Colab execution pipelines
 │   ├── collect_hindi_colab.ipynb    # Hindi automated + manual collection & tokenizer training
 │   ├── collect_nepali_colab.ipynb   # Nepali automated + manual collection & tokenizer training
+│   ├── finalize_hindi_corpus.ipynb  # Budget-aware Hindi split + tokenizer retrain
 │   └── phase1_pipeline.py           # Standalone modular pipeline runner
 ├── report/                          # Phase reports, metrics, plots, and analysis
-├── scripts/                         # Audit, concurrency, and validation test suites
+├── scripts/                         # Collection, audit, and validation suites
+│   ├── discover_hindi_urls.py       # robots.txt -> sitemap article-URL discovery
+│   ├── collect_hindi_manual_web.py  # Resumable Hindi crawler, streams shards to Drive
+│   ├── process_hindi_wikimedia_dump.py  # Wikisource/Wiktionary dump -> manual shards
+│   ├── export_hindi_manual_hashes.py    # Dedup registry, streamed from Drive
+│   ├── audit_hindi_corpus.py        # Exact per-source token accounting from Drive
 │   ├── audit_batch1_checkpoint.py   # 1,000-doc verification & Drive sharding audit
 │   ├── audit_existing_corpus_language.py
 │   ├── expand_source_urls.py        # Recursive category crawler
@@ -47,6 +53,7 @@ This project builds two completely independent, from-scratch decoder-only Transf
 ├── src/                             # Core modular package
 │   ├── data/
 │   │   ├── clean/                   # Devanagari cleaning & language ID
+│   │   │   ├── clean_hindi_web.py   # Line-level web cleaner & teaser stripper
 │   │   │   ├── clean_nepali.py      # Table stripping & citation cleaner
 │   │   │   ├── nepali_lang_id.py    # Composite lexical/script language detector
 │   │   │   └── migrate_manifest_schema.py
@@ -108,7 +115,85 @@ Building a ~500M token corpus per language on student-tier compute (free Google 
 * **The Challenge**: In the Sangraha repository, `data-0.parquet` is an uncompressed ~8.6GB behemoth that instantly exhausts local Colab disk space, whereas subsequent shards (`data-1.parquet`, `data-2.parquet`, etc.) are neat ~340MB files.
 * **The Solution**: Explicitly filtered out `data-0.parquet` and processed the ~340MB files using `pyarrow.parquet.ParquetFile.iter_batches(batch_size=5000)`. Only ~20MB of records are ever held in memory at any millisecond.
 
-### 8. Final High-Yield Convergence (~400M Tokens in ~25 Minutes)
+### 8. The 20% Floor Is a Multiplier, Not an Independent Check
+* **The Challenge**: The Hindi corpus stalled below target and the reason was
+  structural. A manual share of at least 20% means automated data may be at most
+  $4\times$ the manual total, so the **reachable corpus is capped at $5\times$
+  the manual token count**. With 88.8M Hindi manual tokens the whole corpus was
+  capped at 444M — under the 500M target — while 683M automated tokens sat
+  unusable in reserve. No amount of extra automated data could have helped.
+  Collecting 161M further manual characters lifted the ceiling to ~699M and the
+  delivered corpus to 520.4M tokens at a 26.87% manual share.
+* **The Solution**: Size manual collection from the target first
+  ($\text{target} / 5$ = minimum manual), and derive the automated budget from
+  the manual total at split time as $A = \min(4M,\ T - M)$, so both constraints
+  are enforced together rather than one being applied and the other hoped for.
+
+### 9. Guessed URLs vs. Published Sitemaps
+* **The Challenge**: The first Hindi news crawler enumerated articles by guessing
+  sequential ids (`amarujala.com/india-news/news-id-849999`). Publishers do not
+  expose contiguous id spaces; almost every request 404'd and the crawl produced
+  13 MB of text.
+* **The Solution**: `scripts/discover_hindi_urls.py` reads each publisher's
+  `robots.txt`, follows every `Sitemap:` directive and descends the sitemap index.
+  The naive guess of `/sitemap.xml` is itself wrong nearly everywhere — `ndtv.in`
+  and `zeenews` return 403, `bhaskar`, `aajtak`, `abplive`, `livehindustan`,
+  `news18` and `naidunia` return 404 — yet all of them publish working sitemaps via
+  `robots.txt`. Result: **11,112,623 live article URLs across 18 domains in 7.6
+  minutes**, reservoir-sampled to a domain-balanced 375,539-URL frontier.
+
+### 10. Devanagari Is Not a Language Filter
+* **The Challenge**: Script-ratio filtering cannot separate Hindi from other
+  Devanagari languages. `vikaspedia.in` serves ~15 languages from sibling
+  subdomains including Nepali (`ne.`), Sanskrit (`sa.`), Maithili and Konkani —
+  Nepali being exactly the language of Model L, whose corpus must stay disjoint.
+* **The Solution**: Exclude non-Hindi hosts at the frontier, and score every
+  crawled document with `hindi_lang_id.py`, which rejects text whose
+  Nepali/Sanskrit lexical density exceeds its Hindi density. Auditing the
+  pre-existing manual shards the same way returned 97.9–100% Hindi, with a single
+  Sanskrit page in the Wikibooks shard.
+
+### 11. Two Transport Traps on the Way to Drive
+* **`--bind 0.0.0.0`**: added to work around an intermittent IPv6 route failure
+  that aborts rclone during *filesystem construction*, before `--retries` applies.
+  Measured effect on this link: throughput collapsed from **1.2 MB/s to 21 KB/s**.
+  The fix is an application-level retry loop, not a source-address bind.
+* **`RobotFileParser.read()`**: fetches `robots.txt` with urllib's User-Agent,
+  which several Hindi portals answer with 403 — and on 403 the parser silently
+  switches to *disallow-all*. Left unfixed, this rejected 100% of the frontier
+  while reporting a clean run. Fetch `robots.txt` with the crawler's own
+  User-Agent and hand the text to `rp.parse()`.
+
+### 12. Asserting on the Plan Instead of the Result
+* **The Challenge**: The split notebook staged shards from Drive to local disk with
+  a single bulk `cp ... 2>/dev/null`. The FUSE transport dropped partway, the error
+  went to the null device, and **2 of 220 automated shards** reached the machine.
+  Every downstream check still passed — the budget assert only verified the target
+  was *reachable* — so a corpus that was 95.7% manual was written to Drive with no
+  warning anywhere. The same silent-truncation bug appeared in the audit and
+  dedup-registry scripts, where a short `rclone cat` through a pipe is
+  indistinguishable from a short file; it under-reported the corpus by 10,000
+  documents.
+* **The Solution**: Never move or read a remote shard without verifying the byte
+  count against the source, and assert on the *ingested result*, not the plan.
+  Staging now copies per file, compares sizes, remounts on `Errno 107` and retries;
+  the split refuses to sync unless the automated ingest reached 98% of its budget,
+  the total clears 500M, and the manual floor holds.
+
+### 13. Deduplicate the Manual Partition Against Itself
+* **The Challenge**: The pipeline deduplicated manual→automated but never
+  manual→manual, on the assumption that each collection run had already deduplicated
+  itself. It had — but against a registry snapshotted before later shards existed, so
+  every run was blind to the ones that followed. Auditing found **2,523 exact
+  duplicates / 18.6M characters**, 94% of them because `manual_lit_shard_0030` is a
+  re-parse of the same Wikimedia dumps behind `manual_aux_shard_0032`: 2,365 of its
+  2,366 documents were already present.
+* **The Solution**: Deduplicate the manual partition against itself *before* deriving
+  the automated budget from it — otherwise duplicate characters inflate the budget as
+  well as the corpus. The freshly written sitemap crawler accounted for 9 of the
+  2,523, so the cost of a stale registry falls on whichever run collects last.
+
+### 14. Final High-Yield Convergence (~400M Tokens in ~25 Minutes)
 * **The Breakthrough**: Originally, we filtered Sangraha strictly for PDF and ASR transcripts. However, because each 340MB parquet chunk contained mixed document types, discarding web text meant each file yielded only 2–3M tokens, requiring over 50 files to hit our target.
 * **The Final Architecture**: Sangraha Verified documents are human-curated and clean. By accepting all verified documents (PDF, ASR, and Web), each 340MB file yielded **35M+ clean tokens**. The entire 400M automated token target is now reached in just **11–12 parquet files (~25 minutes total runtime)**.
 
@@ -129,6 +214,21 @@ All corpora are partitioned using a reproducible document-level split (Seed `42`
 * **Validation Set (5%)**: Held-out set for loss, perplexity (PPL), and Bits-Per-Byte (BPB) tracking (~24.4M tokens).
 * **Test Set (5%)**: Final evaluation split for generation quality (BLEU, chrF, ROUGE-L) and attention map analysis (~24.5M tokens).
 
+#### Corpus Scale & Balance (Hindi — Model H):
+* **Manual Data (66 Shards, post-deduplication)**: **240,510 documents /
+  479,582,790 clean characters / 139,705,463 tokens** — the Hindi Wikipedia dump
+  (73.7M tokens), a sitemap-driven web crawl over 32 Hindi domains (75,387 docs /
+  46.9M tokens), the Colab news crawl (12.0M) and Wikibooks/Wikiquote (7.1M).
+  Intra-manual deduplication removed 2,523 documents / 18.6M characters, 94% of
+  them a redundant re-parse of the same Wikimedia dumps.
+* **Automated Data (220 Shards)**: ~682.9M tokens from AI4Bharat Sangraha Verified.
+* **Active Pretraining Dataset**: **520,409,408 tokens** across 848,815 documents
+  (train 467,905,255 / val 26,069,560 / test 26,434,593), manual share **26.87%**.
+  The 139.7M unique manual tokens raise the corpus ceiling from 444M to **~699M**.
+* **Chars/token is measured, not assumed**: 3.433 manual, 3.507 automated, 3.484
+  on the final corpus. The pipeline re-measures these against the live tokenizer
+  before budgeting, because a stale flat constant caused the original shortfall.
+
 #### Corpus Scale & Balance (Nepali — Model L):
 * **Manual Data Shards (48 Shards — 1.28 GiB)**: ~253.6M tokens (~8.65M tokens from Wikipedia dumps + ~245M tokens from live news crawls: *Ratopati*, *Setopati*, *Gorkhapatra*). Comfortably exceeds the $\ge 20\%$ manual floor.
 * **Automated Data Shards (248 Shards — 6.26 GiB)**: ~1.25B tokens from AI4Bharat Sangraha Verified.
@@ -139,12 +239,63 @@ All corpora are partitioned using a reproducible document-level split (Seed `42`
 
 ## Tokenizer Construction
 
-Trained separate **SentencePiece Byte-Pair Encoding (BPE)** tokenizers from scratch for each language on the training split:
-* **Model Type**: BPE (`byte_fallback=True` to prevent out-of-vocabulary `<unk>` tokens on rare characters/emojis).
-* **Vocabulary Size**: `32,000` tokens per language.
-* **Character Coverage**: `0.9995` (tailored for Devanagari combining characters, nuktas, and virama `्`).
+Separate **SentencePiece BPE** tokenizers, trained from scratch on each
+language's own training split. No corpus, vocabulary or tokenizer is shared.
+
+* **Model Type**: BPE, `byte_fallback=True` — unknown characters become raw UTF-8 byte tokens instead of `<unk>`, giving a **0.00% unknown-token rate**.
+* **Vocabulary Size**: **8,000 (Hindi)**, 32,000 (Nepali). Sizes differ; see the note below.
+* **Character Coverage**: `0.9995` (retains Devanagari combining marks, nuktas, virama `्`).
 * **Special Tokens**: `<pad>=0`, `<unk>=1`, `<bos>=2`, `<eos>=3`.
 * **Script Preservation**: `split_by_unicode_script=True`, `split_by_whitespace=True`, `split_digits=True`.
+
+### Measured on held-out text
+
+Hindi, on 59,713 validation documents (12.2M characters) never seen in training:
+
+| Statistic | Value |
+| :--- | ---: |
+| Fertility (tokens/word) | **1.4938** |
+| Characters per token | 3.4712 |
+| Unknown-token rate | **0.00%** |
+| Vocabulary coverage | 97.41% (7,793 of 8,000 pieces observed) |
+| Broken grapheme rate | 5.5683% |
+
+### Why BPE, and why 8,000
+
+**Subword over word- or character-level.** Hindi is inflectional
+(`विद्यार्थी` → `विद्यार्थियों`), so a word vocabulary would need hundreds of
+thousands of entries and still emit `<unk>` on unseen inflections. Character
+level avoids that but makes Devanagari sequences 4–5x longer, and attention cost
+is quadratic in length. Subword is the only option that fits a 25M budget.
+
+**BPE over Unigram — with a caveat we state openly.** At an equal 8k vocabulary
+on the same sample, Unigram actually scored *better*: fertility 1.5613 vs 1.5873
+and broken graphemes 6.07% vs 7.97%. BPE was chosen on procedural grounds — it is
+the standard for decoder-only pretraining and makes our fertility directly
+comparable to the Devanagari literature we benchmark against — not because it
+measured better. Report §6.2.2 flags this as the weakest-evidenced decision in
+Phase 1 and names the Phase 2 ablation that would settle it.
+
+**Byte fallback** routes unknown characters to raw UTF-8 bytes, which is why the
+unknown-token rate is exactly 0.00% at every vocabulary size tested. It decouples
+vocabulary size from OOV risk, so the vocabulary need not be inflated defensively.
+
+### Why 8,000 for Hindi
+
+Vocabulary size trades directly against the ~25M parameter budget: with
+`d_model = 256` and weight tying, the embedding table costs `V x 256` parameters
+— 8.2% of the budget at 8k, but **32.8% at 32k**. A vocabulary sweep on held-out
+text (report §6.2) shows 8k -> 32k buys only 0.23 tokens/word of fertility while
+vocabulary coverage collapses from 94.31% to 82.39%, leaving ~1.4M embedding
+parameters that are never used. The course Q&A also advises a 5–10K vocabulary.
+
+> **Known inconsistency**: Nepali is still at 32,000, predating that guidance. It
+> should be retrained at 8k or the choice justified against its parameter cost
+> before Phase 2. Recorded in report §6.4 rather than quietly reconciled.
+
+Full benchmark, including the vocabulary sweep and a BPE-vs-Unigram comparison:
+[`report/hindi_tokenizer_benchmark.json`](report/hindi_tokenizer_benchmark.json)
+(reproduce with `scripts/benchmark_hindi_tokenizer.py`).
 
 ---
 
@@ -159,6 +310,35 @@ Trained separate **SentencePiece Byte-Pair Encoding (BPE)** tokenizers from scra
    * Merge and perform exact SHA-256 deduplication.
    * Create 90/5/5 train/val/test splits.
    * Train the 32k SentencePiece BPE tokenizer and save all artifacts to Drive.
+
+### Option C: Hindi Manual Web Collection (Local)
+
+The Hindi manual partition is collected locally and streamed to Drive with
+`rclone`, which avoids Colab session drops on a multi-hour crawl. Local disk is
+never asked to hold more than one shard.
+
+```bash
+# 1. Discover article URLs from publisher sitemaps (~8 min, ~11M URLs)
+python scripts/discover_hindi_urls.py --out data/hindi/sources/frontier.txt
+
+# 2. Snapshot the dedup registry already on Drive
+python scripts/export_hindi_manual_hashes.py
+
+# 3. Crawl until the character target is met (resumable; Ctrl-C is safe)
+python scripts/collect_hindi_manual_web.py \
+    --frontier data/hindi/sources/frontier_balanced.txt \
+    --hashes data/hindi/manifests/existing_manual_hashes.txt \
+    --target-chars 160000000
+
+# 4. Verify what actually landed on Drive
+python scripts/audit_hindi_corpus.py
+```
+
+Then run [`notebooks/finalize_hindi_corpus.ipynb`](notebooks/finalize_hindi_corpus.ipynb)
+on Colab to rebuild the 90/5/5 splits under the token budget and retrain the
+8k BPE tokenizer.
+
+---
 
 ### Option B: Local CLI Execution
 ```bash
@@ -202,18 +382,43 @@ python -m src.tokenizer.train_bpe train \
 
 ## Google Drive Artifacts and Checkpoints
 
-All large raw archives, processed JSONL shards, split files, and trained tokenizer models are hosted on Google Drive:
+All large artifacts live in a single shared Google Drive folder:
 
-| Artifact Description | Language | Link |
-| :--- | :---: | :---: |
-| **Complete Cleaned Dataset (JSONL Shards)** | Nepali (`ne`) | *[Google Drive Link Placeholder]* |
-| **Complete Cleaned Dataset (JSONL Shards)** | Hindi (`hi`) | *[Google Drive Link Placeholder]* |
-| **Train / Val / Test Splits** | Nepali (`ne`) | *[Google Drive Link Placeholder]* |
-| **Train / Val / Test Splits** | Hindi (`hi`) | *[Google Drive Link Placeholder]* |
-| **SentencePiece BPE Model & Vocab (`32k`)** | Nepali (`ne`) | *[Google Drive Link Placeholder]* |
-| **SentencePiece BPE Model & Vocab (`32k`)** | Hindi (`hi`) | *[Google Drive Link Placeholder]* |
-| **Pretrained Model Checkpoints (Phase 2)** | Model L / Model H | *Coming in Phase 2* |
-| **Finetuned Model Checkpoints (Phase 3)** | Model L / Model H | *Coming in Phase 3* |
+## 🔗 [**`24KaratAu/` — all datasets, splits and tokenizers**](https://drive.google.com/drive/folders/19EANSjwyIp-z36jwCvKhwlWdcwA1Ohhq)
+
+`https://drive.google.com/drive/folders/19EANSjwyIp-z36jwCvKhwlWdcwA1Ohhq`
+
+Shared as **Anyone with the link → Viewer**, so it opens without an access
+request. Every path below is relative to that folder. Report §7 documents which
+source produced which file.
+
+| Artifact | Language | Path inside the shared folder | Size |
+| :--- | :---: | :--- | ---: |
+| Cleaned dataset — automated (JSONL) | `hi` | `hindi/cleaned/automated_nonweb/` | 5.976 GiB |
+| Cleaned dataset — manual (JSONL) | `hi` | `hindi/cleaned/manual/` | 1.270 GiB |
+| Raw crawled HTML (gzipped per shard) | `hi` | `hindi/raw/manual_web/` | 1.702 GiB |
+| Raw Wikimedia dumps (`.xml.bz2`) | `hi` | `hindi/raw/wiki_dump/` | 0.234 GiB |
+| Train / val / test splits | `hi` | `hindi/splits/` | 8.834 GiB |
+| BPE tokenizer model + vocab (`8k`) | `hi` | `hindi/tokenizer/hindi_bpe_8k.{model,vocab}` | 573 KiB |
+| Collection provenance & manifests | `hi` | `hindi/manifests/` | 0.328 GiB |
+| Cleaned dataset — automated (JSONL) | `ne` | `nepali/cleaned/automated_nonweb/` | 6.263 GiB |
+| Cleaned dataset — manual (JSONL) | `ne` | `nepali/cleaned/manual/` | 1.280 GiB |
+| Raw Wikipedia dump + scraped pages | `ne` | `nepali/raw/` | 0.101 GiB |
+| Train / val / test splits | `ne` | `nepali/splits/` | 2.659 GiB |
+| BPE tokenizer model + vocab (`32k`) | `ne` | `nepali/tokenizer/` | 4 MiB |
+| Pretrained checkpoints | H / L | *Coming in Phase 2* | — |
+| Finetuned checkpoints | H / L | *Coming in Phase 3* | — |
+
+### Provenance files (Hindi collection)
+
+| File | Path | Contents |
+| :--- | :--- | :--- |
+| Full URL frontier | `hindi/manifests/frontier_full.txt.gz` | All 11,112,623 sitemap-discovered URLs |
+| Balanced frontier | `hindi/manifests/frontier_balanced.txt.gz` | The 375,539-URL crawl input |
+| Attempted-URL log | `hindi/manifests/crawl_done_urls.txt.gz` | Every URL the crawler tried |
+| Rejection log | `hindi/manifests/crawl_rejected.jsonl.gz` | Per-URL rejection reason |
+| Dedup registry | `hindi/manifests/existing_manual_hashes.txt.gz` | Content hashes at crawl time |
+| Corpus summary | `hindi/manifests/hindi_corpus_summary.json` | Final split and share figures |
 
 ---
 
