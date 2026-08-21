@@ -1,8 +1,8 @@
 # Phase 1 Report: Data Collection, Preprocessing, and Tokenizer Construction
 **Course**: Language Models and Agents (CL3-410) — Monsoon 2026  
 **Project**: Building and Analyzing Monolingual Transformer LMs in Two Indian Languages  
-**Author**: 24KaratAu  
-**Phase 1 Deadline**: 19th August 2026  
+**Author**: 24KaratAu (Avnish Uba)
+
 
 ---
 
