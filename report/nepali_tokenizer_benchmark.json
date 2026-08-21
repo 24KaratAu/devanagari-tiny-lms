@@ -1,0 +1,330 @@
+{
+  "documents": 70196,
+  "characters": 11582889,
+  "words": 1749360,
+  "tokens": 2722993,
+  "fertility_tokens_per_word": 1.5566,
+  "characters_per_token": 4.2537,
+  "broken_grapheme_rate_pct": 4.462,
+  "unknown_tokens": 0,
+  "unknown_token_rate_pct": 0.0,
+  "vocab_size": 8000,
+  "vocab_types_observed": 7759,
+  "vocab_coverage_pct": 96.99,
+  "shannon_entropy_bits": 11.1083,
+  "renyi_entropy_alpha2_bits": 8.6409,
+  "token_frequency": {
+    "distinct_types_observed": 7759,
+    "types_seen_once": 63,
+    "coverage": {
+      "top_100_pct_of_tokens": 28.38,
+      "top_500_pct_of_tokens": 51.07,
+      "top_1000_pct_of_tokens": 64.34,
+      "top_2000_pct_of_tokens": 78.22,
+      "top_4000_pct_of_tokens": 91.59
+    },
+    "top_25_pieces": [
+      {
+        "piece": "।",
+        "count": 79610,
+        "pct": 2.9236
+      },
+      {
+        "piece": ",",
+        "count": 48780,
+        "pct": 1.7914
+      },
+      {
+        "piece": "▁र",
+        "count": 37268,
+        "pct": 1.3686
+      },
+      {
+        "piece": "▁छ",
+        "count": 33318,
+        "pct": 1.2236
+      },
+      {
+        "piece": "▁।",
+        "count": 28073,
+        "pct": 1.031
+      },
+      {
+        "piece": "को",
+        "count": 26709,
+        "pct": 0.9809
+      },
+      {
+        "piece": "मा",
+        "count": 23070,
+        "pct": 0.8472
+      },
+      {
+        "piece": "का",
+        "count": 21174,
+        "pct": 0.7776
+      },
+      {
+        "piece": "ले",
+        "count": 19163,
+        "pct": 0.7037
+      },
+      {
+        "piece": "लाई",
+        "count": 16476,
+        "pct": 0.6051
+      },
+      {
+        "piece": "▁पनि",
+        "count": 16455,
+        "pct": 0.6043
+      },
+      {
+        "piece": "▁छन्",
+        "count": 13544,
+        "pct": 0.4974
+      },
+      {
+        "piece": "▁भएको",
+        "count": 10400,
+        "pct": 0.3819
+      },
+      {
+        "piece": "▁गरेको",
+        "count": 9722,
+        "pct": 0.357
+      },
+      {
+        "piece": "▁भने",
+        "count": 9695,
+        "pct": 0.356
+      },
+      {
+        "piece": "▁हो",
+        "count": 9445,
+        "pct": 0.3469
+      },
+      {
+        "piece": "बाट",
+        "count": 9099,
+        "pct": 0.3342
+      },
+      {
+        "piece": "▁उनले",
+        "count": 8632,
+        "pct": 0.317
+      },
+      {
+        "piece": "▁थियो",
+        "count": 8596,
+        "pct": 0.3157
+      },
+      {
+        "piece": "▁लागि",
+        "count": 8574,
+        "pct": 0.3149
+      },
+      {
+        "piece": "▁गर्ने",
+        "count": 8208,
+        "pct": 0.3014
+      },
+      {
+        "piece": "▁तथा",
+        "count": 8147,
+        "pct": 0.2992
+      },
+      {
+        "piece": "▁गर्न",
+        "count": 7913,
+        "pct": 0.2906
+      },
+      {
+        "piece": "हरू",
+        "count": 7537,
+        "pct": 0.2768
+      },
+      {
+        "piece": "▁'",
+        "count": 7423,
+        "pct": 0.2726
+      }
+    ]
+  },
+  "examples": [
+    {
+      "text": "नेपाल एक सुन्दर र सार्वभौमसत्ता सम्पन्न दक्षिण एसियाली राष्ट्र हो।",
+      "pieces": [
+        "▁नेपाल",
+        "▁एक",
+        "▁सुन्दर",
+        "▁र",
+        "▁सार्व",
+        "भौ",
+        "म",
+        "स",
+        "त्ता",
+        "▁सम्पन्न",
+        "▁दक्षिण",
+        "▁एसियाली",
+        "▁राष्ट्र",
+        "▁हो",
+        "।"
+      ],
+      "n_tokens": 15,
+      "n_words": 10
+    },
+    {
+      "text": "विश्वविद्यालयमा विद्यार्थीहरूले वैज्ञानिक अनुसन्धान गरिरहेका छन्।",
+      "pieces": [
+        "▁विश्वविद्यालय",
+        "मा",
+        "▁विद्यार्थी",
+        "हरूले",
+        "▁वैज्ञानिक",
+        "▁अनुसन्धान",
+        "▁गरिरहेका",
+        "▁छन्",
+        "।"
+      ],
+      "n_tokens": 9,
+      "n_words": 6
+    },
+    {
+      "text": "प्रधानमन्त्रीले अर्थतन्त्र तीव्र गतिमा अगाडि बढिरहेको बताउनुभयो।",
+      "pieces": [
+        "▁प्रधानमन्त्रीले",
+        "▁अर्थतन्त्र",
+        "▁तीव्र",
+        "▁गतिमा",
+        "▁अगाडि",
+        "▁बढिरहेको",
+        "▁बताउनुभयो",
+        "।"
+      ],
+      "n_tokens": 8,
+      "n_words": 7
+    },
+    {
+      "text": "उनीहरूले २०२६ मा करिब १५ प्रतिशत वृद्धि दर्ज गरे।",
+      "pieces": [
+        "▁उनीहरूले",
+        "▁२०२",
+        "६",
+        "▁मा",
+        "▁करिब",
+        "▁१५",
+        "▁प्रतिशत",
+        "▁वृद्धि",
+        "▁द",
+        "र्ज",
+        "▁गरे",
+        "।"
+      ],
+      "n_tokens": 12,
+      "n_words": 9
+    }
+  ],
+  "sweep": [
+    {
+      "documents": 70196,
+      "characters": 11582889,
+      "words": 1749360,
+      "tokens": 3180832,
+      "fertility_tokens_per_word": 1.8183,
+      "characters_per_token": 3.6415,
+      "broken_grapheme_rate_pct": 7.4582,
+      "unknown_tokens": 0,
+      "unknown_token_rate_pct": 0.0,
+      "vocab_size": 4000,
+      "vocab_types_observed": 3845,
+      "vocab_coverage_pct": 96.12,
+      "shannon_entropy_bits": 10.4113,
+      "renyi_entropy_alpha2_bits": 8.5592,
+      "model_type": "bpe",
+      "requested_vocab": 4000
+    },
+    {
+      "documents": 70196,
+      "characters": 11582889,
+      "words": 1749360,
+      "tokens": 2719360,
+      "fertility_tokens_per_word": 1.5545,
+      "characters_per_token": 4.2594,
+      "broken_grapheme_rate_pct": 4.9422,
+      "unknown_tokens": 0,
+      "unknown_token_rate_pct": 0.0,
+      "vocab_size": 8000,
+      "vocab_types_observed": 7796,
+      "vocab_coverage_pct": 97.45,
+      "shannon_entropy_bits": 11.0729,
+      "renyi_entropy_alpha2_bits": 8.5888,
+      "model_type": "bpe",
+      "requested_vocab": 8000
+    },
+    {
+      "documents": 70196,
+      "characters": 11582889,
+      "words": 1749360,
+      "tokens": 2656749,
+      "fertility_tokens_per_word": 1.5187,
+      "characters_per_token": 4.3598,
+      "broken_grapheme_rate_pct": 5.034,
+      "unknown_tokens": 0,
+      "unknown_token_rate_pct": 0.0,
+      "vocab_size": 8000,
+      "vocab_types_observed": 7845,
+      "vocab_coverage_pct": 98.06,
+      "shannon_entropy_bits": 10.7599,
+      "renyi_entropy_alpha2_bits": 8.1485,
+      "model_type": "unigram",
+      "requested_vocab": 8000
+    },
+    {
+      "documents": 70196,
+      "characters": 11582889,
+      "words": 1749360,
+      "tokens": 2420296,
+      "fertility_tokens_per_word": 1.3835,
+      "characters_per_token": 4.7857,
+      "broken_grapheme_rate_pct": 3.0702,
+      "unknown_tokens": 0,
+      "unknown_token_rate_pct": 0.0,
+      "vocab_size": 16000,
+      "vocab_types_observed": 15558,
+      "vocab_coverage_pct": 97.24,
+      "shannon_entropy_bits": 11.5676,
+      "renyi_entropy_alpha2_bits": 8.5163,
+      "model_type": "bpe",
+      "requested_vocab": 16000
+    },
+    {
+      "documents": 70196,
+      "characters": 11582889,
+      "words": 1749360,
+      "tokens": 2236831,
+      "fertility_tokens_per_word": 1.2787,
+      "characters_per_token": 5.1783,
+      "broken_grapheme_rate_pct": 1.7908,
+      "unknown_tokens": 0,
+      "unknown_token_rate_pct": 0.0,
+      "vocab_size": 32000,
+      "vocab_types_observed": 30059,
+      "vocab_coverage_pct": 93.93,
+      "shannon_entropy_bits": 11.8909,
+      "renyi_entropy_alpha2_bits": 8.3842,
+      "model_type": "bpe",
+      "requested_vocab": 32000
+    }
+  ],
+  "superseded_32k": {
+    "vocab_size": 32000,
+    "fertility_tokens_per_word": 1.317,
+    "characters_per_token": 5.0274,
+    "broken_grapheme_rate_pct": 1.609,
+    "vocab_coverage_pct": 91.92,
+    "shannon_entropy_bits": 11.7805,
+    "renyi_entropy_alpha2_bits": 8.3181,
+    "unknown_token_rate_pct": 0.0
+  }
+}

@@ -38,13 +38,25 @@ This project builds two completely independent, from-scratch decoder-only Transf
 │   ├── collect_hindi_colab.ipynb    # Hindi automated + manual collection & tokenizer training
 │   ├── collect_nepali_colab.ipynb   # Nepali automated + manual collection & tokenizer training
 │   ├── finalize_hindi_corpus.ipynb  # Budget-aware Hindi split + tokenizer retrain
+│   ├── finalize_nepali_corpus.ipynb # Budget-aware Nepali split + tokenizer retrain
 │   └── phase1_pipeline.py           # Standalone modular pipeline runner
+├── tokenizers/                      # Deliverables 6 & 7 — committed, not Drive-only
+│   ├── hindi/hindi_bpe_8k.{model,vocab}
+│   └── nepali/nepali_bpe_8k.{model,vocab}
 ├── report/                          # Phase reports, metrics, plots, and analysis
+│   ├── phase1_report.md             # Phase 1 report
+│   ├── collection_ledger.md         # Every collection stage: commit, script, shards, counts
+│   ├── collection_ledger.json       # Machine-readable source for the above
+│   └── {hindi,nepali}_tokenizer_benchmark.json
 ├── scripts/                         # Collection, audit, and validation suites
-│   ├── discover_hindi_urls.py       # robots.txt -> sitemap article-URL discovery
-│   ├── collect_hindi_manual_web.py  # Resumable Hindi crawler, streams shards to Drive
-│   ├── process_hindi_wikimedia_dump.py  # Wikisource/Wiktionary dump -> manual shards
-│   ├── export_hindi_manual_hashes.py    # Dedup registry, streamed from Drive
+│   ├── discover_sitemap_urls.py     # robots.txt -> sitemap article-URL discovery
+│   ├── collect_manual_web_sitemap.py    # Resumable crawler (--language hindi|nepali)
+│   ├── process_hindi_wikimedia_dump.py  # Wikimedia XML dump -> manual shards
+│   ├── export_manual_hashes.py      # Dedup registry, streamed from Drive
+│   ├── benchmark_tokenizer.py       # Fertility / coverage / vocab sweep on held-out text
+│   ├── render_collection_ledger.py  # collection_ledger.json -> collection_ledger.md
+│   ├── verify_corpus_claims.py      # Reproduces every measured claim in the report
+│   ├── probe_sitemap_availability.py # Which outlets publish crawlable sitemaps
 │   ├── audit_hindi_corpus.py        # Exact per-source token accounting from Drive
 │   ├── audit_batch1_checkpoint.py   # 1,000-doc verification & Drive sharding audit
 │   ├── audit_existing_corpus_language.py
@@ -54,6 +66,7 @@ This project builds two completely independent, from-scratch decoder-only Transf
 │   ├── data/
 │   │   ├── clean/                   # Devanagari cleaning & language ID
 │   │   │   ├── clean_hindi_web.py   # Line-level web cleaner & teaser stripper
+│   │   │   ├── clean_nepali_web.py  # Nepali marker vocabulary over the same cleaner
 │   │   │   ├── clean_nepali.py      # Table stripping & citation cleaner
 │   │   │   ├── nepali_lang_id.py    # Composite lexical/script language detector
 │   │   │   └── migrate_manifest_schema.py
@@ -134,7 +147,7 @@ Building a ~500M token corpus per language on student-tier compute (free Google 
   sequential ids (`amarujala.com/india-news/news-id-849999`). Publishers do not
   expose contiguous id spaces; almost every request 404'd and the crawl produced
   13 MB of text.
-* **The Solution**: `scripts/discover_hindi_urls.py` reads each publisher's
+* **The Solution**: `scripts/discover_sitemap_urls.py` reads each publisher's
   `robots.txt`, follows every `Sitemap:` directive and descends the sitemap index.
   The naive guess of `/sitemap.xml` is itself wrong nearly everywhere — `ndtv.in`
   and `zeenews` return 403, `bhaskar`, `aajtak`, `abplive`, `livehindustan`,
@@ -233,7 +246,12 @@ All corpora are partitioned using a reproducible document-level split (Seed `42`
 * **Manual Data Shards (48 Shards — 1.28 GiB)**: ~253.6M tokens (~8.65M tokens from Wikipedia dumps + ~245M tokens from live news crawls: *Ratopati*, *Setopati*, *Gorkhapatra*). Comfortably exceeds the $\ge 20\%$ manual floor.
 * **Automated Data Shards (248 Shards — 6.26 GiB)**: ~1.25B tokens from AI4Bharat Sangraha Verified.
 * **Total Cleaned Storage on Google Drive**: **296 shards (7.54 GiB, ~1.50B tokens)**.
-* **Active Pretraining Dataset**: **488,502,833 tokens (~488.5M tokens)** partitioned into the 90/5/5 splits.
+* **Active Pretraining Dataset**: **632,711,308 tokens** across 1,367,965 documents
+  (train 569,663,061 / val 31,697,868 / test 31,350,379), manual share **21.20%**.
+  An audit on 2026-08-21 found the previously reported 488.5M figure counted
+  duplicate documents — only **42.7%** of the Nepali manual partition was unique —
+  and that the splits held ~16% of the available pool. A 340M-character crawl and a
+  re-split with intra-manual deduplication fixed both. See report §3.4, §4.3, §5.1.
 
 ---
 
@@ -295,7 +313,7 @@ parameters that are never used. The course Q&A also advises a 5–10K vocabulary
 
 Full benchmark, including the vocabulary sweep and a BPE-vs-Unigram comparison:
 [`report/hindi_tokenizer_benchmark.json`](report/hindi_tokenizer_benchmark.json)
-(reproduce with `scripts/benchmark_hindi_tokenizer.py`).
+(reproduce with `scripts/benchmark_tokenizer.py`).
 
 ---
 
@@ -311,7 +329,7 @@ Full benchmark, including the vocabulary sweep and a BPE-vs-Unigram comparison:
    * Create 90/5/5 train/val/test splits.
    * Train the 32k SentencePiece BPE tokenizer and save all artifacts to Drive.
 
-### Option C: Hindi Manual Web Collection (Local)
+### Option C: Manual Web Collection (Local)
 
 The Hindi manual partition is collected locally and streamed to Drive with
 `rclone`, which avoids Colab session drops on a multi-hour crawl. Local disk is
@@ -319,13 +337,13 @@ never asked to hold more than one shard.
 
 ```bash
 # 1. Discover article URLs from publisher sitemaps (~8 min, ~11M URLs)
-python scripts/discover_hindi_urls.py --out data/hindi/sources/frontier.txt
+python scripts/discover_sitemap_urls.py --out data/hindi/sources/frontier.txt
 
 # 2. Snapshot the dedup registry already on Drive
-python scripts/export_hindi_manual_hashes.py
+python scripts/export_manual_hashes.py
 
 # 3. Crawl until the character target is met (resumable; Ctrl-C is safe)
-python scripts/collect_hindi_manual_web.py \
+python scripts/collect_manual_web_sitemap.py \
     --frontier data/hindi/sources/frontier_balanced.txt \
     --hashes data/hindi/manifests/existing_manual_hashes.txt \
     --target-chars 160000000
@@ -334,9 +352,25 @@ python scripts/collect_hindi_manual_web.py \
 python scripts/audit_hindi_corpus.py
 ```
 
-Then run [`notebooks/finalize_hindi_corpus.ipynb`](notebooks/finalize_hindi_corpus.ipynb)
-on Colab to rebuild the 90/5/5 splits under the token budget and retrain the
-8k BPE tokenizer.
+The same scripts serve Nepali via `--language nepali`, pointing at
+`data/nepali/sources/` and `gdrive:24KaratAu/nepali/`:
+
+```bash
+python scripts/discover_sitemap_urls.py --domains <nepali domains> \
+    --out data/nepali/sources/frontier.txt
+python scripts/export_manual_hashes.py \
+    --remote gdrive:24KaratAu/nepali/cleaned/manual \
+    --out data/nepali/manifests/existing_manual_hashes.txt
+python scripts/collect_manual_web_sitemap.py --language nepali \
+    --frontier data/nepali/sources/frontier_balanced.txt \
+    --hashes data/nepali/manifests/existing_manual_hashes.txt \
+    --target-chars 340000000
+```
+
+Then run the matching notebook on Colab to rebuild the 90/5/5 splits under the
+token budget and retrain the 8k BPE tokenizer:
+[`finalize_hindi_corpus.ipynb`](notebooks/finalize_hindi_corpus.ipynb) or
+[`finalize_nepali_corpus.ipynb`](notebooks/finalize_nepali_corpus.ipynb).
 
 ---
 

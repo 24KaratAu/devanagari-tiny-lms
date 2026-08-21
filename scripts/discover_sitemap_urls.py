@@ -1,15 +1,21 @@
-"""Sitemap-based Hindi article-URL discovery.
+"""Sitemap-based article-URL discovery.
 
-Phase A of the remaining Hindi manual collection. For each seed domain we read
-robots.txt, follow every `Sitemap:` directive, recursively descend sitemap
-indexes, and emit deduplicated article URLs to a frontier file.
+For each seed domain we read robots.txt, follow every `Sitemap:` directive,
+recursively descend sitemap indexes, and emit deduplicated article URLs to a
+frontier file. ``SEED_DOMAINS`` below is the Hindi list and is the default;
+pass ``--domains`` to target another language (the Nepali run used a separate
+list, since most large Nepali outlets publish no sitemap at all).
 
 The Colab pipeline previously guessed sequential article ids
 (``news-id-850000`` ...), which 404'd almost everywhere and yielded only ~13 MB
 of news text. Sitemaps give us the real, currently-live URL space instead.
 
 Usage:
-    python scripts/discover_hindi_urls.py --out data/hindi/sources/frontier.txt
+    python scripts/discover_sitemap_urls.py --out data/hindi/sources/frontier.txt
+
+    python scripts/discover_sitemap_urls.py \
+        --domains https://www.makalukhabar.com https://clickmandu.com ... \
+        --out data/nepali/sources/frontier.txt
 """
 
 from __future__ import annotations

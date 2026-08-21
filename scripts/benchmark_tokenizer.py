@@ -1,15 +1,16 @@
-"""Intrinsic evaluation of the Hindi tokenizer on held-out text.
+"""Intrinsic evaluation of a trained tokenizer on held-out text.
 
 Produces every statistic Phase 1 §1.3 asks for — vocabulary size,
 token-frequency statistics, average characters per token, tokenization
 examples, and unknown-token statistics — plus a vocabulary-size sweep that
-justifies the 8,000-token choice on fertility rather than by assertion.
+justifies the vocabulary choice on fertility rather than by assertion.
+Use ``--language`` to select which example sentences are reported.
 
 Comparison tokenizers are fitted on a sample of the *train* split and evaluated
 on a sample of the *validation* split, so no model is scored on text it saw.
 
 Usage:
-    python scripts/benchmark_hindi_tokenizer.py \
+    python scripts/benchmark_tokenizer.py \
         --model  <path>/hindi_bpe_8k.model \
         --val    <path>/val_sample.txt \
         --train  <path>/train_sample.txt \
@@ -102,12 +103,20 @@ def train_variant(train_file: Path, vocab_size: int, model_type: str,
     return sp
 
 
-SAMPLES = [
-    "भारत एक विशाल और विविधतापूर्ण दक्षिण एशियाई गणराज्य है।",
-    "विश्वविद्यालय के विद्यार्थियों ने वैज्ञानिक अनुसंधान में महत्वपूर्ण योगदान दिया।",
-    "प्रधानमंत्री ने कहा कि अर्थव्यवस्था तेज़ी से आगे बढ़ रही है।",
-    "उन्होंने 2026 में लगभग 15 प्रतिशत की वृद्धि दर्ज की।",
-]
+SAMPLES = {
+    "hindi": [
+        "भारत एक विशाल और विविधतापूर्ण दक्षिण एशियाई गणराज्य है।",
+        "विश्वविद्यालय के विद्यार्थियों ने वैज्ञानिक अनुसंधान में महत्वपूर्ण योगदान दिया।",
+        "प्रधानमंत्री ने कहा कि अर्थव्यवस्था तेज़ी से आगे बढ़ रही है।",
+        "उन्होंने 2026 में लगभग 15 प्रतिशत की वृद्धि दर्ज की।",
+    ],
+    "nepali": [
+        "नेपाल एक सुन्दर र सार्वभौमसत्ता सम्पन्न दक्षिण एसियाली राष्ट्र हो।",
+        "विश्वविद्यालयमा विद्यार्थीहरूले वैज्ञानिक अनुसन्धान गरिरहेका छन्।",
+        "प्रधानमन्त्रीले अर्थतन्त्र तीव्र गतिमा अगाडि बढिरहेको बताउनुभयो।",
+        "उनीहरूले २०२६ मा करिब १५ प्रतिशत वृद्धि दर्ज गरे।",
+    ],
+}
 
 
 def main() -> int:
@@ -118,6 +127,10 @@ def main() -> int:
     ap.add_argument("--out", default="report/hindi_tokenizer_benchmark.json")
     ap.add_argument("--val-chars", type=int, default=20_000_000)
     ap.add_argument("--sweep", default="4000,8000,16000,32000")
+    ap.add_argument("--skip-sweep", action="store_true",
+                    help="Only evaluate --model; do not fit comparison tokenizers.")
+    ap.add_argument("--language", choices=sorted(SAMPLES), default="hindi",
+                    help="Selects the example sentences shown in the report.")
     args = ap.parse_args()
 
     val_docs = load_docs(Path(args.val), args.val_chars)
@@ -149,14 +162,17 @@ def main() -> int:
     prod["examples"] = [{"text": s,
                          "pieces": sp.encode(s, out_type=str),
                          "n_tokens": len(sp.encode(s)),
-                         "n_words": len(WORD_RE.findall(s))} for s in SAMPLES]
+                         "n_words": len(WORD_RE.findall(s))}
+                        for s in SAMPLES[args.language]]
 
     # --- vocabulary-size sweep + algorithm comparison ---
     sweep = []
+    if args.skip_sweep:
+        print("  (sweep skipped)", flush=True)
     with tempfile.TemporaryDirectory() as td:
         workdir = Path(td)
         train_file = Path(args.train)
-        for vs in [int(v) for v in args.sweep.split(",")]:
+        for vs in ([] if args.skip_sweep else [int(v) for v in args.sweep.split(",")]):
             for mt in (("bpe", "unigram") if vs == 8000 else ("bpe",)):
                 print(f"  fitting {mt} {vs}...", flush=True)
                 v = evaluate(train_variant(train_file, vs, mt, workdir), val_docs)
@@ -168,7 +184,7 @@ def main() -> int:
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(prod, indent=2, ensure_ascii=False))
 
-    print(f"\nProduction hindi_bpe_8k on {prod['documents']:,} held-out docs")
+    print(f"\nProduction {Path(args.model).stem} on {prod['documents']:,} held-out docs")
     print(f"  vocabulary size          {prod['vocab_size']:,}")
     print(f"  fertility (tok/word)     {prod['fertility_tokens_per_word']}")
     print(f"  characters / token       {prod['characters_per_token']}")

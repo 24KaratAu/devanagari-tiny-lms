@@ -1,0 +1,181 @@
+{
+  "language": "nepali",
+  "description": "Nepali manual web crawl (scripts/collect_manual_web_sitemap.py). The full URL frontier, attempted-URL log, rejection log and dedup registry are archived on Google Drive under <language>/manifests/; this is the committable summary. Regenerate with scripts/summarise_crawl.py.",
+  "frontier": {
+    "urls_discovered": 651660,
+    "hosts_discovered": 38,
+    "discovery_seconds": 202.8,
+    "per_host_discovered": {
+      "www.makalukhabar.com": 167268,
+      "www.kathmandupati.com": 111588,
+      "clickmandu.com": 96568,
+      "www.bizmandu.com": 83422,
+      "arthasarokar.com": 82165,
+      "deshsanchar.com": 39114,
+      "www.nepalpatra.com": 32753,
+      "www.nepalnews.com": 25622,
+      "www.nepalaaja.com": 2274,
+      "www.karobardaily.com": 1217,
+      "www.pariwartankhabar.com": 594,
+      "www.hamrakura.com": 391,
+      "www.khabarhub.com": 381,
+      "www.dcnepal.com": 84,
+      "www.prasashan.com": 73,
+      "www.lokpath.com": 41,
+      "reportersnepal.com": 32,
+      "thahakhabar.com": 10,
+      "www.setopati.com": 7,
+      "swasthyakhabar.com": 3,
+      "www.nayapatrikadaily.com": 0,
+      "www.shilapatra.com": 0,
+      "ukeraa.com": 0,
+      "www.everestpost.com": 0,
+      "himalpress.com": 0,
+      "sajhapost.com": 0,
+      "www.nepalsamaya.com": 0,
+      "glocalkhabar.com": 0,
+      "www.nepalpress.com": 0,
+      "www.abhiyandaily.com": 0,
+      "www.corporatenepal.com": 0,
+      "www.news24nepal.tv": 0,
+      "www.newbusinessage.com": 0,
+      "www.himalayatimes.com.np": 0,
+      "www.rajdhanidaily.com": 0,
+      "www.onlinemajdur.com": 0,
+      "www.nepalmandal.com": 0,
+      "www.janaaawaj.com": 0
+    }
+  },
+  "crawl": {
+    "urls_attempted": 227699,
+    "urls_preseeded_and_skipped": 197695,
+    "documents_accepted": 202769,
+    "clean_characters_accepted": 340215209,
+    "shards_written": 262,
+    "acceptance_rate": 0.8905
+  },
+  "rejections_by_reason": {
+    "http_404": 11485,
+    "langid_uncertain_ne": 6725,
+    "quality_filter": 2870,
+    "http_429": 2415,
+    "duplicate": 1009,
+    "http_500": 162,
+    "error_ConnectionError": 80,
+    "langid_reject_hi": 19,
+    "no_extract": 3,
+    "error_ReadTimeout": 1
+  },
+  "per_host": {
+    "www.makalukhabar.com": {
+      "attempted": 42800,
+      "rejected": 616,
+      "accepted": 42184
+    },
+    "www.kathmandupati.com": {
+      "attempted": 40033,
+      "rejected": 394,
+      "accepted": 39639
+    },
+    "clickmandu.com": {
+      "attempted": 38016,
+      "rejected": 3926,
+      "accepted": 34090
+    },
+    "bizmandu.com": {
+      "attempted": 36171,
+      "rejected": 1309,
+      "accepted": 34862
+    },
+    "arthasarokar.com": {
+      "attempted": 32498,
+      "rejected": 2250,
+      "accepted": 30248
+    },
+    "deshsanchar.com": {
+      "attempted": 15555,
+      "rejected": 3012,
+      "accepted": 12543
+    },
+    "nepalpatra.com": {
+      "attempted": 11590,
+      "rejected": 11569,
+      "accepted": 21
+    },
+    "nepalnews.com": {
+      "attempted": 9134,
+      "rejected": 266,
+      "accepted": 8868
+    },
+    "nepalaaja.com": {
+      "attempted": 847,
+      "rejected": 847,
+      "accepted": 0
+    },
+    "www.karobardaily.com": {
+      "attempted": 428,
+      "rejected": 419,
+      "accepted": 9
+    },
+    "www.pariwartankhabar.com": {
+      "attempted": 176,
+      "rejected": 109,
+      "accepted": 67
+    },
+    "khabarhub.com": {
+      "attempted": 171,
+      "rejected": 13,
+      "accepted": 158
+    },
+    "hamrakura.com": {
+      "attempted": 161,
+      "rejected": 2,
+      "accepted": 159
+    },
+    "www.dcnepal.com": {
+      "attempted": 36,
+      "rejected": 3,
+      "accepted": 33
+    },
+    "prasashan.com": {
+      "attempted": 25,
+      "rejected": 3,
+      "accepted": 22
+    },
+    "sancharkendra.com": {
+      "attempted": 18,
+      "rejected": 11,
+      "accepted": 7
+    },
+    "www.lokpath.com": {
+      "attempted": 16,
+      "rejected": 11,
+      "accepted": 5
+    },
+    "www.reportersnepal.com": {
+      "attempted": 11,
+      "rejected": 0,
+      "accepted": 11
+    },
+    "www.setopati.com": {
+      "attempted": 4,
+      "rejected": 2,
+      "accepted": 2
+    },
+    "www.thahakhabar.com": {
+      "attempted": 4,
+      "rejected": 3,
+      "accepted": 1
+    },
+    "baahrakhari.com": {
+      "attempted": 4,
+      "rejected": 4,
+      "accepted": 0
+    },
+    "swasthyakhabar.com": {
+      "attempted": 1,
+      "rejected": 0,
+      "accepted": 1
+    }
+  }
+}

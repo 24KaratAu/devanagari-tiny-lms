@@ -77,10 +77,10 @@ def clean_line(line: str) -> str:
     return _MULTISPACE_RE.sub(" ", line).strip()
 
 
-def _cut_teasers(line: str, min_keep: int) -> str:
+def _cut_teasers(line: str, min_keep: int, teasers=TEASER_MARKERS) -> str:
     """Truncate a line at the first "read also"-style teaser marker."""
     cut = len(line)
-    for marker in TEASER_MARKERS:
+    for marker in teasers:
         idx = line.find(marker)
         if idx != -1:
             cut = min(cut, idx)
@@ -90,12 +90,18 @@ def _cut_teasers(line: str, min_keep: int) -> str:
 
 
 def clean_web_text(text: str, min_line_chars: int = 15,
-                   max_line_latin_ratio: float = 0.40) -> str:
+                   max_line_latin_ratio: float = 0.40,
+                   teasers=TEASER_MARKERS,
+                   boilerplate=BOILERPLATE_MARKERS) -> str:
     """Line-level clean: drop navigation furniture and Latin-dominant lines.
 
     Latin-heavy lines are almost always template leftovers (timestamps, credits,
     social widgets). Dropping them per-line instead of per-document keeps
-    otherwise-good Hindi articles that carry a footer.
+    otherwise-good articles that carry a footer.
+
+    The marker tuples are parameters so the same cleaner serves both corpora;
+    `clean_nepali_web` supplies the Nepali equivalents. Everything else here —
+    URL/entity stripping, NFC normalisation, script ratios — is language-neutral.
     """
     kept: list[str] = []
     for raw_line in text.split("\n"):
@@ -103,10 +109,10 @@ def clean_web_text(text: str, min_line_chars: int = 15,
         if not line:
             kept.append("")
             continue
-        line = _cut_teasers(line, min_line_chars)
+        line = _cut_teasers(line, min_line_chars, teasers)
         if not line:
             continue
-        if any(marker in line for marker in BOILERPLATE_MARKERS):
+        if any(marker in line for marker in boilerplate):
             continue
         if len(line) < min_line_chars and devanagari_ratio(line) < 0.5:
             continue

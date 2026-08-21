@@ -1,10 +1,12 @@
-"""Phase B of the remaining Hindi manual collection: crawl the discovered frontier.
+"""Crawl a discovered sitemap frontier into cleaned manual shards on Drive.
 
-Reads the article-URL frontier produced by ``scripts/discover_hindi_urls.py``,
-fetches each page, extracts the article body with trafilatura, applies the
-project's Hindi cleaning + quality filters, deduplicates against the manual
-shards already on Google Drive, and streams new ``manual_web_shard_XXXX.jsonl``
-shards straight to Drive via rclone.
+Serves both corpora via ``--language {hindi,nepali}``. Reads the article-URL
+frontier produced by ``scripts/discover_sitemap_urls.py``, fetches each page,
+extracts the article body with trafilatura, applies that language's cleaning and
+quality filters, identifies the language (Devanagari alone does not distinguish
+Hindi from Nepali, Sanskrit or Maithili), deduplicates against the manual shards
+already on Drive, and streams new ``manual_web_shard_XXXX.jsonl`` shards straight
+to Drive via rclone.
 
 Local disk on this machine has < 4 GB free, so shards are uploaded and deleted
 as soon as they are written; peak local usage stays around one shard.
@@ -13,9 +15,13 @@ The run is resumable: every attempted URL is appended to ``done.txt`` and the
 shard counter / totals live in ``state.json``.
 
 Usage:
-    python scripts/collect_hindi_manual_web.py \
-        --frontier data/hindi/sources/frontier.txt \
-        --target-chars 350000000
+    python scripts/collect_manual_web_sitemap.py --language hindi \
+        --frontier data/hindi/sources/frontier_balanced.txt \
+        --target-chars 160000000
+
+    python scripts/collect_manual_web_sitemap.py --language nepali \
+        --frontier data/nepali/sources/frontier_balanced.txt \
+        --target-chars 340000000
 """
 
 from __future__ import annotations
@@ -45,9 +51,35 @@ import trafilatura
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.data.clean.clean_hindi_web import (  # noqa: E402
-    clean_web_text, devanagari_ratio, latin_ratio, passes_quality,
+    clean_web_text as clean_hindi_web_text, devanagari_ratio, latin_ratio,
+    passes_quality,
+)
+from src.data.clean.clean_nepali_web import (  # noqa: E402
+    clean_web_text as clean_nepali_web_text,
 )
 from src.data.clean.hindi_lang_id import identify_hindi_language  # noqa: E402
+from src.data.clean.nepali_lang_id import identify_nepali_language  # noqa: E402
+
+# Per-language wiring. The crawl mechanics — sitemap frontier, robots handling,
+# host rate limiting, shard streaming, dedup — are identical for both corpora;
+# only the cleaner's boilerplate vocabulary, the language identifier and the
+# Drive destination differ.
+LANGUAGES = {
+    "hindi": {
+        "clean": clean_hindi_web_text,
+        "identify": identify_hindi_language,
+        "accept_code": "hi",
+        "manual_dir": "gdrive:24KaratAu/hindi/cleaned/manual",
+        "raw_dir": "gdrive:24KaratAu/hindi/raw/manual_web",
+    },
+    "nepali": {
+        "clean": clean_nepali_web_text,
+        "identify": identify_nepali_language,
+        "accept_code": "ne",
+        "manual_dir": "gdrive:24KaratAu/nepali/cleaned/manual",
+        "raw_dir": "gdrive:24KaratAu/nepali/raw/manual_web",
+    },
+}
 
 USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -304,7 +336,7 @@ class ShardWriter:
 
 
 def load_existing_hashes(path: Path) -> set[int]:
-    """Load the 64-bit dedup registry built by scripts/export_hindi_manual_hashes.py."""
+    """Load the 64-bit dedup registry built by scripts/export_manual_hashes.py."""
     hashes: set[int] = set()
     if not path or not path.exists():
         return hashes
@@ -322,13 +354,16 @@ def load_existing_hashes(path: Path) -> set[int]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--language", choices=sorted(LANGUAGES), default="hindi")
     ap.add_argument("--frontier", default="data/hindi/sources/frontier.txt")
     ap.add_argument("--state-dir", default="data/hindi/manifests/manual_web_crawl")
     ap.add_argument("--staging-dir", default=None,
                     help="Where shards are written before upload (default: <state-dir>/staging)")
     ap.add_argument("--hashes", default="data/hindi/manifests/existing_manual_hashes.txt")
-    ap.add_argument("--remote", default=DRIVE_MANUAL_DIR)
-    ap.add_argument("--raw-remote", default=DRIVE_RAW_DIR)
+    ap.add_argument("--remote", default=None,
+                    help="Defaults to the selected language's Drive manual dir.")
+    ap.add_argument("--raw-remote", default=None,
+                    help="Defaults to the selected language's Drive raw dir.")
     ap.add_argument("--no-raw", action="store_true",
                     help="Skip archiving the raw HTML alongside the cleaned shards.")
     ap.add_argument("--target-chars", type=int, default=350_000_000)
@@ -348,6 +383,15 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true",
                     help="Do everything but keep shards on local disk.")
     args = ap.parse_args()
+
+    lang = LANGUAGES[args.language]
+    clean_text_fn = lang["clean"]
+    identify_fn = lang["identify"]
+    if args.remote is None:
+        args.remote = lang["manual_dir"]
+    if args.raw_remote is None:
+        args.raw_remote = lang["raw_dir"]
+    print(f"Language: {args.language} -> {args.remote}")
 
     state_dir = Path(args.state_dir)
     state_dir.mkdir(parents=True, exist_ok=True)
@@ -448,6 +492,19 @@ def main() -> int:
             if resp is None:
                 record_reject(url, f"error_{type(last_exc).__name__}")
                 return
+            if resp.status_code in (429, 503) and args.retries > 0:
+                # Smaller portals rate-limit sooner than the large Hindi dailies;
+                # backing off recovers most of these instead of discarding them.
+                delay = float(resp.headers.get("Retry-After") or 0) or 4.0
+                time.sleep(min(delay, 15.0))
+                limiter.acquire(host)
+                try:
+                    resp = session().get(url, timeout=args.timeout)
+                except Exception:
+                    record_reject(url, f"http_{resp.status_code}")
+                    return
+                finally:
+                    limiter.release(host)
             if resp.status_code != 200:
                 record_reject(url, f"http_{resp.status_code}")
                 return
@@ -456,7 +513,7 @@ def main() -> int:
             if not body:
                 record_reject(url, "no_extract")
                 return
-            text = clean_web_text(body)
+            text = clean_text_fn(body)
             if not passes_quality(text, min_chars=args.min_chars):
                 record_reject(url, "quality_filter")
                 return
@@ -464,11 +521,15 @@ def main() -> int:
             # Sanskrit and Maithili all pass a script-ratio test. This is the
             # same identifier the Wikipedia pipeline uses, and it is what keeps
             # the Hindi corpus disjoint from the Nepali (Model L) corpus.
-            lang = identify_hindi_language(text, raw_text=body)
-            if lang["language_status"] == "reject" or (
-                    lang["language_status"] == "uncertain" and not args.accept_uncertain):
-                record_reject(url, f"langid_{lang['language_status']}_"
-                                   f"{lang['language_code']}")
+            try:
+                lid = identify_fn(text, raw_text=body)
+            except TypeError:
+                # nepali_lang_id takes only the cleaned text
+                lid = identify_fn(text)
+            if lid["language_status"] == "reject" or (
+                    lid["language_status"] == "uncertain" and not args.accept_uncertain):
+                record_reject(url, f"langid_{lid['language_status']}_"
+                                   f"{lid['language_code']}")
                 return
             sha = text_hash(text)
             h64 = hash64(sha)
@@ -480,17 +541,17 @@ def main() -> int:
             writer.add({
                 "doc_id": sha[:16],
                 "url": url,
-                "source": f"Hindi web ({host})",
+                "source": f"{args.language.capitalize()} web ({host})",
                 "source_type": "news_web",
                 "collection_type": "manual",
-                "language": "hindi",
+                "language": args.language,
                 "text": text,
                 "clean_text_characters": len(text),
-                "devanagari_ratio": lang["devanagari_ratio"],
-                "latin_ratio": lang["latin_ratio"],
-                "hindi_token_ratio": lang["hindi_token_ratio"],
-                "language_confidence": lang["language_confidence"],
-                "language_status": lang["language_status"],
+                "devanagari_ratio": lid["devanagari_ratio"],
+                "latin_ratio": lid["latin_ratio"],
+                "language_confidence": lid["language_confidence"],
+                "language_status": lid["language_status"],
+                "language_code": lid["language_code"],
                 "text_sha256": sha,
             }, raw_html=None if args.no_raw else slim_html(resp.text))
             with stats_lock:

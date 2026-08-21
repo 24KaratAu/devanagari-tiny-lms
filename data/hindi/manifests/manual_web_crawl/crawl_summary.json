@@ -1,10 +1,10 @@
 {
-  "description": "Hindi manual web crawl (scripts/collect_hindi_manual_web.py). Full URL frontier, attempted-URL log, rejection log and dedup registry are archived on Google Drive under hindi/manifests/ (see README); this file is the committable summary.",
+  "language": "hindi",
+  "description": "Hindi manual web crawl (scripts/collect_manual_web_sitemap.py). The full URL frontier, attempted-URL log, rejection log and dedup registry are archived on Google Drive under <language>/manifests/; this is the committable summary. Regenerate with scripts/summarise_crawl.py.",
   "frontier": {
     "urls_discovered": 11112623,
     "hosts_discovered": 19,
     "discovery_seconds": 456.2,
-    "balanced_frontier_urls": 375539,
     "per_host_discovered": {
       "www.amarujala.com": 7966346,
       "www.livehindustan.com": 2817821,
@@ -140,12 +140,12 @@
       "rejected": 3,
       "accepted": 98
     },
-    "punjab.punjabkesari.in": {
+    "haryana.punjabkesari.in": {
       "attempted": 98,
       "rejected": 0,
       "accepted": 98
     },
-    "haryana.punjabkesari.in": {
+    "punjab.punjabkesari.in": {
       "attempted": 98,
       "rejected": 0,
       "accepted": 98

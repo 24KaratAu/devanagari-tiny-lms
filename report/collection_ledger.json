@@ -1,0 +1,432 @@
+{
+  "generated": "2026-08-21",
+  "note": "Definitive record of what was collected, by which script or notebook, at which commit, and into which shards. Times are IST (Drive stores UTC; +05:30 applied). Document and character counts are measured unless marked 'estimated', which means extrapolated from a sampled subset by byte size.",
+  "stages": [
+    {
+      "stage": 1,
+      "language": "nepali",
+      "date": "2026-08-13 -> 08-14",
+      "where": "local",
+      "commits": [
+        "552605f",
+        "b263dd2",
+        "1ed2dd5",
+        "f5e4972",
+        "a7e3dfc"
+      ],
+      "ran": "src/data/collect/collect_manual_web.py, collect_wikimedia_api.py",
+      "source": "Nepali news + Wikipedia via API; pilot/test runs",
+      "produced": "data/nepali/raw/manual_web/ (local HTML), nepali/corpus/, nepali/raw/test/ on Drive",
+      "measured": null,
+      "note": "Development and pilot phase. The raw/test and corpus/test folders on Drive are fixtures from scripts/test_shard_rollover.py and test_upload_failure_recovery.py."
+    },
+    {
+      "stage": 2,
+      "language": "nepali",
+      "date": "2026-08-15 18:26 -> 21:58",
+      "where": "colab",
+      "commits": [
+        "eca89ce",
+        "146874e",
+        "897638d",
+        "e9e5aeb",
+        "d63d026",
+        "85d7550",
+        "351858c",
+        "69fd95c",
+        "082ac21",
+        "73fcf5f",
+        "db8f608"
+      ],
+      "ran": "notebooks/collect_nepali_colab.ipynb (iterated)",
+      "source": "debugging: HF login, XML namespace, ElementTree RAM leak, data-0.parquet, PyArrow micro-batching",
+      "produced": "nepali/raw/wiki_dump/newiki-latest-pages-articles.xml.bz2 (54,964,181 B)",
+      "measured": null
+    },
+    {
+      "stage": 3,
+      "language": "nepali",
+      "date": "2026-08-15 21:58 -> 08-16 02:09",
+      "where": "colab",
+      "commits": [
+        "db8f608"
+      ],
+      "ran": "collect_nepali_colab.ipynb — Sangraha ingest",
+      "source": "HuggingFace ai4bharat/sangraha (verified/nep)",
+      "produced": "nepali/cleaned/automated_nonweb/nonweb_shard_*.jsonl",
+      "shards": 248,
+      "bytes": 6724688000,
+      "measured": {
+        "documents": "~1,090,000 (estimated)",
+        "characters": 2445256140,
+        "chars_per_token": 4.493,
+        "tokens": 544293393,
+        "basis": "3 shards sampled, scaled by byte size"
+      },
+      "collection_type": "automated"
+    },
+    {
+      "stage": 4,
+      "language": "nepali",
+      "date": "2026-08-16 02:09 -> 02:10",
+      "where": "colab",
+      "commits": [
+        "db8f608"
+      ],
+      "ran": "collect_nepali_colab.ipynb — Wikipedia dump parse",
+      "source": "newiki-latest-pages-articles.xml.bz2",
+      "produced": "nepali/cleaned/manual/wiki_shard_0000-0005.jsonl",
+      "shards": 6,
+      "bytes": 122406000,
+      "measured": {
+        "documents": 27946,
+        "characters": 42864542,
+        "unique_documents": 27946,
+        "unique_characters": 42864542,
+        "uniqueness": "100%"
+      },
+      "collection_type": "manual"
+    },
+    {
+      "stage": 5,
+      "language": "nepali",
+      "date": "2026-08-16 02:17 -> 03:02",
+      "where": "colab",
+      "commits": [
+        "db8f608"
+      ],
+      "ran": "collect_nepali_colab.ipynb — tokenizer training",
+      "source": "nepali splits (superseded)",
+      "produced": "nepali/tokenizer/nepali_bpe_32k.{model,vocab}, nepali_unigram_32k.{model,vocab}",
+      "measured": {
+        "fertility": 1.317,
+        "chars_per_token": 5.0274,
+        "coverage_pct": 91.92,
+        "unknown_rate_pct": 0.0,
+        "broken_grapheme_pct": 1.609,
+        "basis": "70,196 held-out validation documents, measured 2026-08-21"
+      }
+    },
+    {
+      "stage": 6,
+      "language": "nepali",
+      "date": "2026-08-17 20:00 -> 23:27",
+      "where": "colab",
+      "commits": [
+        "db8f608"
+      ],
+      "ran": "collect_nepali_colab.ipynb — news crawl",
+      "source": "Ratopati, Setopati, Gorkhapatra, OnlineKhabar",
+      "produced": "nepali/cleaned/manual/manual_news_shard_0000-0041.jsonl",
+      "shards": 42,
+      "bytes": 1252000000,
+      "measured": {
+        "documents": 208975,
+        "characters": 447189127,
+        "unique_documents": 76813,
+        "unique_characters": 166421339,
+        "uniqueness": "37.2% of characters",
+        "note": "URL-deduplicated only; syndicated copy repeated under disjoint URLs (report 4.3)"
+      },
+      "collection_type": "manual"
+    },
+    {
+      "stage": 7,
+      "language": "nepali",
+      "date": "2026-08-17 23:31",
+      "where": "colab",
+      "commits": [
+        "db8f608"
+      ],
+      "ran": "collect_nepali_colab.ipynb — split",
+      "produced": "nepali/splits/{train,val,test}.{txt,jsonl}",
+      "measured": {
+        "characters": 516682122,
+        "tokens": "~102,700,000",
+        "val_txt_exact_characters": 25500994,
+        "note": "SUPERSEDED: captured ~16% of the available pool; no ingest assertion"
+      }
+    },
+    {
+      "stage": 8,
+      "language": "hindi",
+      "date": "2026-08-19 01:19 -> 01:26",
+      "where": "colab",
+      "commits": [
+        "add5f40",
+        "973bf4d"
+      ],
+      "ran": "notebooks/collect_hindi_colab.ipynb — Step 2a",
+      "source": "dumps.wikimedia.org/hiwiki/latest/hiwiki-latest-pages-articles.xml.bz2 (239,196,553 B)",
+      "produced": "hindi/cleaned/manual/wiki_shard_0000-0029.jsonl",
+      "shards": 30,
+      "bytes": 692500000,
+      "measured": {
+        "unique_documents": 146296,
+        "unique_characters": 253116189
+      },
+      "collection_type": "manual"
+    },
+    {
+      "stage": 9,
+      "language": "hindi",
+      "date": "2026-08-19 01:26 -> 01:59",
+      "where": "colab",
+      "commits": [
+        "add5f40"
+      ],
+      "ran": "collect_hindi_colab.ipynb — Step 1 Sangraha ingest",
+      "source": "HuggingFace ai4bharat/sangraha (verified/hin)",
+      "produced": "hindi/cleaned/automated_nonweb/nonweb_shard_*.jsonl",
+      "shards": 220,
+      "bytes": 6416845919,
+      "measured": {
+        "documents": "~1,090,000 (estimated)",
+        "characters": "~2,400,700,000 (estimated)",
+        "chars_per_token": 3.507,
+        "tokens": "~684,500,000 (estimated)",
+        "basis": "8 shards sampled, scaled by byte size"
+      },
+      "collection_type": "automated"
+    },
+    {
+      "stage": 10,
+      "language": "hindi",
+      "date": "2026-08-19 14:46",
+      "where": "colab",
+      "commits": [
+        "696c060",
+        "6b8c6f4"
+      ],
+      "ran": "collect_hindi_colab.ipynb — literature step",
+      "source": "re-parse of the same Wikimedia dumps as stage 12",
+      "produced": "hindi/cleaned/manual/manual_lit_shard_0030.jsonl",
+      "shards": 1,
+      "measured": {
+        "documents": 2366,
+        "unique_documents": 1,
+        "note": "99.96% redundant: 2,365 of 2,366 documents already present in manual_aux_shard_0032"
+      },
+      "collection_type": "manual"
+    },
+    {
+      "stage": 11,
+      "language": "hindi",
+      "date": "2026-08-20 19:17",
+      "where": "colab",
+      "commits": [
+        "baf4076"
+      ],
+      "ran": "collect_hindi_colab.ipynb — Step 2c",
+      "source": "hiwikibooks + hiwikiquote -latest-pages-articles.xml.bz2",
+      "produced": "hindi/cleaned/manual/manual_aux_shard_0032.jsonl",
+      "shards": 1,
+      "measured": {
+        "documents": 4058,
+        "unique_documents": 4015,
+        "unique_characters": 24368410
+      },
+      "collection_type": "manual"
+    },
+    {
+      "stage": 12,
+      "language": "hindi",
+      "date": "2026-08-20 19:56 -> 22:50",
+      "where": "colab",
+      "commits": [
+        "baf4076"
+      ],
+      "ran": "notebooks/remaining_hindi_manual_collection.ipynb (v3, superseded)",
+      "source": "Hindi news portals",
+      "produced": "hindi/cleaned/manual/manual_news_shard_0033-0038.jsonl",
+      "shards": 6,
+      "measured": {
+        "unique_documents": 14811,
+        "unique_characters": 41116565
+      },
+      "collection_type": "manual"
+    },
+    {
+      "stage": 13,
+      "language": "hindi",
+      "date": "2026-08-20 20:06",
+      "where": "colab",
+      "commits": [
+        "baf4076"
+      ],
+      "ran": "collect_hindi_colab.ipynb — Wikisource step",
+      "source": "hiwikisource-latest-pages-articles.xml.bz2",
+      "produced": "hindi/cleaned/manual/wikisource_shard_0000.jsonl",
+      "shards": 1,
+      "measured": {
+        "documents": 1,
+        "unique_documents": 0,
+        "note": "FAILED: filtered ns in {0,104}, but hi.wikisource uses namespace 250. Re-parsing with --namespaces 0,250 recovers 161,734 docs / 268,055,655 chars. Not ingested (report 3.3)."
+      },
+      "collection_type": "manual"
+    },
+    {
+      "stage": 14,
+      "language": "hindi",
+      "date": "2026-08-20 22:36 -> 23:07",
+      "where": "local",
+      "commits": [
+        "baf4076"
+      ],
+      "ran": "scripts/discover_sitemap_urls.py; scripts/export_manual_hashes.py",
+      "source": "robots.txt Sitemap directives across 18 Hindi domains",
+      "produced": "hindi/manifests/frontier_full.txt.gz, frontier_balanced.txt.gz, existing_manual_hashes.txt.gz",
+      "measured": {
+        "urls_discovered": 11112623,
+        "balanced_frontier_urls": 375539,
+        "dedup_registry_hashes": 155123,
+        "discovery_seconds": 456
+      }
+    },
+    {
+      "stage": 15,
+      "language": "hindi",
+      "date": "2026-08-20 23:13 -> 08-21 00:27",
+      "where": "local",
+      "commits": [
+        "baf4076"
+      ],
+      "ran": "scripts/collect_manual_web_sitemap.py --language hindi",
+      "source": "32 Hindi news/government portals (indiatv 19.0%, livehindustan 17.3%, amarujala 16.8%, pardaphash 13.7%, moneycontrol 9.0%, patrika 8.5%, bhaskar 5.5%, thelallantop 4.4%, hi.vikaspedia 1.4%)",
+      "produced": "hindi/cleaned/manual/manual_web_shard_0000-0031.jsonl + hindi/raw/manual_web/*.tar.gz",
+      "shards": 27,
+      "raw_archives": 27,
+      "measured": {
+        "urls_attempted": 87585,
+        "documents": 75396,
+        "characters": 161000865,
+        "unique_documents": 75387,
+        "unique_characters": 160980352,
+        "acceptance_rate": 0.86,
+        "rate_url_per_s": 20.2,
+        "chars_per_token": 3.538
+      },
+      "collection_type": "manual"
+    },
+    {
+      "stage": 16,
+      "language": "hindi",
+      "date": "2026-08-21 03:15 -> 04:09",
+      "where": "colab",
+      "commits": [
+        "baf4076"
+      ],
+      "ran": "notebooks/finalize_hindi_corpus.ipynb",
+      "produced": "hindi/splits/{train,val,test}.{txt,jsonl}; hindi/tokenizer/hindi_bpe_8k.{model,vocab}",
+      "measured": {
+        "documents": 848815,
+        "characters": 1813233513,
+        "tokens": 520409408,
+        "manual_share_pct": 26.87,
+        "chars_per_token": 3.484,
+        "manual_duplicates_dropped": 2523,
+        "duplicate_characters": 18639999,
+        "train_tokens": 467905255,
+        "val_tokens": 26069560,
+        "test_tokens": 26434593
+      }
+    },
+    {
+      "stage": 17,
+      "language": "hindi",
+      "date": "2026-08-21 04:32 -> 04:48",
+      "where": "local",
+      "commits": [
+        "e65804c"
+      ],
+      "ran": "curl + rclone (report 7.5)",
+      "source": "dumps.wikimedia.org",
+      "produced": "hindi/raw/wiki_dump/{hiwiki,hiwikibooks,hiwikiquote}-latest-pages-articles.xml.bz2",
+      "measured": {
+        "bytes": 251074420,
+        "note": "Re-fetched 2026-08-21; Wikimedia regenerates 'latest' continuously, so these are the same sources at a later snapshot than the 19 Aug parse."
+      }
+    },
+    {
+      "stage": 18,
+      "language": "nepali",
+      "date": "2026-08-21 05:17 -> 05:55",
+      "where": "local",
+      "commits": [
+        "e65804c"
+      ],
+      "ran": "exact val.txt measurement; scripts/export_manual_hashes.py; scripts/discover_sitemap_urls.py",
+      "source": "audit + robots.txt Sitemap discovery over 38 probed Nepali domains",
+      "produced": "data/nepali/sources/frontier.txt, frontier_balanced.txt; existing_manual_hashes.txt",
+      "measured": {
+        "urls_discovered": 651660,
+        "balanced_frontier_urls": 604392,
+        "dedup_registry_hashes": 100929,
+        "manual_uniqueness_pct": 42.7,
+        "note": "ekantipur, onlinekhabar, ratopati, himalkhabar, nagariknews, annapurnapost publish no sitemap"
+      }
+    },
+    {
+      "stage": 19,
+      "language": "nepali",
+      "date": "2026-08-21 05:40 -> 09:36",
+      "where": "local",
+      "commits": [
+        "e65804c"
+      ],
+      "ran": "scripts/collect_manual_web_sitemap.py --language nepali",
+      "source": "22 Nepali portals (makalukhabar 22.4%, kathmandupati 20.7%, bizmandu 16.1%, clickmandu 15.6%, arthasarokar 14.0%, deshsanchar 5.9%, nepalnews 4.9%)",
+      "produced": "nepali/cleaned/manual/manual_web_shard_*.jsonl + nepali/raw/manual_web/*.tar.gz",
+      "shards": 70,
+      "raw_archives": 73,
+      "measured": {
+        "documents": 202769,
+        "characters": 340215209,
+        "duplicates_in_9000_doc_sample": 0,
+        "chars_per_token": 5.091,
+        "rate_url_per_s": 24.6,
+        "mean_chars_per_doc": 1682,
+        "rejections": {
+          "http_404": 11448,
+          "langid_uncertain": 5883,
+          "quality_filter": 2543,
+          "http_429": 1516,
+          "duplicate": 1002,
+          "langid_reject_hi": 17
+        }
+      },
+      "collection_type": "manual"
+    },
+    {
+      "stage": 20,
+      "language": "nepali",
+      "date": "2026-08-21 12:45 -> 13:30",
+      "where": "colab",
+      "commits": [
+        "e65804c"
+      ],
+      "ran": "notebooks/finalize_nepali_corpus.ipynb",
+      "source": "all 118 manual shards + Sangraha, budget-limited",
+      "produced": "nepali/splits/{train,val,test}.{txt,jsonl}; nepali/tokenizer/nepali_bpe_8k.{model,vocab}",
+      "measured": {
+        "manual_documents": 303275,
+        "manual_characters": 541814473,
+        "manual_duplicates_dropped": 132181,
+        "duplicate_characters": 280791280,
+        "automated_characters": 2069272506,
+        "total_documents": 1367965,
+        "total_characters": 2611086979,
+        "total_tokens": 632711308,
+        "manual_share_pct": 21.2,
+        "chars_per_token": 4.127,
+        "train_tokens": 569663061,
+        "val_tokens": 31697868,
+        "test_tokens": 31350379,
+        "note": "FINAL. The automated budget was derived from chars/token = 5.022 measured on the pre-existing nepali_bpe_32k, but the corpus was then tokenised with the newly trained 8k model, so 2.61B characters produced 632.7M tokens rather than the projected 520M — over the ~500M target rather than under it. The manual share was re-measured directly against nepali_bpe_8k at 21.20% (manual 4.014 chars/token, automated 4.123); Cell 3's 20.75% used the 32k ratios and understated it. Both requirements are met, so no re-split was run. Separately, val.jsonl and test.jsonl initially failed to leave the FUSE mount while the sync reported success (report 8.1 failure 6) and were re-uploaded through the Drive API; all six splits are verified from the Drive side.",
+        "manual_chars_per_token_8k": 4.014,
+        "automated_chars_per_token_8k": 4.123
+      },
+      "collection_type": "mixed"
+    }
+  ]
+}

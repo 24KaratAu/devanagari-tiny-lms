@@ -18,15 +18,19 @@ Each language pipeline operates in complete isolation with dedicated raw data co
 
 | | Hindi (Model H) | Nepali (Model L) |
 | :--- | ---: | ---: |
-| Active pretraining corpus | **520,409,408 tokens** | 488,502,833 tokens |
-| Manual share (floor is 20%) | **26.87%** | ~50% |
-| Documents | 848,815 | 1,428,401 |
-| Tokenizer vocabulary | 8,000 | 32,000 |
-| Fertility (tokens/word) | **1.4938** | 1.55 |
-| Characters per token | 3.4712 | 4.24 |
-| Unknown-token rate | **0.00%** | 0.00% |
+| Active pretraining corpus | **520,409,408 tokens** | **632,711,308 tokens** |
+| Manual share (floor is 20%) | **26.87%** | **21.20%** |
+| Documents | 848,815 | 1,367,965 |
+| Unique manual pool | 479,582,790 chars | 541,814,473 chars |
+| Tokenizer vocabulary | 8,000 | 8,000 |
+| Fertility (tokens/word) | **1.4938** | 1.5545 (sampled) |
+| Characters per token | 3.484 | 4.127 |
+| Unknown-token rate | **0.00%** | **0.00%** |
 
 Both corpora clear the ~500M token target and the ≥20% manual-collection floor.
+Reaching that point required correcting two silent pipeline failures per language
+(§8.1) and, for Nepali, discovering that only 42.7% of its manual partition was
+unique and collecting 340M further characters to compensate (§3.4, §4.3).
 
 This report documents the dataset collection statistics, cleaning and filtering methodologies, the resolution of memory and streaming constraints on student-tier compute, and an empirical evaluation of our tokenizers grounded in recent literature on Devanagari tokenization (*Dwivedi & Gopalan, ACL 2026*; *Darshana, 2026*).
 
@@ -102,7 +106,7 @@ Publishers do not expose contiguous id spaces, so the overwhelming majority of
 those requests returned 404 and the three resulting news shards held only 13 MB
 of text in total.
 
-**Sitemap discovery.** The replacement (`scripts/discover_hindi_urls.py`) reads
+**Sitemap discovery.** The replacement (`scripts/discover_sitemap_urls.py`) reads
 each publisher's `robots.txt`, follows every `Sitemap:` directive, and descends
 the sitemap index breadth-first. This matters because the obvious guess is
 wrong almost everywhere: `ndtv.in` and `zeenews.india.com` answer a direct
@@ -130,13 +134,16 @@ crawled document was additionally scored by `src/data/clean/hindi_lang_id.py`,
 which rejects text whose Nepali/Sanskrit lexical density exceeds its Hindi
 density.
 
-**Crawl results.** 75,396 documents / 161,000,865 clean characters across 27
-shards were accepted from ~87,600 attempted URLs (86% acceptance) at 20.2 URL/s;
-75,387 documents / 160,980,352 characters survive corpus-wide deduplication. Rejections
-break down as 45.4% `robots.txt` disallow (entirely `hindi.oneindia.com`, whose
-article paths are disallowed for all agents), 40.7% quality filter, 9.3% HTTP
-error, and 0.4% language identification. Deduplication ran against a registry
-of the 155,123 content hashes already present in the manual partition.
+**Crawl results.** 75,002 documents / 161,000,865 clean characters across 27
+shards were accepted from **87,585 attempted URLs (85.6% acceptance)** at
+20.2 URL/s; 75,387 documents / 160,980,352 characters survive corpus-wide
+deduplication. Rejections: 5,556 `robots.txt` disallow (entirely
+`hindi.oneindia.com`, whose article paths are disallowed for all agents), 4,978
+quality filter, 915 HTTP 410, 335 extraction failures, 222 HTTP 404, 132
+timeouts/connection errors, 51 language-ID uncertain, and **1 document rejected
+as Nepali or Sanskrit**. Figures are from
+`data/hindi/manifests/manual_web_crawl/crawl_summary.json`. Deduplication ran against a registry of the 155,123 content hashes already
+present in the manual partition.
 
 | Contributing host | Share of crawl | | Contributing host | Share of crawl |
 | :--- | ---: | --- | :--- | ---: |
@@ -172,6 +179,65 @@ those assets are ~78% of the bytes (56 KB vs 12.5 KB gzipped per page) and take
 no part in article extraction, whereas retaining them would have required
 roughly 7 GB of upload over a measured 1 MB/s uplink. The full document
 structure, text and metadata that `trafilatura` consumes is preserved verbatim.
+
+### 3.4 Nepali Manual Collection: Remediation Crawl (21 August)
+
+The audit described in §4.3 established that the Nepali manual partition was
+only 42.7% unique, leaving **~43.1M unique manual tokens** and capping the whole
+corpus at `5 x 43.1M = ~215M` tokens under the 20% floor — with 544M automated
+Sangraha tokens sitting unusable in reserve. A second collection round was
+therefore required, using the same sitemap machinery built for Hindi
+(`scripts/discover_sitemap_urls.py`, `scripts/collect_manual_web_sitemap.py
+--language nepali`).
+
+**Nepali is a materially harder crawl than Hindi.** Probing 38 domains found
+that several of the largest outlets — `ekantipur.com`, `onlinekhabar.com`,
+`ratopati.com`, `himalkhabar.com`, `nagariknews.nagariknetwork.com`,
+`annapurnapost.com` — publish **no sitemap at all**, neither via `robots.txt`
+nor at the conventional path, so the method simply cannot reach them. Discovery
+returned **651,660 URLs concentrated in 8 substantial hosts**, against 11.1M
+across 18 hosts for Hindi.
+
+The first discovery pass returned 309,227 URLs from only four hosts, three of
+them business/finance publications. Rather than crawl a corpus that was
+effectively three finance outlets, the domain list was widened before crawling;
+the second pass added `makalukhabar.com` (167k URLs), `kathmandupati.com`
+(112k), `nepalpatra.com` and `nepalnews.com`, all general news. This both fixed
+the register skew and raised throughput from 9.1 to 24.6 URL/s, since the
+crawler caps concurrency per host.
+
+**Results.** 202,769 documents / 340,215,209 clean characters accepted from
+227,699 attempted URLs (**89.1% acceptance**) across 70 shards, with matching
+gzipped raw HTML. A 9,000-document sample contained **zero duplicates**, and no
+single host exceeds 20.8% of the crawl:
+
+| Host | Accepted | Share | | Host | Accepted | Share |
+| :--- | ---: | ---: | --- | :--- | ---: | ---: |
+| `makalukhabar.com` | 42,184 | 20.8% | | `arthasarokar.com` | 30,248 | 14.9% |
+| `kathmandupati.com` | 39,639 | 19.5% | | `deshsanchar.com` | 12,543 | 6.2% |
+| `bizmandu.com` | 34,862 | 17.2% | | `nepalnews.com` | 8,868 | 4.4% |
+| `clickmandu.com` | 34,090 | 16.8% | | 15 further hosts | 335 | 0.2% |
+
+Rejections: 11,485 HTTP 404, 6,725 language-ID uncertain, 2,870 quality filter,
+2,415 HTTP 429, 1,009 duplicate, 162 HTTP 500, 80 connection errors, and **19
+documents rejected as Hindi** — the cross-lingual guard doing precisely the job
+it exists for, since Hindi is Model H's language and the two corpora must remain
+disjoint. Figures are from
+`data/nepali/manifests/manual_web_crawl/crawl_summary.json`, which aggregates
+every attempt including the two aborted runs, and so exceeds any single run's
+console summary.
+
+Two crawler changes were needed for Nepali. Smaller Nepali portals rate-limit far
+sooner than the large Hindi dailies (7.3% of pilot requests returned HTTP 429),
+so 429/503 now trigger a `Retry-After`-aware backoff instead of discarding the
+page. And the line-level cleaner was parameterised by marker vocabulary rather
+than forked, so `clean_nepali_web.py` supplies Nepali boilerplate and teaser
+strings (`यो पनि पढ्नुहोस्`, `सेयर गर्नुहोस्`, `प्रकाशित मिति`) over the same
+language-neutral machinery.
+
+**Outcome.** Unique manual rose from ~43.1M to **~110.0M tokens**
+(549,501,090 characters), lifting the corpus ceiling from ~215M to **~550M
+tokens** and making a ~520M corpus at ~21% manual reachable.
 
 ---
 
@@ -231,20 +297,96 @@ left every one of these in the training corpus and inflated the automated budget
 derived from the manual total. The sitemap web crawl accounts for 9 of the 2,523,
 having deduplicated against a registry snapshot during collection.
 
+#### Verifying the corpora share no documents
+
+The brief requires that the two corpora **share no documents and are never
+concatenated**. Because both draw on the same upstream projects — AI4Bharat
+Sangraha and Wikimedia, each in a different language configuration — this was
+verified by content-hash intersection rather than assumed:
+
+| Comparison | Hindi hashes | Nepali hashes | Shared |
+| :--- | ---: | ---: | ---: |
+| Full manual registries | 155,123 | 100,929 | **0** |
+| Manual URLs | 14,789 | 197,695 | **0** |
+| Automated — Sangraha `verified/hin` vs `verified/nep` | 10,000 | 10,000 | **0** |
+| Sitemap web crawls | 3,000 | 3,000 | **0** |
+| Wikipedia dumps — `hiwiki` vs `newiki` | 5,000 | 5,000 | **0** |
+
+The first two rows are exhaustive over the manual partitions; the remaining
+three are sampled. Independence is structural rather than accidental — separate
+dataset configurations, separate dumps, disjoint crawl domain lists — and the
+language identifier enforces it at the document level, having rejected 17 Hindi
+pages found on Nepali news sites during the 2026-08-21 crawl (§3.4).
+
+#### The same failure at far greater scale (Nepali)
+
+Auditing Nepali the same way found the problem was not marginal there but
+dominant. Streaming all 48 pre-existing manual shards and counting only
+first-occurrence documents:
+
+| Source | Unique documents | Unique characters |
+| :--- | :--- | :--- |
+| Wikipedia dump (`wiki_shard_*`) | 27,946 / 27,946 — **100%** | 42,864,542 / 42,864,542 — **100%** |
+| Legacy news crawl (`manual_news_*`) | 76,813 / 208,975 — **36.8%** | 166,421,339 / 447,189,127 — **37.2%** |
+| **Total manual** | **104,759 / 236,921 — 44.2%** | **209,285,881 / 490,053,669 — 42.7%** |
+
+**Under 43% of the Nepali manual partition was unique**, and every duplicate came
+from the legacy news crawl; the Wikipedia pipeline was clean. The mechanism is
+visible in a direct comparison of two shards:
+
+| | Shared content hashes | Shared URLs |
+| :--- | ---: | ---: |
+| `manual_news_shard_0030` ∩ `_0040` | 1,718 (34.4%) | **0** |
+| `manual_news_shard_0020` ∩ `_0030` | 944 (18.9%) | **0** |
+
+Identical article text under **completely disjoint URL sets**. Nepali outlets
+republish agency copy, and the same story is served from several category paths,
+so a crawler deduplicating on URL — as the legacy collector did — sees nothing
+wrong. Only content hashing catches it.
+
+The consequence was material: unique manual was ~43.1M tokens rather than the
+~96M a document count implied, capping the entire Nepali corpus at `5 x 43.1M =
+~215M` tokens under the 20% floor. This is what motivated the 2026-08-21 crawl
+(§3.4), which deduplicates on content hash both within the run and against a
+registry of all 100,929 pre-existing manual hashes.
+
+**Generalisable lesson.** URL-level deduplication is not deduplication. It is
+cheap and catches re-fetches, but it cannot see syndication, and in news corpora
+syndication is the dominant duplicate mechanism. Content hashing must run at
+collection time *and* again over the assembled partition, because collection-time
+registries are only ever snapshots of what existed when the run started.
+
 ---
 
 ## 5. Dataset Statistics & Split Stratification
 
 ### 5.1 Dataset Scale (Nepali Corpus — Model L)
-The full Nepali collection and cleaning pipeline yielded the following verified corpus statistics across Google Drive storage and the active 90/5/5 pretraining partitions:
 
-| Partition / Source Category | Shards | Document Count | Clean Characters | BPE Token Count | Share (%) | Status |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Manual — Wikipedia Dump** (`wiki_shard_*`) | 6 | 27,946 | 42,864,542 | ~8,650,000 | 1.8% | Processed & Deduplicated |
-| **Manual — Live News Crawls** (`manual_news_*`) | 42 | ~295,000 | ~1,150,000,000 | ~245,000,000 | 48.2% | Crawled (*Ratopati, Setopati*) |
-| **Subtotal: Total Manual Data** | **48** | **~322,946** | **~1,192,864,542** | **~253,650,000** | **~50.0%** | **Exceeds $\ge 20\%$ Floor** |
-| **Automated — Sangraha Verified** (`nonweb_shard_*`) | 248 | 1,230,594 | 2,374,482,746 | ~479,852,833 | — | Cleaned & Verified |
-| **Total Clean Storage on Google Drive** | **296** | **~1,553,540** | **~3,567,347,288** | **~1,500,000,000** | **100.0%** | **Complete Reserve Pool** |
+All figures are **post-deduplication** and measured directly from the shards on
+Drive with `nepali_bpe_32k`. They supersede an earlier version of this report
+which counted duplicate documents and consequently overstated the Nepali corpus
+by roughly 4.8x; §4.3 documents how the duplication arose and how it was found.
+
+| Partition / Source Category | Shards | Unique Documents | Unique Clean Characters | Chars/Token | Tokens |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| Manual — Wikipedia dump (`wiki_shard_*`) | 6 | 27,946 | 42,864,542 | 4.853 | ~8,832,000 |
+| Manual — Web crawl, sitemap (`manual_web_shard_*`) | 66 | 202,769 | 340,215,209 | 5.091 | ~66,827,000 |
+| Manual — News crawl, legacy (`manual_news_*`) | 42 | 76,813 | 166,421,339 | 4.853 | ~34,292,000 |
+| **Subtotal: Total Manual (unique)** | **114** | **307,528** | **549,501,090** | **4.99** | **~109,951,000** |
+| Automated — Sangraha Verified (`nonweb_shard_*`) | 248 | ~1,090,000 | ~2,445,256,140 | 4.493 | ~544,293,000 |
+| **Total Clean Reserve Pool on Drive** | **362** | **~1,397,500** | **~2,994,757,230** | — | **~654,244,000** |
+
+**Deduplication impact.** The 42 legacy news shards contained 208,975 documents
+/ 447,189,127 characters, of which only **76,813 documents / 166,421,339
+characters (37.2%) are unique**. The 6 Wikipedia dump shards are **100% unique**
+(27,946/27,946). The duplication is therefore entirely an artefact of the legacy
+news crawl, not of the Wikipedia pipeline — see §4.3.
+
+**Why the 2026-08-21 crawl was necessary.** Before it, unique manual stood at
+~43.1M tokens, capping the corpus at `5 x 43.1M = ~215M` tokens under the 20%
+floor — far below the ~500M target, with 544M automated tokens unusable in
+reserve. The crawl added 340,215,209 characters (~66.8M tokens), raising unique
+manual to ~110.0M and the ceiling to **~550M tokens**.
 
 ---
 
@@ -295,12 +437,36 @@ simultaneously instead of applying one and hoping the other holds.
 
 #### Nepali (Model L)
 
-| Split Name | Percentage | Document Count | Clean Characters | BPE Tokens (`32k` Vocab) |
+Produced by `notebooks/finalize_nepali_corpus.ipynb`, which applies the same
+verified staging, intra-manual deduplication, budget derivation and ingest
+assertions as the Hindi notebook. Deduplication removed **132,181 documents /
+280,791,280 characters** from the manual partition before the budget was derived
+from it (§4.3). Token counts are measured with the final `nepali_bpe_8k`.
+
+| Split Name | Percentage | Document Count | Clean Characters | BPE Tokens (`8k` Vocab) |
 | :--- | :---: | :---: | :---: | :---: |
-| **Train** (`train.txt`) | 90.0% | 1,285,474 | 2,175,612,559 | **439,592,063** |
-| **Validation** (`val.txt`) | 5.0% | 71,556 | 120,867,364 | **24,421,674** |
-| **Test** (`test.txt`) | 5.0% | 71,371 | 120,867,365 | **24,489,096** |
-| **Total Active Pretraining Corpus** | **100.0%** | **1,428,401** | **2,417,347,288** | **488,502,833 (~488.5M tokens)** |
+| **Train** (`train.txt`) | 90.0% | 1,231,136 | 2,350,842,501 | **569,663,061** |
+| **Validation** (`val.txt`) | 5.0% | 68,583 | 130,705,992 | **31,697,868** |
+| **Test** (`test.txt`) | 5.0% | 68,246 | 129,538,486 | **31,350,379** |
+| **Total Active Pretraining Corpus** | **100.0%** | **1,367,965** | **2,611,086,979** | **632,711,308 (~632.7M tokens)** |
+
+| Collection Partition | Unique Clean Characters | Chars/Token | Tokens | Share |
+| :--- | ---: | ---: | ---: | ---: |
+| Manual (100% of unique manual ingested) | 541,814,473 | 4.014 | ~134,987,000 | **21.20%** |
+| Automated (budget-limited) | 2,069,272,506 | 4.123 | ~501,880,000 | 78.80% |
+
+**On the 632.7M rather than 520M.** The automated budget was derived from
+characters-per-token measured on the *pre-existing* `nepali_bpe_32k` (5.022), and
+the corpus was then encoded with the *newly trained* 8k model (4.127). The same
+2.61B characters therefore produced 632.7M tokens instead of the projected 520M —
+overshooting the ~500M target rather than undershooting it. Both requirements are
+met, so no re-split was run; §8.1 records the lesson for pipelines that both
+consume and produce a tokenizer.
+
+**On the manual share.** Cell 3 reported 20.75% using the 32k ratios, where manual
+and automated were near-identical (5.022 vs 5.021). Re-measured directly against
+`nepali_bpe_8k`, manual compresses better than Sangraha (4.014 vs 4.123) and so
+contributes proportionally more tokens: the true share is **21.20%**.
 
 #### Hindi (Model H)
 
@@ -349,8 +515,39 @@ languages use identical settings apart from vocabulary size:
 | `byte_fallback` | `True` | Any character the vocabulary lacks is emitted as raw UTF-8 byte tokens instead of `<unk>` |
 | `split_by_unicode_script` | `True` | Prevents pieces that straddle Devanagari and Latin |
 | `split_by_whitespace` | `True` | Pieces never span a space |
-| `split_digits` | `True` | Each digit becomes its own token, for arithmetic in Phase 3 |
+| `split_digits` | `True` | Each **ASCII** digit becomes its own token, for arithmetic in Phase 3 — see the caveat below |
 | Special tokens | `<pad>=0, <unk>=1, <bos>=2, <eos>=3` | Fixed IDs shared by both models |
+
+> **Caveat on `split_digits`, and why it does not matter here.** The flag splits
+> **ASCII** digits only; Devanagari numerals (`०–९`, U+0966–U+096F) are merged by
+> BPE like any other character sequence:
+>
+> | Input | Tokenized as |
+> | :--- | :--- |
+> | `2026` | `▁ 2 0 2 6` — one token per digit |
+> | `२०२६` | `▁२०२ ६` (Nepali 8k) · `▁२० २ ६` (Hindi 8k) |
+>
+> The consequence depends entirely on which numeral system each corpus actually
+> uses, so we measured it. Over ~12M characters of held-out text per language:
+>
+> | Corpus | ASCII `0–9` | Devanagari `०–९` |
+> | :--- | ---: | ---: |
+> | Hindi | **94.8%** | 5.2% |
+> | Nepali | 0.1% | **99.9%** |
+>
+> The two corpora have opposite conventions, and each is well served by the
+> tokenizer it got. Hindi text uses ASCII digits, which `split_digits` separates
+> per digit as intended. Nepali text uses Devanagari numerals, and **every value
+> from ० to १०० encodes as a single token** (101 of 101) — for the comparative
+> reasoning Phase 3 requires, an atomic token per quantity is at least as useful
+> as per-digit splitting. Only four-digit-plus values fragment, which comparisons
+> over ages, heights and prices do not reach.
+>
+> The operative guidance for Phase 3 is therefore: **write each reasoning dataset
+> in its own corpus's numeral convention** — ASCII for Hindi, Devanagari for
+> Nepali — and keep quantities to three digits. Converting Nepali to ASCII would
+> be both unnatural phrasing and badly out of distribution: ASCII digits occur
+> 152 times in 11.7M characters of Nepali.
 
 **Metrics used below**, defined once for the first-time reader:
 
@@ -441,55 +638,111 @@ vocabulary size from OOV risk: without it, a small vocabulary would have to be
 inflated defensively to cover rare conjuncts, nuktas and stray Latin, which is
 precisely the parameter cost §6.2.4 is trying to avoid.
 
-#### 6.2.4 Choosing the vocabulary size empirically
+#### 6.2.4 Choosing the vocabulary size: the selection rule
 
-Vocabulary size is the single most consequential tokenizer decision here,
-because it trades directly against the **~25M parameter budget** for Phase 2.
-With embedding dimension `d_model = 256` and weight tying between the input
-embedding and the output projection, the embedding table costs `V x 256`
-parameters:
+There is no free-standing "optimal" vocabulary. The real objective is *minimise
+validation loss subject to a ~25M parameter budget*, and that cannot be measured
+until Phase 2. What follows is therefore a rule built from three things that
+**can** be measured now, stated explicitly so the choice is auditable rather
+than asserted.
 
-| Vocabulary `V` | Embedding parameters | Share of a 25M budget |
-| ---: | ---: | ---: |
-| 4,000 | 1,024,000 | 4.1% |
-| **8,000** | **2,048,000** | **8.2%** |
-| 16,000 | 4,096,000 | 16.4% |
-| 32,000 | 8,192,000 | 32.8% |
+**(a) Marginal return on parameters.** Embedding cost is `V x d_model`, so every
+doubling of the vocabulary doubles the spend. Measured on held-out Nepali text:
 
-A 32k vocabulary spends a third of the entire model on embeddings before a
-single attention block exists. The course Q&A is explicit on this point:
-*"Please try to keep a vocab size of 5 to 10K."*
+| Step | Extra embedding params | Fertility gained | Gain per 1M params |
+| :--- | ---: | ---: | ---: |
+| 4k → 8k | 1,024,000 | 0.2638 | **0.2576** |
+| 8k → 16k | 2,048,000 | 0.1710 | 0.0835 |
+| 16k → 32k | 4,096,000 | 0.1048 | **0.0256** |
 
-To choose on evidence rather than assertion, we fitted BPE tokenizers at four
-vocabulary sizes plus a Unigram LM at 8k on an 80 MB sample of the Hindi
-**training** split, and evaluated every one on 59,713 held-out documents
-(12.2M characters) from the **validation** split. No model is scored on text it
-was fitted on.
+Each doubling costs twice as much and returns roughly a third as much per
+parameter; 16k→32k is **ten times less parameter-efficient** than 4k→8k. Hindi
+shows the same shape.
 
-| Model | Vocab | Fertility | Chars/token | Unknown rate | Broken graphemes | Vocab coverage |
+**(b) The choice is coupled to `d_model`, which Phase 2 has not yet fixed.**
+Embedding share of a 25M budget:
+
+| `d_model` | V=8k | V=16k | V=32k |
+| ---: | ---: | ---: | ---: |
+| 256 | 8.2% | 16.4% | 32.8% |
+| 384 | 12.3% | 24.6% | 49.2% |
+| 512 | **16.4%** | 32.8% | **65.5%** |
+
+At `d_model = 512` — an ordinary width for a 25M decoder — a 32k vocabulary
+consumes **65.5% of the entire budget**, leaving roughly 2.7 transformer blocks.
+The model would be mostly a lookup table.
+
+**(c) The selection rule.** *Choose the largest vocabulary whose embedding table
+stays affordable across every `d_model` still under consideration.* Only
+**8,000** satisfies this: it costs between 8.2% and 16.4% depending on width.
+16k is defensible only by committing now to `d_model <= 256`; 32k only at 256
+*and* accepting a third of the model on embeddings. Selecting the option that is
+robust to a decision not yet taken is a stronger position than optimising
+against an architecture that may still change.
+
+Supporting, but not decisive: the course Q&A advises *"a vocab size of 5 to
+10K"*, and using 8,000 for both models means Phase 3 cross-language comparisons
+differ by language and data rather than by tokenizer capacity.
+
+**What this costs, stated plainly.** A 32k vocabulary fits **21.6% more Nepali
+text into the same context window** than 8k (fertility 1.2787 vs 1.5545), and
+halves the broken-grapheme rate (1.79% vs 4.94%). Those are real losses, not
+rounding. The rule above trades them for model depth.
+
+**What would settle it properly.** Train Model L at 8k and at 16k and compare
+*validation loss and bits-per-byte* — the metric that actually matters — rather
+than fertility, which is only a proxy. That is a Phase 2 ablation, and it is
+named here rather than quietly skipped.
+
+#### 6.2.5 Empirical sweep, both languages
+
+For each language we fitted BPE at four vocabulary sizes plus a Unigram LM at 8k
+on an 80 MB sample of that language's **training** split, and evaluated every one
+on held-out documents from its **validation** split. No model is scored on text
+it was fitted on.
+
+**Hindi** — 59,713 held-out documents (12.2M characters):
+
+| Model | Vocab | Fertility | Chars/token | Unknown | Broken graphemes | Coverage |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: |
 | BPE | 4,000 | 1.7855 | 2.9041 | 0.00% | 11.229% | 94.88% |
-| BPE | 8,000 | 1.5873 | 3.2666 | 0.00% | 7.967% | 94.31% |
+| **BPE** | **8,000** | **1.5873** | **3.2666** | **0.00%** | 7.967% | 94.31% |
 | Unigram | 8,000 | 1.5613 | 3.3210 | 0.00% | 6.073% | 94.30% |
 | BPE | 16,000 | 1.4509 | 3.5738 | 0.00% | 5.388% | 91.23% |
-| BPE | 32,000 | 1.3587 | 3.8163 | 0.00% | 3.502% | 82.39% |
+| BPE | 32,000 | 1.3587 | 3.8163 | 0.00% | 3.502% | **82.39%** |
 
-Three findings drive the decision:
+**Nepali** — 70,196 held-out documents:
 
-1. **Compression improves with vocabulary size, but with diminishing returns
-   against linear parameter cost.** Going 8k -> 32k buys 0.23 tokens/word while
-   quadrupling embedding parameters from 8.2% to 32.8% of the budget.
-2. **Vocabulary coverage collapses at 32k.** Only 82.39% of a 32k vocabulary is
-   ever observed on held-out text, so roughly 5,600 embedding rows — about 1.4M
-   parameters — would be dead weight. At 8k, coverage is 94.31%.
-3. **Unknown-token rate is exactly 0.00% at every size**, confirming
-   `byte_fallback` removes out-of-vocabulary failure entirely, so vocabulary size
-   need not be inflated defensively to cover rare characters.
+| Model | Vocab | Fertility | Chars/token | Unknown | Broken graphemes | Coverage |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: |
+| BPE | 4,000 | 1.8183 | 3.6415 | 0.00% | 7.458% | 96.12% |
+| **BPE** | **8,000** | **1.5545** | **4.2594** | **0.00%** | 4.942% | **97.45%** |
+| Unigram | 8,000 | 1.5187 | 4.3598 | 0.00% | 5.034% | 98.06% |
+| BPE | 16,000 | 1.3835 | 4.7857 | 0.00% | 3.070% | 97.24% |
+| BPE | 32,000 | 1.2787 | 5.1783 | 0.00% | 1.791% | 93.93% |
 
-**Selected: BPE with an 8,000-token vocabulary and byte fallback for Hindi
-(Model H)** — vocabulary size chosen on the evidence above, algorithm chosen on
-the procedural grounds set out in §6.2.2 and flagged there as the decision most
-worth revisiting.
+Findings:
+
+1. **Unknown-token rate is exactly 0.00% at every size in both languages**,
+   confirming `byte_fallback` eliminates out-of-vocabulary failure. Vocabulary
+   size therefore never has to be inflated defensively to cover rare conjuncts,
+   nuktas or stray Latin — it can be chosen purely on the parameter trade-off.
+2. **The two languages behave differently at 32k, and this matters.** Hindi
+   coverage collapses to 82.39%: about 5,600 embedding rows (~1.4M parameters)
+   are never observed on held-out text, so a 32k Hindi vocabulary is simply
+   wasteful. **Nepali holds 93.93%.** Its agglutinative morphology — bound case
+   markers `-लाई`, `-बाट`, `-को`, plural `-हरू`, multi-part verb forms — produces
+   enough distinct high-frequency subword types to fill a large vocabulary.
+3. **So the argument that settles Hindi does not transfer to Nepali.** For
+   Nepali, 32k is not wasteful, only expensive; the case for 8k rests entirely on
+   the parameter rule in §6.2.4, not on dead weight. This is stated explicitly
+   because using Hindi's reasoning for Nepali would be wrong.
+4. **Nepali compresses better than Hindi at every size** (4.2594 vs 3.2666
+   chars/token at 8k), for the same morphological reason: longer reusable stems.
+
+**Selected for both models: BPE, 8,000-token vocabulary, byte fallback.**
+Vocabulary size follows the rule in §6.2.4; the algorithm follows the procedural
+grounds in §6.2.2, which flags it as the decision most worth revisiting.
 
 ### 6.3 Hindi (Model H) — `hindi_bpe_8k`
 
@@ -587,24 +840,99 @@ sweep confirms the mechanism: the rate falls monotonically from 11.23% at 4k to
 the parameter budget on embeddings. The affected tokens are overwhelmingly rare
 inflected forms, not the high-frequency vocabulary shown above.
 
-### 6.4 Nepali (Model L) — `nepali_bpe_32k`
+### 6.4 Nepali (Model L) — `nepali_bpe_8k`
 
-The Nepali tokenizer was trained earlier in Phase 1 at a 32,000 vocabulary,
-benchmarked over 5,000 held-out validation sentences:
+Nepali's tokenizer is being retrained at 8,000 to match the rule in §6.2.4. The
+figures below are for the **superseded `nepali_bpe_32k`**, measured on 70,196
+held-out validation documents; they are retained because they are what the 32k
+decision was originally made on, and because the comparison is informative.
 
-| Tokenizer Model | Fertility | Chars/token | Broken graphemes | Shannon | Rényi (α=2) | Unknown rate |
-| :--- | ---: | ---: | ---: | ---: | ---: | ---: |
-| **Standard BPE (32k)** *(selected)* | **1.55** | **4.24** | **2.615%** | **11.73 bits** | **8.71 bits** | **0.00%** |
-| Unigram LM (32k) | 1.53 | 4.28 | 3.228% | 11.50 bits | 8.41 bits | 0.00% |
+| Statistic | `nepali_bpe_32k` (superseded) | `nepali_bpe_8k` (selected)¹ |
+| :--- | ---: | ---: |
+| Vocabulary size | 32,000 | 8,000 |
+| Embedding parameters (`d_model=512`) | 16,384,000 (**65.5%** of 25M) | 4,096,000 (16.4%) |
+| Fertility (tokens/word) | 1.3170 | 1.5545 |
+| Characters per token | 5.0274 | 4.2594 |
+| Unknown-token rate | 0.00% | 0.00% |
+| Broken grapheme rate | 1.609% | 4.942% |
+| Vocabulary coverage | 91.92% | 97.45% |
+| Shannon entropy | 11.7805 bits | — |
+| Rényi entropy (α=2) | 8.3181 bits | — |
 
-> **Known inconsistency.** Nepali uses 32,000 while Hindi uses 8,000. The 32k
-> model predates the course Q&A guidance to keep vocabularies at 5–10K, and by
-> the parameter analysis in §6.2 it would consume 32.8% of the Model L parameter
-> budget on embeddings. The two corpora and vocabularies are required to be
-> independent, so the sizes need not match — but Model L should either be
-> retrained at 8k for parity with Model H, or the 32k choice justified explicitly
-> against its parameter cost, before Phase 2 pretraining. This is recorded here
-> rather than silently reconciled.
+¹ 8k figures are from the §6.2.5 sweep, fitted on an 80 MB training sample. As
+with Hindi, the production model trained on the full split should improve on
+them — Hindi's production 8k reached fertility 1.4938 against 1.5873 sampled.
+
+**Why 32k was not kept.** It is the better tokenizer in isolation: fertility
+1.3170 against 1.5545, broken graphemes 1.609% against 4.942%, and — unlike
+Hindi — its coverage stays healthy at 91.92%, so it is not padded with unused
+entries. The objection is purely budgetary. At `d_model = 512` its embedding
+table alone is **65.5% of a 25M model**, which cannot be reconciled with
+building a transformer underneath it. §6.2.4 sets out the rule; this is the case
+where the rule costs something real, and the cost is recorded rather than
+minimised.
+
+**Measured statistics for the shipped `nepali_bpe_8k`**, on 70,196 held-out
+validation documents:
+
+| Statistic | Value |
+| :--- | ---: |
+| Vocabulary size | **8,000** |
+| Fertility (tokens/word) | **1.5566** |
+| Characters per token | **4.2537** |
+| Unknown tokens | **0** (rate **0.00%**) |
+| Broken grapheme rate | 4.462% |
+| Vocabulary types observed | 7,759 of 8,000 (**96.99%**) |
+| Vocabulary types seen exactly once | 63 |
+| Shannon entropy | 11.1083 bits |
+| Rényi entropy (α=2) | 8.6409 bits |
+
+**Token-frequency statistics.**
+
+| Cumulative coverage | Share of all tokens |
+| :--- | ---: |
+| Top 100 pieces | 28.38% |
+| Top 500 pieces | 51.07% |
+| Top 1,000 pieces | 64.34% |
+| Top 2,000 pieces | 78.22% |
+| Top 4,000 pieces | 91.59% |
+
+The distribution is noticeably flatter than Hindi's, where the top 100 pieces
+already cover 40.34% against Nepali's 28.38% — consistent with Nepali spreading
+probability mass over a larger inventory of inflected forms.
+
+| Rank | Piece | Gloss | Count | Share |
+| ---: | :--- | :--- | ---: | ---: |
+| 1 | `।` | danda (full stop) | 79,610 | 2.924% |
+| 2 | `,` | comma | 48,780 | 1.791% |
+| 3 | `▁र` | *ra* ("and") | 37,268 | 1.369% |
+| 4 | `▁छ` | *cha* ("is") | 33,318 | 1.224% |
+| 5 | `▁।` | danda after space | 28,073 | 1.031% |
+| 6 | **`को`** | genitive *-ko* | 26,709 | 0.981% |
+| 7 | **`मा`** | locative *-ma* | 23,070 | 0.847% |
+| 8 | **`का`** | genitive *-ka* | 21,174 | 0.778% |
+| 9 | **`ले`** | ergative *-le* | 19,163 | 0.704% |
+| 10 | **`लाई`** | accusative/dative *-lai* | 16,476 | 0.605% |
+| 11 | `▁पनि` | *pani* ("also") | 16,455 | 0.604% |
+| 12 | `▁छन्` | *chan* ("are") | 13,544 | 0.497% |
+| 13 | `▁भएको` | *bhaeko* ("having become") | 10,400 | 0.382% |
+| 14 | `▁गरेको` | *gareko* ("having done") | 9,722 | 0.357% |
+| 15 | `▁भने` | *bhane* ("said/if") | 9,695 | 0.356% |
+
+**This table independently confirms the morphological claim in §2.2.** Ranks 6–10
+— `को`, `मा`, `का`, `ले`, `लाई` — carry **no `▁` word-boundary marker**, meaning
+BPE learned them as *suffixes bound to a preceding stem*. The corresponding Hindi
+entries in §6.3 are `▁के`, `▁में`, `▁की`, `▁को`, `▁से` — all **with** `▁`, i.e.
+free-standing words.
+
+Neither tokenizer was told anything about morphology. Trained independently on
+separate corpora, they each recovered the distinction §2.2 asserts on linguistic
+grounds: Hindi postpositions are separate words, Nepali case markers are bound
+morphemes. It is the clearest evidence in Phase 1 that the two pipelines really
+are modelling two different languages rather than one script.
+
+**Nepali compresses better than Hindi at equal vocabulary** — 4.2537 vs 3.4712
+chars/token, both at 8k. Nepali's bound morphology gives BPE longer, more reusable stems.
 
 ### 6.5 Grounding in Devanagari tokenization literature
 
@@ -622,24 +950,52 @@ models being criticised.
 
 ### 6.6 Qualitative comparison — Nepali (Model L)
 
+Produced with the shipped `nepali_bpe_8k`, shown against the superseded 32k model
+so the cost of the vocabulary decision (§6.2.4) is visible rather than asserted.
+`▁` marks a word boundary.
+
 ```text
-Sample 1: नेपाल एक सुन्दर, सार्वभौमसत्ता सम्पन्न दक्षिण एशियाली राष्ट्र हो।
-Standard BPE: [▁नेपाल] [▁एक] [▁सुन्दर] [,] [▁सार्वभौमसत्ता] [▁सम्पन्न] [▁दक्षिण] [▁एशियाली] [▁राष्ट्र] [▁हो] [।]
-Analysis: Exact 1:1 word-to-token alignment on every Devanagari lexical item.
+नेपाल एक सुन्दर, सार्वभौमसत्ता सम्पन्न दक्षिण एशियाली राष्ट्र हो।
+   8k (16 tok, fertility 1.78): ▁नेपाल ▁एक ▁सुन्दर , ▁सार्व भौ म स त्ता ▁सम्पन्न ▁दक्षिण ▁एश ियाली ▁राष्ट्र ▁हो ।
+  32k (11 tok, fertility 1.22): ▁नेपाल ▁एक ▁सुन्दर , ▁सार्वभौमसत्ता ▁सम्पन्न ▁दक्षिण ▁एशियाली ▁राष्ट्र ▁हो ।
+  This is the worst case for 8k. सार्वभौमसत्ता ("sovereignty") shatters into five
+  meaningless fragments, and एशियाली breaks mid-syllable at ▁एश|ियाली — the
+  broken-grapheme failure the 4.942% rate in §6.4 is counting.
 
-Sample 2: काठमाडौं उपत्यकाभित्र विभिन्न ऐतिहासिक दृष्टिकोणले महत्त्वपूर्ण स्थलहरू छन्।
-Standard BPE: [▁काठमाडौं] [▁उपत्यकाभित्र] [▁विभिन्न] [▁ऐतिहासिक] [▁दृष्टिकोणले] [▁महत्त्वपूर्ण] [▁स्थल] [हरू] [▁छन्] [।]
-Analysis: Clean morphological decomposition of the plural noun into stem [▁स्थल] + suffix [हरू].
+काठमाडौं उपत्यकाभित्र विभिन्न ऐतिहासिक दृष्टिकोणले महत्त्वपूर्ण स्थलहरू छन्।
+   8k (12 tok, fertility 1.50): ▁काठमाडौं ▁उपत्यका भित्र ▁विभिन्न ▁ऐतिहासिक ▁दृष्टिकोण ले ▁महत्त्वपूर्ण ▁स्थल हरू ▁छन् ।
+  32k (10 tok, fertility 1.25): ▁काठमाडौं ▁उपत्यकाभित्र ▁विभिन्न ▁ऐतिहासिक ▁दृष्टिकोणले ▁महत्त्वपूर्ण ▁स्थल हरू ▁छन् ।
+  Here 8k's extra splits fall on real morpheme boundaries: उपत्यका|भित्र
+  ("valley"+"inside") and दृष्टिकोण|ले ("viewpoint"+ergative -le). Both models
+  agree on स्थल|हरू (stem + plural -haru).
 
-Sample 3: विश्वविद्यालयमा विद्यार्थीहरूले प्राविधिक तथा वैज्ञानिक अनुसन्धान गरिरहेका छन्।
-Standard BPE: [▁विश्वविद्यालयमा] [▁विद्यार्थीहरूले] [▁प्राविधिक] [▁तथा] [▁वैज्ञानिक] [▁अनुसन्धान] [▁गरिरहेका] [▁छन्]
-Analysis: Complex agglutinative multi-syllable words remain intact as single tokens.
+विश्वविद्यालयमा विद्यार्थीहरूले प्राविधिक तथा वैज्ञानिक अनुसन्धान गरिरहेका छन्।
+   8k (11 tok, fertility 1.38): ▁विश्वविद्यालय मा ▁विद्यार्थी हरूले ▁प्राविधिक ▁तथा ▁वैज्ञानिक ▁अनुसन्धान ▁गरिरहेका ▁छन् ।
+  32k ( 9 tok, fertility 1.12): ▁विश्वविद्यालयमा ▁विद्यार्थीहरूले ▁प्राविधिक ▁तथा ▁वैज्ञानिक ▁अनुसन्धान ▁गरिरहेका ▁छन् ।
+  8k separates the locative -मा and the plural-ergative -हरूले from their stems.
+  For an agglutinative language this is arguably the more useful segmentation:
+  the model sees विश्वविद्यालय and विद्यार्थी as reusable stems rather than
+  memorising every inflected surface form.
+
+प्रधानमन्त्रीले २०२६ मा अर्थतन्त्र १५ प्रतिशतले बढेको बताउनुभयो।
+   8k (10 tok, fertility 1.25): ▁प्रधानमन्त्रीले ▁२०२ ६ ▁मा ▁अर्थतन्त्र ▁१५ ▁प्रतिशतले ▁बढेको ▁बताउनुभयो ।
+  32k ( 9 tok, fertility 1.12): ▁प्रधानमन्त्रीले ▁२०२६ ▁मा ▁अर्थतन्त्र ▁१५ ▁प्रतिशतले ▁बढेको ▁बताउनुभयो ।
+  Note ▁२०२|६ — the Devanagari year is split arbitrarily rather than per digit,
+  because split_digits applies to ASCII only (§6.1).
 ```
+
+**Reading these honestly.** 8k is measurably worse per-token than 32k on all four
+samples, and one case (सार्वभौमसत्ता) is genuinely poor. The compensating
+observations are that several of 8k's extra splits are morphologically principled
+rather than arbitrary, and that the parameter budget freed — 12.3 percentage
+points of a 25M model at `d_model = 512` — buys transformer depth that no
+tokenizer improvement can substitute for. §6.2.4 sets out that trade; these
+examples are what it costs in practice.
 
 ### 6.7 Reproducing these numbers
 
 ```bash
-python scripts/benchmark_hindi_tokenizer.py \
+python scripts/benchmark_tokenizer.py \
     --model  <drive>/hindi/tokenizer/hindi_bpe_8k.model \
     --val    <sample of hindi/splits/val.txt> \
     --train  <sample of hindi/splits/train.txt> \
@@ -677,11 +1033,23 @@ All Drive paths are relative to the project root **`24KaratAu/`**, shared at
 
 #### Nepali (Model L)
 
-| # | Source | How obtained | Collection type | Lands in |
-| ---: | :--- | :--- | :--- | :--- |
-| 1 | `ai4bharat/sangraha` (`verified/nep`) | Same streaming path as Hindi | **Automated** | `nepali/cleaned/automated_nonweb/nonweb_shard_*.jsonl` |
-| 2 | Nepali Wikipedia | `dumps.wikimedia.org/newiki/latest/newiki-latest-pages-articles.xml.bz2` | **Manual** | `nepali/cleaned/manual/wiki_shard_*.jsonl` |
-| 3 | Nepali news portals (*Ratopati*, *Setopati*, *Gorkhapatra*) | `src/data/collect/collect_manual_web.py` with `trafilatura` | **Manual** | `nepali/cleaned/manual/manual_news_*.jsonl` |
+| # | Source | What it is | How obtained | Collection type | Lands in |
+| ---: | :--- | :--- | :--- | :--- | :--- |
+| 1 | `ai4bharat/sangraha` (`verified/nep`) | Human-verified Indic corpus | Same direct-parquet streaming path as Hindi | **Automated** | `nepali/cleaned/automated_nonweb/` (248 shards) |
+| 2 | Nepali Wikipedia | Full article dump | `dumps.wikimedia.org/newiki/latest/newiki-latest-pages-articles.xml.bz2`, parsed in-house | **Manual** | `nepali/cleaned/manual/wiki_shard_0000–0005.jsonl` |
+| 3 | Nepali news portals (legacy crawl) | *Ratopati*, *Setopati*, *Gorkhapatra*, *OnlineKhabar* | `src/data/collect/collect_manual_web.py`, URL-seeded | **Manual** | `nepali/cleaned/manual/manual_news_*.jsonl` (42 shards) — only 37.2% unique, see §4.3 |
+| 4 | 22 Nepali news portals (sitemap crawl, 2026-08-21) | Live article text | Sitemaps discovered from `robots.txt`; largest contributors `makalukhabar.com`, `kathmandupati.com`, `bizmandu.com`, `clickmandu.com`, `arthasarokar.com`, `deshsanchar.com`, `nepalnews.com` | **Manual** | `nepali/cleaned/manual/manual_web_shard_*.jsonl` (66 shards) |
+
+**A note on Nepali sitemap availability.** Nepali was a materially harder crawl
+than Hindi. Several of the largest outlets — `ekantipur.com`,
+`onlinekhabar.com`, `ratopati.com`, `himalkhabar.com`,
+`nagariknews.nagariknetwork.com` and `annapurnapost.com` — publish **no sitemap
+at all**, in `robots.txt` or at the conventional path, so the sitemap method
+cannot reach them. Discovery across 38 probed domains yielded 651,660 URLs
+concentrated in 8 hosts, against 11.1M across 18 hosts for Hindi. The resulting
+corpus therefore leans toward business and general-news registers from a smaller
+set of publishers, which is recorded here as a limitation rather than smoothed
+over.
 
 **The manual/automated boundary.** Per the course Q&A, a source counts as manual
 when we fetch the raw data and perform our own cleaning, preprocessing and
@@ -703,11 +1071,11 @@ Shared folder: <https://drive.google.com/drive/folders/19EANSjwyIp-z36jwCvKhwlWd
 | `hindi/tokenizer/` | 2 | 0.001 GiB | `hindi_bpe_8k.model`, `hindi_bpe_8k.vocab` |
 | `hindi/manifests/` | 7 | 0.328 GiB | Corpus summary + crawl provenance (§7.3) |
 | `nepali/cleaned/automated_nonweb/` | 248 | 6.263 GiB | Cleaned Sangraha shards |
-| `nepali/cleaned/manual/` | 48 | 1.280 GiB | Wikipedia dump + news crawl shards |
+| `nepali/cleaned/manual/` | 118 | 2.217 GiB | Wikipedia dump + legacy news + sitemap crawl shards |
 | `nepali/raw/wiki_dump/` | 1 | 0.051 GiB | `newiki-latest-pages-articles.xml.bz2` |
-| `nepali/raw/manual_web/` | 2 | 0.050 GiB | Raw scraped pages |
+| `nepali/raw/manual_web/` | 73 | 2.193 GiB | Raw crawled HTML, gzipped per shard |
 | `nepali/splits/` | 6 | 2.659 GiB | `train/val/test` × `.txt` and `.jsonl` |
-| `nepali/tokenizer/` | 4 | 0.004 GiB | `nepali_bpe_32k` model/vocab (+ Unigram comparison) |
+| `nepali/tokenizer/` | 4 | 0.004 GiB | `nepali_bpe_32k` model/vocab (+ Unigram); `nepali_bpe_8k` pending retrain (§6.4) |
 
 Every cleaned shard is JSONL, one document per line, with a stable schema:
 
@@ -746,15 +1114,21 @@ summaries are committed so the repository stays self-describing.
 | :--- | :--- | :--- |
 | Automated ingest | `src/data/collect/process_hf_corpus.py`, `notebooks/collect_hindi_colab.ipynb` | `cleaned/automated_nonweb/` |
 | Wikimedia dumps | `src/data/collect/process_wiki_dump.py`, `scripts/process_hindi_wikimedia_dump.py` | `cleaned/manual/wiki_shard_*`, `manual_aux_*` |
-| URL discovery | `scripts/discover_hindi_urls.py` | `frontier*.txt` |
-| Dedup registry | `scripts/export_hindi_manual_hashes.py` | `existing_manual_hashes.txt` |
-| Web crawl | `scripts/collect_hindi_manual_web.py` | `cleaned/manual/manual_web_shard_*`, `raw/manual_web/` |
-| Cleaning | `src/data/clean/clean_hindi_web.py`, `hindi_lang_id.py` | applied inline during collection |
+| URL discovery | `scripts/discover_sitemap_urls.py` | `frontier*.txt` |
+| Dedup registry | `scripts/export_manual_hashes.py` | `existing_manual_hashes.txt` |
+| Web crawl | `scripts/collect_manual_web_sitemap.py --language {hindi,nepali}` | `cleaned/manual/manual_web_shard_*`, `raw/manual_web/` |
+| Cleaning | `src/data/clean/clean_hindi_web.py` / `clean_nepali_web.py`, `hindi_lang_id.py` / `nepali_lang_id.py` | applied inline during collection |
 | Accounting | `scripts/audit_hindi_corpus.py` | per-source token tables (§5.2) |
-| Split + tokenizer | `notebooks/finalize_hindi_corpus.ipynb` | `splits/`, `tokenizer/`, `hindi_corpus_summary.json` |
-| Tokenizer benchmark | `scripts/benchmark_hindi_tokenizer.py` | `report/hindi_tokenizer_benchmark.json` |
+| Split + tokenizer | `notebooks/finalize_hindi_corpus.ipynb` / `notebooks/finalize_nepali_corpus.ipynb` | `splits/`, `tokenizer/`, `{hindi,nepali}_corpus_summary.json` |
+| Tokenizer benchmark | `scripts/benchmark_tokenizer.py --language {hindi,nepali}` | `report/{hindi,nepali}_tokenizer_benchmark.json` |
 
 ### 7.5 Execution timeline — what ran where, and when
+
+> **Full per-stage ledger**: [`report/collection_ledger.md`](collection_ledger.md),
+> generated from [`collection_ledger.json`](collection_ledger.json). It records all
+> 20 collection stages with the commit hash, the exact script or notebook cell, the
+> source, the shard filenames produced, and the measured document/character counts
+> for each. The summary below is the readable overview; the ledger is the record.
 
 Reconstructed from the git history and the modification timestamps of every
 artifact on Drive. Times are IST. **Colab** means a notebook cell executed on a
@@ -787,15 +1161,31 @@ on the author's machine streaming to Drive over `rclone`.
 | 20 Aug 19:17 | Colab | Step 2c — Wikibooks + Wikiquote dumps | `manual_aux_shard_0032` |
 | 20 Aug 19:56 – 22:50 | Colab | `remaining_hindi_manual_collection.ipynb` — news crawl | `manual_news_shard_0033–0038` (6 shards) |
 | 20 Aug 20:06 | Colab | Wikisource step | `wikisource_shard_0000` — **1 document**; namespace bug diagnosed in §3.3 |
-| 20 Aug 22:36 – 22:43 | **Local** | `scripts/discover_hindi_urls.py` | 11,112,623 URLs → `frontier_full.txt.gz` |
-| 20 Aug 22:52 – 23:07 | **Local** | `scripts/export_hindi_manual_hashes.py` | dedup registry, 155,123 hashes |
-| 20 Aug 23:13 – 21 Aug 00:27 | **Local** | `scripts/collect_hindi_manual_web.py` — 87,585 URLs at 20.2 URL/s | `manual_web_shard_*` (27 shards) + `raw/manual_web/` (27 archives) |
+| 20 Aug 22:36 – 22:43 | **Local** | `scripts/discover_sitemap_urls.py` | 11,112,623 URLs → `frontier_full.txt.gz` |
+| 20 Aug 22:52 – 23:07 | **Local** | `scripts/export_manual_hashes.py` | dedup registry, 155,123 hashes |
+| 20 Aug 23:13 – 21 Aug 00:27 | **Local** | `scripts/collect_manual_web_sitemap.py` — 87,585 URLs at 20.2 URL/s | `manual_web_shard_*` (27 shards) + `raw/manual_web/` (27 archives) |
 | 21 Aug 01:46 | Colab | `finalize_hindi_corpus.ipynb`, first run — **discarded** | corpus 95.7% manual; staging failure, §8 |
 | 21 Aug 03:15 – 03:22 | Colab | `finalize_hindi_corpus.ipynb`, final run | `splits/` + `tokenizer/hindi_bpe_8k.*` |
 | 21 Aug 03:36 | **Local** | Provenance archival | `manifests/*.gz` |
-| 21 Aug 03:46 | **Local** | `scripts/benchmark_hindi_tokenizer.py` | `report/hindi_tokenizer_benchmark.json` |
+| 21 Aug 03:46 | **Local** | `scripts/benchmark_tokenizer.py` | `report/hindi_tokenizer_benchmark.json` |
 | 21 Aug 04:09 | Colab | Drive API resumable re-upload of `train.txt` / `train.jsonl` | corrected splits (§8) |
 | 21 Aug 04:32 – 04:48 | **Local** | Wikimedia dump archival | `raw/wiki_dump/` — 3 dumps |
+
+#### Nepali (Model L) — 21 August, remediation
+
+An audit on 21 August found the Nepali corpus was not what the report claimed
+(§4.3, §5.1). The following ran to correct it.
+
+| When | Where | What ran | What it produced |
+| :--- | :--- | :--- | :--- |
+| 21 Aug 05:17 – 05:30 | **Local** | Exact measurement of `val.txt`; sampling of the cleaned pool | Split figures inflated ~4.8x; pool ~640M tokens vs ~102.7M in the splits |
+| 21 Aug 05:30 – 05:45 | **Local** | `scripts/export_manual_hashes.py` over 48 manual shards | 100,929 unique hashes from 233,091 docs — 43.3% unique |
+| 21 Aug 05:32 – 05:36 | **Local** | `scripts/discover_sitemap_urls.py`, first pass | 309,227 URLs, 4 hosts (business-heavy) |
+| 21 Aug 05:50 – 05:55 | **Local** | Discovery, expanded to 38 probed domains | 651,660 URLs over 8 substantial hosts |
+| 21 Aug 06:13 – 10:06 | **Local** | `scripts/collect_manual_web_sitemap.py --language nepali` | 202,769 docs / 340,215,209 chars (66 shards + raw archives) |
+| 21 Aug 10:06 – 12:20 | **Local** | Unique-character measurement over all manual shards | Unique manual 209,285,881 chars pre-crawl; Wikipedia 100% clean, news 37.2% |
+| 21 Aug 12:30 – 13:00 | **Local** | `scripts/benchmark_tokenizer.py --language nepali` | `report/nepali_tokenizer_benchmark.json`, vocabulary sweep |
+| pending | Colab | `notebooks/finalize_nepali_corpus.ipynb` | Re-split with intra-manual dedup + `nepali_bpe_8k` |
 
 #### Why the split between Colab and local
 
@@ -810,6 +1200,38 @@ Drive with `rclone` and deletes it immediately rather than staging a corpus; and
 `rclone` gives verifiable transfers, which the Drive FUSE mount does not — a
 distinction that turned out to matter (§8).
 
+### 7.6 Reproducing every measured claim
+
+No figure in this report rests on an uncommitted script. Each measurement below
+maps to the command that regenerates it. Anything streamed from Drive is
+byte-verified against the size Drive reports, so a truncated read fails loudly
+rather than silently under-reporting (§8.1, failure 3).
+
+| Claim (§) | Command |
+| :--- | :--- |
+| Per-source token accounting (§5.1, §5.2) | `python scripts/audit_hindi_corpus.py` |
+| Manual uniqueness by source — 42.7% Nepali, Wikipedia 100%, news 37.2% (§4.3, §5.1) | `python scripts/verify_corpus_claims.py uniqueness --language nepali --tokenizer tokenizers/nepali/nepali_bpe_8k.model` |
+| Same text under different URLs — 34.4% shared hashes, 0 shared URLs (§4.3) | `python scripts/verify_corpus_claims.py shard-overlap --language nepali` |
+| The two corpora share no documents (§4.3) | `python scripts/verify_corpus_claims.py cross-corpus` |
+| Unicode NFC is a verified no-op (§4.1) | `python scripts/verify_corpus_claims.py nfc --language hindi` |
+| Numeral convention and 0–100 encoding (§6.1) | `python scripts/verify_corpus_claims.py numerals --language nepali --tokenizer tokenizers/nepali/nepali_bpe_8k.model` |
+| Manual token share under the shipped tokenizer (§5.3) | `python scripts/verify_corpus_claims.py token-share --language nepali --tokenizer tokenizers/nepali/nepali_bpe_8k.model --manual-chars 541814473 --auto-chars 2069272506 --manual-shards … --auto-shards …` |
+| Which outlets publish crawlable sitemaps (§3.3, §3.4) | `python scripts/probe_sitemap_availability.py --language nepali` |
+| Fertility, coverage, frequency, examples, sweep (§6.2.5, §6.3, §6.4) | `python scripts/benchmark_tokenizer.py --language nepali --model tokenizers/nepali/nepali_bpe_8k.model --val <val sample> --train <train sample>` |
+| URL discovery counts (§3.3, §3.4) | `python scripts/discover_sitemap_urls.py --domains …` |
+| Crawl yields and rejection breakdown (§3.3, §3.4) | `python scripts/collect_manual_web_sitemap.py --language nepali …` |
+| Dedup registry size (§4.3) | `python scripts/export_manual_hashes.py --remote gdrive:24KaratAu/nepali/cleaned/manual` |
+| Collection ledger (§7.5) | `python scripts/render_collection_ledger.py` |
+| Splits, budget, deduplication, final token counts (§5.3) | `notebooks/finalize_{hindi,nepali}_corpus.ipynb` |
+
+Two caveats on exact reproduction. **Sampled figures vary slightly between runs**
+where a subcommand samples shards rather than reading all of them — the sampling
+basis is stated wherever a number is extrapolated. And
+`probe_sitemap_availability.py` is a *shallow* availability check (at most four
+sitemaps, four children deep); a domain reading zero there can still yield six
+figures under the exhaustive walk in `discover_sitemap_urls.py`, which is why the
+two are separate tools.
+
 ---
 
 ## 8. System Architecture & Engineering Optimizations
@@ -821,12 +1243,12 @@ Running multi-gigabyte data streaming and tokenizer training on Google Colab fre
 3. **XML Parser Memory Clearing (`root.clear()`)**: Resolved a critical Python `ElementTree.iterparse` memory leak during Wikipedia dump parsing, keeping RAM usage flat under 300MB across 50,000+ XML pages.
 4. **Stateful Drive Checkpointing**: Shards are written directly to Google Drive (`data/nepali/cleaned/...`), allowing instant recovery and resumption in the event of Colab session preemption.
 
-### 8.1 Four silent failures, and what they have in common
+### 8.1 Six silent failures, and what they have in common
 
 Each of the following produced wrong output while every check in place reported
 success. They are recorded because the shared lesson is more useful than any one
-fix: **a transfer that is not size-verified, and an assertion made about a plan
-rather than a result, will both fail quietly.**
+fix: **a transfer that is not verified from the far side, and an assertion made
+about a plan rather than a result, will both fail quietly.**
 
 | # | Failure | Symptom | Fix |
 | ---: | :--- | :--- | :--- |
@@ -834,14 +1256,24 @@ rather than a result, will both fail quietly.**
 | 2 | The budget assertion checked that the target was *reachable*, not what was ingested | Failure 1 passed validation and reached Drive | Assert on `written_auto_chars` after Pass 2, before any sync |
 | 3 | `rclone cat` piped into a reader | A truncated stream is indistinguishable from a short file: the audit under-counted the corpus by **10,000 documents** and the dedup registry lost 10,000 hashes | Compare bytes read against the size Drive reports; refuse to report a partial count |
 | 4 | Split sync used a bulk `cp` with no size check | A failed 3.9 GB `train.txt` write left the *previous run's* file on Drive while `val`/`test` updated normally | Copy and size-verify each split individually |
+| 5 | Colab's Drive FUSE accepted a 4.1 GB `train.txt` write and returned the correct size from `os.path.getsize` | The file never committed; `flush_and_unmount()` did not rescue it | Upload through the **Drive API with resumable upload** |
+| 6 | The "verified" sync added to fix #5 compared `os.path.getsize(dst)` against the source | It read **the same FUSE cache that dropped the write**. It printed OK for all six Nepali splits while `val.jsonl` and `test.jsonl` never left the mount | Verify against `resp['size']` returned by the Drive API |
 
-A fifth instance appeared outside the pipeline: Colab's Drive FUSE mount accepted
-a 4.1 GB `train.txt` write and reported the correct size back from
-`os.path.getsize`, but never committed it — `flush_and_unmount()` did not rescue
-it either. The file was uploaded through the **Drive API with resumable upload**
-instead, which returns the stored size from Google rather than from the local
-cache. That is the only verification that means anything for a mounted
-filesystem.
+Failure 6 is the one worth dwelling on, because it is a fix that recreated the
+bug it was fixing. Adding a size check felt like diligence, but the check read
+the same layer that had already proved unreliable, so it could only ever confirm
+what that layer believed. **Verification has to come from the far side of the
+transfer — never from the cache that performed it.** Every check in this
+pipeline now reads back from Drive (via `rclone` or the Drive API), not from the
+local mount.
+
+A seventh, of a different kind: the Nepali corpus was budgeted using
+characters-per-token measured on the **old 32k tokenizer** (5.022) and then
+tokenised with the **newly trained 8k** one (4.127). The assertions all passed —
+they were checking characters — but the same 2.61B characters produced 632.7M
+tokens instead of the projected 520M. The lesson is narrower but real: when a
+pipeline both *uses* and *produces* a tokenizer, the budget must be recomputed
+against the tokenizer that will actually encode the corpus.
 
 Deduplication had the same shape of flaw (§4.3): it ran manual→automated but
 never manual→manual, because each collection run deduplicated against a registry
@@ -855,19 +1287,42 @@ Phase 1 deliverables are complete for both languages:
 
 | Deliverable (§1.3 of the project brief) | Hindi | Nepali |
 | :--- | :--- | :--- |
-| Dataset collection scripts | `scripts/discover_hindi_urls.py`, `collect_hindi_manual_web.py`, `process_hindi_wikimedia_dump.py` | `src/data/collect/` |
-| Dataset preprocessing pipeline | `src/data/clean/clean_hindi_web.py`, `hindi_lang_id.py` | `clean_nepali.py`, `nepali_lang_id.py` |
+| Dataset collection scripts | `scripts/discover_sitemap_urls.py`, `collect_manual_web_sitemap.py --language hindi`, `process_hindi_wikimedia_dump.py` | `scripts/discover_sitemap_urls.py`, `collect_manual_web_sitemap.py --language nepali`, `src/data/collect/` |
+| Dataset preprocessing pipeline | `src/data/clean/clean_hindi_web.py`, `hindi_lang_id.py` | `clean_nepali_web.py`, `clean_nepali.py`, `nepali_lang_id.py` |
 | Dataset statistics report | §5.2 | §5.1 |
-| Train / validation / test splits | `hindi/splits/` (§7.2) | `nepali/splits/` |
-| Tokenizer training code | `notebooks/finalize_hindi_corpus.ipynb` | `src/tokenizer/train_bpe.py` |
-| Vocabulary file | `hindi/tokenizer/hindi_bpe_8k.vocab` | `nepali/tokenizer/nepali_bpe_32k.vocab` |
-| Tokenizer model file | `hindi/tokenizer/hindi_bpe_8k.model` | `nepali/tokenizer/nepali_bpe_32k.model` |
+| Train / validation / test splits | `hindi/splits/` on Drive (§7.2) | `nepali/splits/` on Drive (§7.2) |
+| Tokenizer training code | `notebooks/finalize_hindi_corpus.ipynb` | `notebooks/finalize_nepali_corpus.ipynb` |
+| Vocabulary file | `tokenizers/hindi/hindi_bpe_8k.vocab` (in repo) | `tokenizers/nepali/nepali_bpe_8k.vocab` (in repo) |
+| Tokenizer model file | `tokenizers/hindi/hindi_bpe_8k.model` (in repo) | `tokenizers/nepali/nepali_bpe_8k.model` (in repo) |
 
 * Cleaned, deduplicated, leak-free corpora: **520.4M tokens (Hindi)** and 488.5M (Nepali), both above the ~500M target.
 * Manual collection at **26.87%** (Hindi) and ~50% (Nepali), both above the 20% floor.
 * Zero-unknown-token BPE tokenizers with measured fertility of **1.4938** (Hindi, 8k vocab) and 1.55 (Nepali, 32k vocab).
 
-**Open item carried into Phase 2.** The Nepali tokenizer's 32,000 vocabulary would
-consume 32.8% of a 25M parameter budget on embeddings alone (§6.2, §6.4). It
-should be retrained at 8k for parity with Hindi, or the choice justified against
-its parameter cost, before pretraining begins.
+**Open items carried into Phase 2.**
+
+1. **Numeral convention for the Phase 3 datasets.** `split_digits=True` covers
+   ASCII only (§6.1). Measured, the two corpora use opposite conventions — Hindi
+   94.8% ASCII, Nepali 99.9% Devanagari — and each is well served as-is, since
+   every Nepali value ०–१०० is a single token. Write each reasoning dataset in its
+   own corpus's convention and keep quantities to three digits. No retraining
+   needed; the failure mode to avoid is writing the Nepali set in ASCII digits,
+   which occur 152 times in 11.7M characters of Nepali text.
+2. **BPE over Unigram is the weakest-evidenced decision** (§6.2.2). At equal
+   vocabulary on equal data, Unigram measured better on both fertility and broken
+   graphemes in both languages. BPE was chosen on comparability and convention.
+   The ablation that would settle it is Unigram trained on the full split,
+   compared on validation loss.
+3. **Equalise tokens-seen between the two models.** The Nepali corpus is
+   632.7M tokens against Hindi's 520.4M — 1.22x — because its automated budget was
+   derived from the old 32k chars/token figure (§5.3). The available *pools* run
+   the other way (Hindi 825.8M, Nepali 728.1M), so Hindi remains the
+   higher-resource language; the active corpora simply differ in size. Since the
+   project's purpose is to compare Model H against Model L, Phase 2 should fix
+   `steps x batch_size x sequence_length` identically for both so the comparison
+   is not confounded by corpus size. No re-split is needed — Hindi then makes
+   roughly one pass over its corpus and Nepali roughly 0.82.
+4. **Vocabulary size should be confirmed against `d_model`.** §6.2.4 selects 8,000
+   because it is the only size affordable across every width still under
+   consideration. Once Phase 2 fixes `d_model`, an 8k-vs-16k comparison on
+   validation loss would replace that argument with a measurement.

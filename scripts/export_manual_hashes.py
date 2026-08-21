@@ -1,12 +1,15 @@
-"""Export the content-hash registry of the Hindi manual shards already on Drive.
+"""Export the content-hash registry of a language's manual shards on Drive.
 
 The crawler needs to know what it must not re-collect, but the manual shards are
 ~780 MB and local disk is nearly full, so we stream them with `rclone cat` and
 keep only the hashes (and URLs, for a cheap second dedup key).
 
+Point ``--remote`` at either language's manual directory.
+
 Usage:
-    python scripts/export_hindi_manual_hashes.py \
-        --out data/hindi/manifests/existing_manual_hashes.txt
+    python scripts/export_manual_hashes.py \
+        --remote gdrive:24KaratAu/nepali/cleaned/manual \
+        --out data/nepali/manifests/existing_manual_hashes.txt
 """
 
 from __future__ import annotations
