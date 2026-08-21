@@ -23,7 +23,7 @@ Each language pipeline operates in complete isolation with dedicated raw data co
 | Documents | 848,815 | 1,367,965 |
 | Unique manual pool | 479,582,790 chars | 541,814,473 chars |
 | Tokenizer vocabulary | 8,000 | 8,000 |
-| Fertility (tokens/word) | **1.4938** | 1.5545 (sampled) |
+| Fertility (tokens/word) | **1.4938** | **1.5566** |
 | Characters per token | 3.484 | 4.127 |
 | Unknown-token rate | **0.00%** | **0.00%** |
 
@@ -370,11 +370,11 @@ by roughly 4.8x; §4.3 documents how the duplication arose and how it was found.
 | Partition / Source Category | Shards | Unique Documents | Unique Clean Characters | Chars/Token | Tokens |
 | :--- | ---: | ---: | ---: | ---: | ---: |
 | Manual — Wikipedia dump (`wiki_shard_*`) | 6 | 27,946 | 42,864,542 | 4.853 | ~8,832,000 |
-| Manual — Web crawl, sitemap (`manual_web_shard_*`) | 66 | 202,769 | 340,215,209 | 5.091 | ~66,827,000 |
+| Manual — Web crawl, sitemap (`manual_web_shard_*`) | 70 | 202,769 | 340,215,209 | 5.091 | ~66,827,000 |
 | Manual — News crawl, legacy (`manual_news_*`) | 42 | 76,813 | 166,421,339 | 4.853 | ~34,292,000 |
-| **Subtotal: Total Manual (unique)** | **114** | **307,528** | **549,501,090** | **4.99** | **~109,951,000** |
+| **Subtotal: Total Manual (unique)** | **118** | **307,528** | **549,501,090** | **4.99** | **~109,951,000** |
 | Automated — Sangraha Verified (`nonweb_shard_*`) | 248 | ~1,090,000 | ~2,445,256,140 | 4.493 | ~544,293,000 |
-| **Total Clean Reserve Pool on Drive** | **362** | **~1,397,500** | **~2,994,757,230** | — | **~654,244,000** |
+| **Total Clean Reserve Pool on Drive** | **366** | **~1,397,500** | **~2,994,757,230** | — | **~654,244,000** |
 
 **Deduplication impact.** The 42 legacy news shards contained 208,975 documents
 / 447,189,127 characters, of which only **76,813 documents / 166,421,339
@@ -862,12 +862,14 @@ inflected forms, not the high-frequency vocabulary shown above.
 
 ### 6.4 Nepali (Model L) — `nepali_bpe_8k`
 
-Nepali's tokenizer is being retrained at 8,000 to match the rule in §6.2.4. The
-figures below are for the **superseded `nepali_bpe_32k`**, measured on 70,196
-held-out validation documents; they are retained because they are what the 32k
-decision was originally made on, and because the comparison is informative.
+Nepali's tokenizer was retrained at 8,000 to match the rule in §6.2.4, and
+`nepali_bpe_8k` is the shipped model (`tokenizers/nepali/`, and
+`nepali/tokenizer/` on Drive). The table below sets it against the **superseded
+`nepali_bpe_32k`**, both measured on the same 70,196 held-out validation
+documents; the 32k column is retained because it is what the original decision
+was made on, and because the comparison is informative.
 
-| Statistic | `nepali_bpe_32k` (superseded) | `nepali_bpe_8k` (selected)¹ |
+| Statistic | `nepali_bpe_32k` (superseded) | `nepali_bpe_8k` (shipped)¹ |
 | :--- | ---: | ---: |
 | Vocabulary size | 32,000 | 8,000 |
 | Embedding parameters (`d_model=512`) | 16,384,000 (**65.5%** of 25M) | 4,096,000 (16.4%) |
@@ -879,9 +881,14 @@ decision was originally made on, and because the comparison is informative.
 | Shannon entropy | 11.7805 bits | — |
 | Rényi entropy (α=2) | 8.3181 bits | — |
 
-¹ 8k figures are from the §6.2.5 sweep, fitted on an 80 MB training sample. As
-with Hindi, the production model trained on the full split should improve on
-them — Hindi's production 8k reached fertility 1.4938 against 1.5873 sampled.
+¹ The 8k column reproduces the §6.2.5 sweep figures, fitted on an 80 MB training
+sample, so that both columns are measured the same way. The **shipped** model was
+trained on the full training split; its measured figures are tabulated immediately
+below and are close to the sampled ones — fertility 1.5566 against 1.5545, and a
+lower broken-grapheme rate of 4.462% against 4.942%. Unlike Hindi, where training
+on the full split cut fertility from 1.5873 to 1.4938, Nepali gains essentially
+nothing on fertility from the larger fit; the improvement shows up in grapheme
+integrity instead.
 
 **Why 32k was not kept.** It is the better tokenizer in isolation: fertility
 1.3170 against 1.5545, broken graphemes 1.609% against 4.942%, and — unlike
@@ -962,8 +969,8 @@ receives only ~300–500 of 32k–100k vocabulary slots, so multi-codepoint aksh
 fragment into isolated matras and viramas and fertility rises to **3.5–5.0
 tokens per word**.
 
-Our tokenizers are 100% monolingual, so all 8,000 (Hindi) or 32,000 (Nepali)
-slots serve one language. Measured fertility of **1.4938** for Hindi is roughly a
+Our tokenizers are 100% monolingual, so all 8,000 slots — in each of the two
+separate vocabularies — serve one language. Measured fertility of **1.4938** for Hindi is roughly a
 **2.3–3.3x improvement** over the multilingual figures reported in that
 literature — achieved with a vocabulary a quarter the size of the multilingual
 models being criticised.
@@ -1058,7 +1065,7 @@ All Drive paths are relative to the project root **`24KaratAu/`**, shared at
 | 1 | `ai4bharat/sangraha` (`verified/nep`) | Human-verified Indic corpus | Same direct-parquet streaming path as Hindi | **Automated** | `nepali/cleaned/automated_nonweb/` (248 shards) |
 | 2 | Nepali Wikipedia | Full article dump | `dumps.wikimedia.org/newiki/latest/newiki-latest-pages-articles.xml.bz2`, parsed in-house | **Manual** | `nepali/cleaned/manual/wiki_shard_0000–0005.jsonl` |
 | 3 | Nepali news portals (legacy crawl) | *Ratopati*, *Setopati*, *Gorkhapatra*, *OnlineKhabar* | `src/data/collect/collect_manual_web.py`, URL-seeded | **Manual** | `nepali/cleaned/manual/manual_news_*.jsonl` (42 shards) — only 37.2% unique, see §4.3 |
-| 4 | 22 Nepali news portals (sitemap crawl, 2026-08-21) | Live article text | Sitemaps discovered from `robots.txt`; largest contributors `makalukhabar.com`, `kathmandupati.com`, `bizmandu.com`, `clickmandu.com`, `arthasarokar.com`, `deshsanchar.com`, `nepalnews.com` | **Manual** | `nepali/cleaned/manual/manual_web_shard_*.jsonl` (66 shards) |
+| 4 | 22 Nepali news portals (sitemap crawl, 2026-08-21) | Live article text | Sitemaps discovered from `robots.txt`; largest contributors `makalukhabar.com`, `kathmandupati.com`, `bizmandu.com`, `clickmandu.com`, `arthasarokar.com`, `deshsanchar.com`, `nepalnews.com` | **Manual** | `nepali/cleaned/manual/manual_web_shard_*.jsonl` (70 shards) |
 
 **A note on Nepali sitemap availability.** Nepali was a materially harder crawl
 than Hindi. Several of the largest outlets — `ekantipur.com`,
@@ -1095,7 +1102,7 @@ Shared folder: <https://drive.google.com/drive/folders/19EANSjwyIp-z36jwCvKhwlWd
 | `nepali/raw/wiki_dump/` | 1 | 0.051 GiB | `newiki-latest-pages-articles.xml.bz2` |
 | `nepali/raw/manual_web/` | 73 | 2.193 GiB | Raw crawled HTML, gzipped per shard |
 | `nepali/splits/` | 6 | 2.659 GiB | `train/val/test` × `.txt` and `.jsonl` |
-| `nepali/tokenizer/` | 4 | 0.004 GiB | `nepali_bpe_32k` model/vocab (+ Unigram); `nepali_bpe_8k` pending retrain (§6.4) |
+| `nepali/tokenizer/` | 6 | 0.005 GiB | `nepali_bpe_8k.{model,vocab}` (shipped); superseded `nepali_bpe_32k` and `nepali_unigram_32k` retained (§6.4) |
 
 Every cleaned shard is JSONL, one document per line, with a stable schema:
 
@@ -1202,10 +1209,10 @@ An audit on 21 August found the Nepali corpus was not what the report claimed
 | 21 Aug 05:30 – 05:45 | **Local** | `scripts/export_manual_hashes.py` over 48 manual shards | 100,929 unique hashes from 233,091 docs — 43.3% unique |
 | 21 Aug 05:32 – 05:36 | **Local** | `scripts/discover_sitemap_urls.py`, first pass | 309,227 URLs, 4 hosts (business-heavy) |
 | 21 Aug 05:50 – 05:55 | **Local** | Discovery, expanded to 38 probed domains | 651,660 URLs over 8 substantial hosts |
-| 21 Aug 06:13 – 10:06 | **Local** | `scripts/collect_manual_web_sitemap.py --language nepali` | 202,769 docs / 340,215,209 chars (66 shards + raw archives) |
+| 21 Aug 06:13 – 10:06 | **Local** | `scripts/collect_manual_web_sitemap.py --language nepali` | 202,769 docs / 340,215,209 chars (70 shards + 73 raw archives) |
 | 21 Aug 10:06 – 12:20 | **Local** | Unique-character measurement over all manual shards | Unique manual 209,285,881 chars pre-crawl; Wikipedia 100% clean, news 37.2% |
 | 21 Aug 12:30 – 13:00 | **Local** | `scripts/benchmark_tokenizer.py --language nepali` | `report/nepali_tokenizer_benchmark.json`, vocabulary sweep |
-| pending | Colab | `notebooks/finalize_nepali_corpus.ipynb` | Re-split with intra-manual dedup + `nepali_bpe_8k` |
+| 21 Aug 12:45 – 13:30 | Colab | `notebooks/finalize_nepali_corpus.ipynb` | Re-split with intra-manual dedup + `nepali_bpe_8k`; 632.7M tokens at 21.20% manual |
 
 #### Why the split between Colab and local
 
@@ -1321,9 +1328,9 @@ Phase 1 deliverables are complete for both languages:
 | Vocabulary file | `tokenizers/hindi/hindi_bpe_8k.vocab` (in repo) | `tokenizers/nepali/nepali_bpe_8k.vocab` (in repo) |
 | Tokenizer model file | `tokenizers/hindi/hindi_bpe_8k.model` (in repo) | `tokenizers/nepali/nepali_bpe_8k.model` (in repo) |
 
-* Cleaned, deduplicated, leak-free corpora: **520.4M tokens (Hindi)** and 488.5M (Nepali), both above the ~500M target.
-* Manual collection at **26.87%** (Hindi) and ~50% (Nepali), both above the 20% floor.
-* Zero-unknown-token BPE tokenizers with measured fertility of **1.4938** (Hindi, 8k vocab) and 1.55 (Nepali, 32k vocab).
+* Cleaned, deduplicated, leak-free corpora: **520.4M tokens (Hindi)** and **632.7M tokens (Nepali)**, both above the ~500M target.
+* Manual collection at **26.87%** (Hindi) and **21.20%** (Nepali), both above the 20% floor.
+* Zero-unknown-token BPE tokenizers with measured fertility of **1.4938** (Hindi, 8k vocab) and **1.5566** (Nepali, 8k vocab).
 
 **Open items carried into Phase 2.**
 

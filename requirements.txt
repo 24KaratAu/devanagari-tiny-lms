@@ -1,0 +1,27 @@
+# Phase 1 — data collection, cleaning, and tokenizer construction.
+# Python 3.11+ (developed on 3.11 locally and on Colab's 3.11 runtime).
+# Everything else the pipeline uses is in the standard library
+# (bz2, gzip, hashlib, xml.etree, unicodedata, concurrent.futures, fcntl).
+
+# --- Tokenizer -------------------------------------------------------------
+sentencepiece>=0.2.0        # BPE / Unigram training and encoding
+
+# --- Web collection --------------------------------------------------------
+requests>=2.31.0            # sitemap + article fetching
+urllib3>=2.0.0              # retry/backoff policy on the crawler's session
+trafilatura>=1.8.0          # main-content extraction from raw HTML
+beautifulsoup4>=4.12.0      # sitemap XML/HTML parsing in the Colab notebooks
+
+# --- Corpus ingest ---------------------------------------------------------
+pyarrow>=15.0.0             # streams Sangraha parquet shards via iter_batches
+pandas>=2.0.0               # notebook-side tabulation of shard statistics
+
+# --- Progress / reporting --------------------------------------------------
+tqdm>=4.66.0
+tabulate>=0.9.0             # ledger and statistics tables in the notebooks
+
+# --- Colab only ------------------------------------------------------------
+# Preinstalled on Google Colab; install only if running those notebooks
+# elsewhere. Used for the Drive API resumable uploads described in report 8.1.
+#   google-api-python-client>=2.100.0
+#   google-auth>=2.23.0

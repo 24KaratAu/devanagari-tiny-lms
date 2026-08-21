@@ -70,6 +70,8 @@ This project builds two completely independent, from-scratch decoder-only Transf
 │   ├── collect_nepali_colab.ipynb   # Nepali automated + manual collection & tokenizer training
 │   ├── finalize_hindi_corpus.ipynb  # Budget-aware Hindi split + tokenizer retrain
 │   ├── finalize_nepali_corpus.ipynb # Budget-aware Nepali split + tokenizer retrain
+│   ├── remaining_hindi_manual_collection.ipynb  # Hindi news crawl -> manual_news_shard_0033-0038
+│   ├── ocr_nepali_books_colab.ipynb # OCR route for Nepali print sources
 │   └── phase1_pipeline.py           # Standalone modular pipeline runner
 ├── tokenizers/                      # Deliverables 6 & 7 — committed, not Drive-only
 │   ├── hindi/hindi_bpe_8k.{model,vocab}
@@ -113,8 +115,8 @@ This project builds two completely independent, from-scratch decoder-only Transf
 │   │   └── split/                   # Stratified train/val/test split generator
 │   │       └── create_splits.py
 │   └── tokenizer/                   # Custom tokenizer training
-│       └── train_bpe.py             # SentencePiece BPE trainer (32k vocab)
-├── doubts-answers.md                # Official course TA clarifications
+│       └── train_bpe.py             # SentencePiece BPE trainer (configurable vocab)
+├── requirements.txt                 # Pinned collection / tokenizer dependencies
 └── README.md
 ```
 
@@ -254,9 +256,15 @@ Building a ~500M token corpus per language on student-tier compute (free Google 
 
 ### Split Stratification & Corpus Accounting
 All corpora are partitioned using a reproducible document-level split (Seed `42`):
-* **Train Set (90%)**: Used for pretraining language models and training tokenizers (~439.6M tokens).
-* **Validation Set (5%)**: Held-out set for loss, perplexity (PPL), and Bits-Per-Byte (BPB) tracking (~24.4M tokens).
-* **Test Set (5%)**: Final evaluation split for generation quality (BLEU, chrF, ROUGE-L) and attention map analysis (~24.5M tokens).
+A document's split is a function of its content hash, so assignment is stable
+regardless of shard ingest order and no document can leak across splits.
+
+| Split | Purpose | Hindi tokens | Nepali tokens |
+| :--- | :--- | ---: | ---: |
+| **Train** (90%) | Pretraining, and tokenizer fitting | 467,905,255 | 569,663,061 |
+| **Validation** (5%) | Loss, perplexity (PPL), bits-per-byte (BPB) | 26,069,560 | 31,697,868 |
+| **Test** (5%) | Generation quality (BLEU, chrF, ROUGE-L), attention analysis | 26,434,593 | 31,350,379 |
+| **Total** | | **520,409,408** | **632,711,308** |
 
 #### Corpus Scale & Balance (Hindi — Model H):
 * **Manual Data (66 Shards, post-deduplication)**: **240,510 documents /
@@ -274,9 +282,15 @@ All corpora are partitioned using a reproducible document-level split (Seed `42`
   before budgeting, because a stale flat constant caused the original shortfall.
 
 #### Corpus Scale & Balance (Nepali — Model L):
-* **Manual Data Shards (48 Shards — 1.28 GiB)**: ~253.6M tokens (~8.65M tokens from Wikipedia dumps + ~245M tokens from live news crawls: *Ratopati*, *Setopati*, *Gorkhapatra*). Comfortably exceeds the $\ge 20\%$ manual floor.
-* **Automated Data Shards (248 Shards — 6.26 GiB)**: ~1.25B tokens from AI4Bharat Sangraha Verified.
-* **Total Cleaned Storage on Google Drive**: **296 shards (7.54 GiB, ~1.50B tokens)**.
+* **Manual Data (118 Shards — 2.217 GiB, post-deduplication)**: **307,528 documents
+  / 549,501,090 unique clean characters / ~110.0M tokens** — the Nepali Wikipedia
+  dump (27,946 docs, 100% unique), a sitemap-driven crawl over 22 Nepali portals
+  (202,769 docs / 340.2M chars, collected 2026-08-21) and the legacy news crawl
+  (*Ratopati*, *Setopati*, *Gorkhapatra*, *OnlineKhabar*), of which only **37.2%**
+  survived content-hash deduplication.
+* **Automated Data Shards (248 Shards — 6.263 GiB)**: ~544.3M tokens ingested from
+  AI4Bharat Sangraha Verified, budget-limited from a much larger pool.
+* **Total Cleaned Storage on Google Drive**: **366 shards (8.48 GiB)**.
 * **Active Pretraining Dataset**: **632,711,308 tokens** across 1,367,965 documents
   (train 569,663,061 / val 31,697,868 / test 31,350,379), manual share **21.20%**.
   An audit on 2026-08-21 found the previously reported 488.5M figure counted
@@ -292,22 +306,27 @@ Separate **SentencePiece BPE** tokenizers, trained from scratch on each
 language's own training split. No corpus, vocabulary or tokenizer is shared.
 
 * **Model Type**: BPE, `byte_fallback=True` — unknown characters become raw UTF-8 byte tokens instead of `<unk>`, giving a **0.00% unknown-token rate**.
-* **Vocabulary Size**: **8,000 (Hindi)**, 32,000 (Nepali). Sizes differ; see the note below.
+* **Vocabulary Size**: **8,000** for both models, in two separate vocabularies. Selected on the measured parameter-efficiency rule in report §6.2.4; the course Q&A also advises 5–10K.
 * **Character Coverage**: `0.9995` (retains Devanagari combining marks, nuktas, virama `्`).
 * **Special Tokens**: `<pad>=0`, `<unk>=1`, `<bos>=2`, `<eos>=3`.
 * **Script Preservation**: `split_by_unicode_script=True`, `split_by_whitespace=True`, `split_digits=True`.
 
 ### Measured on held-out text
 
-Hindi, on 59,713 validation documents (12.2M characters) never seen in training:
+Each model measured on its own validation split, never seen in training —
+Hindi on 59,713 documents (12.2M characters), Nepali on 70,196 documents
+(11.6M characters):
 
-| Statistic | Value |
-| :--- | ---: |
-| Fertility (tokens/word) | **1.4938** |
-| Characters per token | 3.4712 |
-| Unknown-token rate | **0.00%** |
-| Vocabulary coverage | 97.41% (7,793 of 8,000 pieces observed) |
-| Broken grapheme rate | 5.5683% |
+| Statistic | `hindi_bpe_8k` | `nepali_bpe_8k` |
+| :--- | ---: | ---: |
+| Fertility (tokens/word) | **1.4938** | **1.5566** |
+| Characters per token | 3.4712 | 4.2537 |
+| Unknown-token rate | **0.00%** | **0.00%** |
+| Vocabulary coverage | 97.41% (7,793 of 8,000) | 96.99% (7,759 of 8,000) |
+| Broken grapheme rate | 5.5683% | 4.462% |
+
+Nepali compresses better at equal vocabulary — its bound case markers and plural
+`-हरू` give BPE longer, more reusable stems (report §6.4).
 
 ### Why BPE, and why 8,000
 
@@ -329,7 +348,7 @@ Phase 1 and names the Phase 2 ablation that would settle it.
 unknown-token rate is exactly 0.00% at every vocabulary size tested. It decouples
 vocabulary size from OOV risk, so the vocabulary need not be inflated defensively.
 
-### Why 8,000 for Hindi
+### Why 8,000
 
 Vocabulary size trades directly against the ~25M parameter budget: with
 `d_model = 256` and weight tying, the embedding table costs `V x 256` parameters
@@ -338,12 +357,18 @@ text (report §6.2) shows 8k -> 32k buys only 0.23 tokens/word of fertility whil
 vocabulary coverage collapses from 94.31% to 82.39%, leaving ~1.4M embedding
 parameters that are never used. The course Q&A also advises a 5–10K vocabulary.
 
-> **Known inconsistency**: Nepali is still at 32,000, predating that guidance. It
-> should be retrained at 8k or the choice justified against its parameter cost
-> before Phase 2. Recorded in report §6.4 rather than quietly reconciled.
+The same rule selects 8,000 for Nepali, though the argument differs: Nepali
+coverage stays healthy at 32k (93.93%, against Hindi's 82.39%), so 32k is not
+*wasteful* there, only unaffordable — at `d_model = 512` its embedding table alone
+would be 65.5% of a 25M model. Nepali was originally trained at 32,000 and
+retrained at 8,000 on 2026-08-21; the superseded model is kept on Drive and the
+cost of the change is quantified in report §6.4 and §6.6 rather than smoothed over.
 
-Full benchmark, including the vocabulary sweep and a BPE-vs-Unigram comparison:
-[`report/hindi_tokenizer_benchmark.json`](report/hindi_tokenizer_benchmark.json)
+Full benchmarks, including the vocabulary sweep and the BPE-vs-Unigram comparison
+at equal data: [`report/hindi_tokenizer_benchmark.json`](report/hindi_tokenizer_benchmark.json) ·
+[`report/nepali_tokenizer_benchmark.json`](report/nepali_tokenizer_benchmark.json) ·
+[`report/hindi_algorithm_comparison.json`](report/hindi_algorithm_comparison.json) ·
+[`report/nepali_algorithm_comparison.json`](report/nepali_algorithm_comparison.json)
 (reproduce with `scripts/benchmark_tokenizer.py`).
 
 ---
@@ -358,7 +383,7 @@ Full benchmark, including the vocabulary sweep and a BPE-vs-Unigram comparison:
    * Download and parse the full Wikipedia XML dump (manual).
    * Merge and perform exact SHA-256 deduplication.
    * Create 90/5/5 train/val/test splits.
-   * Train the 32k SentencePiece BPE tokenizer and save all artifacts to Drive.
+   * Train the 8k SentencePiece BPE tokenizer and save all artifacts to Drive.
 
 ### Option C: Manual Web Collection (Local)
 
@@ -438,8 +463,8 @@ python -m src.data.split.create_splits \
 # 6. Train SentencePiece BPE Tokenizer
 python -m src.tokenizer.train_bpe train \
     --train-file data/nepali/splits/train.txt \
-    --model-prefix nepali/tokenizer/nepali_bpe_32k \
-    --vocab-size 32000 \
+    --model-prefix nepali/tokenizer/nepali_bpe_8k \
+    --vocab-size 8000 \
     --language nepali
 ```
 
@@ -467,10 +492,12 @@ source produced which file.
 | BPE tokenizer model + vocab (`8k`) | `hi` | `hindi/tokenizer/hindi_bpe_8k.{model,vocab}` | 573 KiB |
 | Collection provenance & manifests | `hi` | `hindi/manifests/` | 0.328 GiB |
 | Cleaned dataset — automated (JSONL) | `ne` | `nepali/cleaned/automated_nonweb/` | 6.263 GiB |
-| Cleaned dataset — manual (JSONL) | `ne` | `nepali/cleaned/manual/` | 1.280 GiB |
-| Raw Wikipedia dump + scraped pages | `ne` | `nepali/raw/` | 0.101 GiB |
+| Cleaned dataset — manual (JSONL) | `ne` | `nepali/cleaned/manual/` | 2.217 GiB |
+| Raw crawled HTML (gzipped per shard) | `ne` | `nepali/raw/manual_web/` | 2.193 GiB |
+| Raw Wikimedia dump (`.xml.bz2`) | `ne` | `nepali/raw/wiki_dump/` | 0.051 GiB |
 | Train / val / test splits | `ne` | `nepali/splits/` | 2.659 GiB |
-| BPE tokenizer model + vocab (`32k`) | `ne` | `nepali/tokenizer/` | 4 MiB |
+| BPE tokenizer model + vocab (`8k`) | `ne` | `nepali/tokenizer/nepali_bpe_8k.{model,vocab}` | 599 KiB |
+| Superseded tokenizer (`32k` BPE + Unigram) | `ne` | `nepali/tokenizer/` | 4 MiB |
 | Pretrained checkpoints | H / L | *Coming in Phase 2* | — |
 | Finetuned checkpoints | H / L | *Coming in Phase 3* | — |
 

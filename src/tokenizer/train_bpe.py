@@ -10,8 +10,8 @@ Requirements:
 Usage:
     python -m src.tokenizer.train_bpe \
         --train-file data/nepali/splits/train.txt \
-        --model-prefix nepali/tokenizer/nepali_bpe_32k \
-        --vocab-size 32000 \
+        --model-prefix nepali/tokenizer/nepali_bpe_8k \
+        --vocab-size 8000 \
         --language nepali
 """
 
@@ -24,7 +24,7 @@ from datetime import datetime, timezone
 def train_tokenizer(
     train_file: str,
     model_prefix: str,
-    vocab_size: int = 32000,
+    vocab_size: int = 8000,
     language: str = "nepali",
     character_coverage: float = 0.9995,
     model_type: str = "bpe",
@@ -243,7 +243,7 @@ def main():
     train_parser = subparsers.add_parser("train", help="Train tokenizer")
     train_parser.add_argument("--train-file", required=True, help="Training text file")
     train_parser.add_argument("--model-prefix", required=True, help="Output model prefix")
-    train_parser.add_argument("--vocab-size", type=int, default=32000)
+    train_parser.add_argument("--vocab-size", type=int, default=8000)
     train_parser.add_argument("--language", default="nepali")
     train_parser.add_argument("--model-type", default="bpe", choices=["bpe", "unigram"])
     train_parser.add_argument("--character-coverage", type=float, default=0.9995)
