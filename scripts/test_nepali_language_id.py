@@ -90,7 +90,7 @@ def run_language_id_tests():
         if test_passed:
             passed_count += 1
 
-        mark = "✅ PASS" if test_passed else "❌ FAIL"
+        mark = "OK  PASS" if test_passed else "FAIL FAIL"
 
         print(f"[{i}/{len(TEST_SAMPLES)}] {sample['category']:30s} -> {mark}")
         print(f"    Expected: lang={sample['expected_lang']}, status={sample['expected_status']}")
@@ -113,7 +113,7 @@ def run_language_id_tests():
     print(f"Total Execution Time:            {total_time:.4f} seconds")
     print(f"Average Latency / Document:      {avg_latency:.2f} ms")
     print(f"Detector Throughput:             {throughput:,.1f} docs/sec")
-    print("Qualitative Validation Result:   SUCCESSFUL ✅")
+    print("Qualitative Validation Result:   SUCCESSFUL OK")
     print("=" * 65)
 
     if passed_count != len(TEST_SAMPLES):

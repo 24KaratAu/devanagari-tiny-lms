@@ -283,5 +283,5 @@ def package_and_upload_shard(
     if local_raw_archive_path and local_raw_archive_path.exists():
         local_raw_archive_path.unlink()
 
-    print(f"Shard {shard_id} successfully uploaded, verified, and cleaned locally. ✅")
+    print(f"Shard {shard_id} successfully uploaded, verified, and cleaned locally. OK")
     return True, manifest_record

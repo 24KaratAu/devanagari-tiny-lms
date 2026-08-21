@@ -168,9 +168,9 @@ def run_corpus_accounting():
     )
 
     if all_valid:
-        print("Status: ALL QUALITY CHECKS PASSED SUCCESSFULLY ✅")
+        print("Status: ALL QUALITY CHECKS PASSED SUCCESSFULLY OK")
     else:
-        print("Status: AUDIT WARNING - Issues detected! ❌")
+        print("Status: AUDIT WARNING - Issues detected! FAIL")
     print("=" * 65)
 
 

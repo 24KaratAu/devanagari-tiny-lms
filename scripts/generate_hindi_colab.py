@@ -431,7 +431,7 @@ notebook = {
                 "for name, url in AUX_DUMPS.items():\n",
                 "    local_bz2 = f'/content/{name}.xml.bz2'\n",
                 "    if not os.path.exists(local_bz2):\n",
-                "        print(f'📥 Downloading Hindi {name} dump...')\n",
+                "        print(f'Downloading Hindi {name} dump...')\n",
                 "        !wget -q --show-progress -O {local_bz2} {url}\n",
                 "    \n",
                 "    print(f'Parsing {name} dump...')\n",
@@ -462,14 +462,14 @@ notebook = {
                 "                    sf = f'{MANUAL_DIR}/manual_aux_shard_{shard_idx:04d}.jsonl'\n",
                 "                    with open(sf, 'w', encoding='utf-8') as out:\n",
                 "                        for d in aux_docs: out.write(json.dumps(d, ensure_ascii=False) + '\\n')\n",
-                "                    print(f'  ✅ Saved {Path(sf).name} ({len(aux_docs):,} docs)')\n",
+                "                    print(f'  OK  Saved {Path(sf).name} ({len(aux_docs):,} docs)')\n",
                 "                    aux_docs = []; shard_idx += 1; gc.collect()\n",
                 "\n",
                 "if aux_docs:\n",
                 "    sf = f'{MANUAL_DIR}/manual_aux_shard_{shard_idx:04d}.jsonl'\n",
                 "    with open(sf, 'w', encoding='utf-8') as out:\n",
                 "        for d in aux_docs: out.write(json.dumps(d, ensure_ascii=False) + '\\n')\n",
-                "    print(f'  ✅ Saved {Path(sf).name} ({len(aux_docs):,} docs)')\n",
+                "    print(f'  OK  Saved {Path(sf).name} ({len(aux_docs):,} docs)')\n",
                 "    aux_docs = []; shard_idx += 1; gc.collect()\n",
                 "\n",
                 "# 2. Fast Multi-Threaded Native Hindi Journalism Crawl (Amar Ujala, OneIndia, Dainik Jagran)\n",
@@ -509,16 +509,16 @@ notebook = {
                 "                sf = f'{MANUAL_DIR}/manual_news_shard_{shard_idx:04d}.jsonl'\n",
                 "                with open(sf, 'w', encoding='utf-8') as out:\n",
                 "                    for d in crawl_docs: out.write(json.dumps(d, ensure_ascii=False) + '\\n')\n",
-                "                print(f'  ✅ Saved Shard to Drive: {Path(sf).name} ({len(crawl_docs):,} docs)')\n",
+                "                print(f'  OK  Saved Shard to Drive: {Path(sf).name} ({len(crawl_docs):,} docs)')\n",
                 "                crawl_docs = []; shard_idx += 1; gc.collect()\n",
                 "\n",
                 "if crawl_docs:\n",
                 "    sf = f'{MANUAL_DIR}/manual_news_shard_{shard_idx:04d}.jsonl'\n",
                 "    with open(sf, 'w', encoding='utf-8') as out:\n",
                 "        for d in crawl_docs: out.write(json.dumps(d, ensure_ascii=False) + '\\n')\n",
-                "    print(f'  ✅ Saved Shard to Drive: {Path(sf).name} ({len(crawl_docs):,} docs)')\n",
+                "    print(f'  OK  Saved Shard to Drive: {Path(sf).name} ({len(crawl_docs):,} docs)')\n",
                 "\n",
-                "print('🎉 Manual Expansion Complete!')\n"
+                "print('Manual Expansion Complete!')\n"
             ]
         },
         {
@@ -608,7 +608,7 @@ notebook = {
                 "# Copy split files cleanly to Drive\n",
                 "print('Syncing split files to Google Drive...')\n",
                 "!cp -r {LOCAL_SPLITS}/* {SPLITS_DIR}/\n",
-                "print('✅ Splits synced to Drive.')\n"
+                "print('OK  Splits synced to Drive.')\n"
             ]
         },
         {
@@ -754,9 +754,9 @@ notebook = {
                 "with open(summary_file, 'w', encoding='utf-8') as f:\n",
                 "    json.dump(summary, f, indent=2, ensure_ascii=False)\n",
                 "\n",
-                "print('\\n🎉 FINAL HINDI PHASE 1 AUDIT:')\n",
-                "print(f'  Total Tokens:       {TOTAL_TOKENS:,} (Target >= 500M: {\"✅ PASSED\" if TOTAL_TOKENS >= 500_000_000 else \"SHORT\"})')\n",
-                "print(f'  Manual Percentage:  {manual_share:.2f}% (Target >= 20.0%: {\"✅ PASSED\" if manual_share >= 20.0 else \"SHORT\"})')\n",
+                "print('\\nFINAL HINDI PHASE 1 AUDIT:')\n",
+                "print(f'  Total Tokens:       {TOTAL_TOKENS:,} (Target >= 500M: {\"OK  PASSED\" if TOTAL_TOKENS >= 500_000_000 else \"SHORT\"})')\n",
+                "print(f'  Manual Percentage:  {manual_share:.2f}% (Target >= 20.0%: {\"OK  PASSED\" if manual_share >= 20.0 else \"SHORT\"})')\n",
                 "print(f'  Summary File:       {summary_file}')\n"
             ]
         }

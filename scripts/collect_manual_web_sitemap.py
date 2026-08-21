@@ -252,12 +252,12 @@ class Uploader:
                  "--timeout", "45s", "--contimeout", "20s"],
                 capture_output=True, text=True)
             if proc.returncode == 0:
-                print(f"  ⬆️  {path.name} → Drive", flush=True)
+                print(f"  uploaded {path.name} → Drive", flush=True)
                 return True
             last = proc.stderr.strip()[:300]
             if attempt < attempts - 1:
                 time.sleep(10 * (attempt + 1))
-        print(f"  ⚠️  upload failed for {path.name} after {attempts} attempts: "
+        print(f"  WARNING: upload failed for {path.name} after {attempts} attempts: "
               f"{last}\n     kept at {path}", file=sys.stderr, flush=True)
         return False
 
@@ -324,7 +324,7 @@ class ShardWriter:
         chars = sum(d["clean_text_characters"] for d in self.buffer)
         docs = len(self.buffer)
         self.buffer = []
-        print(f"  📦 {name}: {docs:,} docs, {chars:,} chars → upload queue", flush=True)
+        print(f"  shard {name}: {docs:,} docs, {chars:,} chars → upload queue", flush=True)
         self.uploader.submit(path, self.remote)
         if self._tar is not None:
             self._tar.close()
@@ -576,7 +576,7 @@ def main() -> int:
         }, indent=2))
 
     def on_signal(signum, frame):  # noqa: ARG001
-        print("\n⏸  stop requested — finishing in-flight requests…", flush=True)
+        print("\nstop requested — finishing in-flight requests…", flush=True)
         _stop.set()
 
     signal.signal(signal.SIGINT, on_signal)

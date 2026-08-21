@@ -589,45 +589,64 @@ Three families were available, and the choice is forced by Hindi's morphology:
   stay whole, rare and inflected forms decompose into reusable pieces. This is
   the only option that fits both constraints.
 
-#### 6.2.2 Why BPE rather than Unigram
+#### 6.2.2 BPE rather than Unigram — a judgement call, stated as one
 
-Within subword tokenizers, the two realistic candidates in SentencePiece are
+Within subword tokenizers the two realistic candidates in SentencePiece are
 **BPE** (bottom-up: repeatedly merge the most frequent adjacent pair) and the
-**Unigram LM** (top-down: over-generate candidates, then prune those that cost
-the least likelihood). WordPiece is close to BPE with a likelihood-based merge
+**Unigram LM** (top-down: over-generate candidates, then prune those costing the
+least likelihood). WordPiece is close to BPE with a likelihood-based merge
 criterion and is not separately supported here.
 
-We chose BPE, and the honest position is that **our own measurements mildly
-favour Unigram**. At an equal 8k vocabulary fitted on the same sample, Unigram
-scored better on both metrics that matter for Devanagari:
+An earlier version of this report called the comparison "small and confounded",
+because the two algorithms had been fitted on an 80 MB sample while the shipped
+BPE saw the full split. That confound has since been removed: both algorithms
+were re-fitted on **identical data with identical settings**, including the same
+`input_sentence_size=1,000,000` cap the shipped tokenizers use, and evaluated on
+held-out text.
 
-| Model (8k, same training sample) | Fertility | Broken graphemes |
-| :--- | ---: | ---: |
-| BPE | 1.5873 | 7.967% |
-| **Unigram** | **1.5613** | **6.073%** |
+| Language | Model | Fertility | Chars/token | Broken graphemes | Coverage |
+| :--- | :--- | ---: | ---: | ---: | ---: |
+| Hindi | BPE | 1.4890 | 3.4825 | 6.077% | 97.00% |
+| Hindi | **Unigram** | **1.4578** | 3.5568 | **4.754%** | **97.35%** |
+| Nepali | BPE | 1.5226 | 4.3487 | **3.996%** | 97.60% |
+| Nepali | **Unigram** | **1.4782** | 4.4792 | 4.923% | **98.09%** |
 
-Unigram's edge on broken graphemes is the more interesting of the two: its
-pruning objective removes pieces that rarely pay for themselves, which appears
-to preserve consonant + matra clusters slightly better than frequency-driven
-merging. The reasons we still selected BPE are procedural rather than empirical,
-and should be read that way:
+Three things follow, and the third is uncomfortable:
 
-1. **Comparability with the literature we benchmark against.** The Devanagari
-   tokenization work this report is grounded in (§6.5) reports fertility for BPE
-   systems. Using BPE makes our 1.4938 directly comparable to their 3.5–5.0.
-2. **It is the standard for decoder-only pretraining** (GPT-2/3, LLaMA), so
-   Phase 2 results transfer more readily to published baselines.
-3. **The margin is small and confounded.** Both sweep models were fitted on an
-   80 MB sample. The production BPE, fitted on the full 3.9 GB split, reaches
-   fertility **1.4938** — better than the sampled Unigram's 1.5613. That is *not*
-   evidence BPE wins, because Unigram was never given the full corpus; it only
-   shows the sample-vs-full gap is larger than the algorithm gap.
+1. **Unigram has lower fertility in both languages** — by 2.1% for Hindi and
+   2.9% for Nepali. This is consistent and survives the removal of the confound.
+2. **Broken-grapheme rate contradicts across the pair.** Unigram is 22% better
+   for Hindi; BPE is 19% better for Nepali. On the Devanagari-specific quality
+   measure the two algorithms therefore trade places, and neither dominates.
+   Unknown-token rate is 0.00% for all four.
+3. **The project brief names fertility as the selection criterion** — *"choose
+   using fertility / unknown-token rate on held-out text"*. Unknown rate is tied,
+   so that criterion selects **Unigram**, and we did not follow it.
 
-**This is the weakest-evidenced decision in Phase 1.** A fair test — Unigram
-trained on the same full split, compared on fertility, broken graphemes and
-downstream validation loss — is the ablation we would run first in Phase 2. If
-Unigram's broken-grapheme advantage survives at full scale, it is the better
-choice for an abugida.
+**Why BPE was nevertheless kept.** The reasons are defensible but they are
+judgement, not measurement, and are recorded as such:
+
+* The fertility gain is **2–3%**, which is real but marginal against the cost of
+  rebuilding and re-verifying both tokenizers and every token count derived from
+  them.
+* On the metric that matters most for an abugida — grapheme integrity — the
+  result is a wash across the two languages, so "Unigram is better" is not an
+  unqualified statement.
+* Both models keeping the **same algorithm** means the Phase 3 comparison between
+  Model H and Model L varies by language and data rather than by tokenizer
+  family. Choosing per-language would have maximised each metric at the cost of
+  confounding the comparison the project exists to make.
+* BPE is the standard for decoder-only pretraining and is what the Devanagari
+  tokenization literature in §6.5 benchmarks, so our fertility figures stay
+  directly comparable to the 3.5–5.0 reported there.
+
+**What would change this.** Fertility is a proxy. The measurement that actually
+decides a tokenizer is downstream validation loss or bits-per-byte, which is a
+Phase 2 experiment: pretrain Model H on BPE and on Unigram and compare. If
+Unigram wins there, the 2–3% fertility edge was pointing at something real and
+the choice above was wrong. The comparison is reproducible now —
+`report/{hindi,nepali}_algorithm_comparison.json`, regenerated with
+`scripts/benchmark_tokenizer.py --algorithms bpe,unigram`.
 
 #### 6.2.3 Why byte fallback
 
@@ -741,8 +760,9 @@ Findings:
    chars/token at 8k), for the same morphological reason: longer reusable stems.
 
 **Selected for both models: BPE, 8,000-token vocabulary, byte fallback.**
-Vocabulary size follows the rule in §6.2.4; the algorithm follows the procedural
-grounds in §6.2.2, which flags it as the decision most worth revisiting.
+Vocabulary size follows the measured rule in §6.2.4. The algorithm does **not**
+follow the brief's fertility criterion, which selects Unigram; §6.2.2 sets out
+that trade-off explicitly and names the Phase 2 experiment that would settle it.
 
 ### 6.3 Hindi (Model H) — `hindi_bpe_8k`
 
@@ -1217,12 +1237,18 @@ rather than silently under-reporting (§8.1, failure 3).
 | Numeral convention and 0–100 encoding (§6.1) | `python scripts/verify_corpus_claims.py numerals --language nepali --tokenizer tokenizers/nepali/nepali_bpe_8k.model` |
 | Manual token share under the shipped tokenizer (§5.3) | `python scripts/verify_corpus_claims.py token-share --language nepali --tokenizer tokenizers/nepali/nepali_bpe_8k.model --manual-chars 541814473 --auto-chars 2069272506 --manual-shards … --auto-shards …` |
 | Which outlets publish crawlable sitemaps (§3.3, §3.4) | `python scripts/probe_sitemap_availability.py --language nepali` |
+| BPE vs Unigram head-to-head at equal data (§6.2.2) | `python scripts/benchmark_tokenizer.py --language hindi --model tokenizers/hindi/hindi_bpe_8k.model --val <val sample> --train <≥150 MB train sample> --algorithms bpe,unigram --algorithms-vocab 8000 --input-sentence-size 1000000 --out report/hindi_algorithm_comparison.json` |
 | Fertility, coverage, frequency, examples, sweep (§6.2.5, §6.3, §6.4) | `python scripts/benchmark_tokenizer.py --language nepali --model tokenizers/nepali/nepali_bpe_8k.model --val <val sample> --train <train sample>` |
 | URL discovery counts (§3.3, §3.4) | `python scripts/discover_sitemap_urls.py --domains …` |
 | Crawl yields and rejection breakdown (§3.3, §3.4) | `python scripts/collect_manual_web_sitemap.py --language nepali …` |
 | Dedup registry size (§4.3) | `python scripts/export_manual_hashes.py --remote gdrive:24KaratAu/nepali/cleaned/manual` |
 | Collection ledger (§7.5) | `python scripts/render_collection_ledger.py` |
 | Splits, budget, deduplication, final token counts (§5.3) | `notebooks/finalize_{hindi,nepali}_corpus.ipynb` |
+
+The algorithm comparison in §6.2.2 is only meaningful if both models are fitted
+on the *same* input with the *same* `--input-sentence-size`; passing a smaller
+sample to one than the other reintroduces exactly the confound that comparison
+was built to remove.
 
 Two caveats on exact reproduction. **Sampled figures vary slightly between runs**
 where a subcommand samples shards rather than reading all of them — the sampling

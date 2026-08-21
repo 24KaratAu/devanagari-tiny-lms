@@ -94,7 +94,7 @@ def train_tokenizer(
         byte_fallback=True,
     )
 
-    print(f"\n✅ Tokenizer trained successfully!")
+    print(f"\nOK  Tokenizer trained successfully!")
     print(f"  Model file: {model_prefix}.model")
     print(f"  Vocab file: {model_prefix}.vocab")
 

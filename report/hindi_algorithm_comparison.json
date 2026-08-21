@@ -1,0 +1,277 @@
+{
+  "documents": 59713,
+  "characters": 12211815,
+  "words": 2355109,
+  "tokens": 3517995,
+  "fertility_tokens_per_word": 1.4938,
+  "characters_per_token": 3.4712,
+  "broken_grapheme_rate_pct": 5.5683,
+  "unknown_tokens": 0,
+  "unknown_token_rate_pct": 0.0,
+  "vocab_size": 8000,
+  "vocab_types_observed": 7793,
+  "vocab_coverage_pct": 97.41,
+  "shannon_entropy_bits": 10.3963,
+  "renyi_entropy_alpha2_bits": 7.7562,
+  "token_frequency": {
+    "distinct_types_observed": 7793,
+    "types_seen_once": 52,
+    "coverage": {
+      "top_100_pct_of_tokens": 40.34,
+      "top_500_pct_of_tokens": 61.18,
+      "top_1000_pct_of_tokens": 72.21,
+      "top_2000_pct_of_tokens": 83.32,
+      "top_4000_pct_of_tokens": 93.47
+    },
+    "top_25_pieces": [
+      {
+        "piece": "।",
+        "count": 97314,
+        "pct": 2.7662
+      },
+      {
+        "piece": "▁के",
+        "count": 93528,
+        "pct": 2.6586
+      },
+      {
+        "piece": "▁में",
+        "count": 71946,
+        "pct": 2.0451
+      },
+      {
+        "piece": ",",
+        "count": 71062,
+        "pct": 2.02
+      },
+      {
+        "piece": "▁है",
+        "count": 68087,
+        "pct": 1.9354
+      },
+      {
+        "piece": "▁की",
+        "count": 61597,
+        "pct": 1.7509
+      },
+      {
+        "piece": "▁",
+        "count": 47231,
+        "pct": 1.3426
+      },
+      {
+        "piece": "▁को",
+        "count": 42126,
+        "pct": 1.1974
+      },
+      {
+        "piece": "▁से",
+        "count": 41818,
+        "pct": 1.1887
+      },
+      {
+        "piece": "▁और",
+        "count": 39044,
+        "pct": 1.1098
+      },
+      {
+        "piece": "▁का",
+        "count": 36166,
+        "pct": 1.028
+      },
+      {
+        "piece": "▁ने",
+        "count": 30353,
+        "pct": 0.8628
+      },
+      {
+        "piece": "▁पर",
+        "count": 28578,
+        "pct": 0.8123
+      },
+      {
+        "piece": "0",
+        "count": 27890,
+        "pct": 0.7928
+      },
+      {
+        "piece": "2",
+        "count": 26162,
+        "pct": 0.7437
+      },
+      {
+        "piece": "1",
+        "count": 23506,
+        "pct": 0.6682
+      },
+      {
+        "piece": ".",
+        "count": 22720,
+        "pct": 0.6458
+      },
+      {
+        "piece": "▁हैं",
+        "count": 22436,
+        "pct": 0.6377
+      },
+      {
+        "piece": "▁कि",
+        "count": 20624,
+        "pct": 0.5862
+      },
+      {
+        "piece": "-",
+        "count": 19358,
+        "pct": 0.5503
+      },
+      {
+        "piece": "▁भी",
+        "count": 16239,
+        "pct": 0.4616
+      },
+      {
+        "piece": "▁एक",
+        "count": 14169,
+        "pct": 0.4028
+      },
+      {
+        "piece": "▁लिए",
+        "count": 12901,
+        "pct": 0.3667
+      },
+      {
+        "piece": "▁इस",
+        "count": 12464,
+        "pct": 0.3543
+      },
+      {
+        "piece": "5",
+        "count": 11812,
+        "pct": 0.3358
+      }
+    ]
+  },
+  "examples": [
+    {
+      "text": "भारत एक विशाल और विविधतापूर्ण दक्षिण एशियाई गणराज्य है।",
+      "pieces": [
+        "▁भारत",
+        "▁एक",
+        "▁विशाल",
+        "▁और",
+        "▁विविध",
+        "ता",
+        "पूर्ण",
+        "▁दक्षिण",
+        "▁एशियाई",
+        "▁गणराज्य",
+        "▁है",
+        "।"
+      ],
+      "n_tokens": 12,
+      "n_words": 9
+    },
+    {
+      "text": "विश्वविद्यालय के विद्यार्थियों ने वैज्ञानिक अनुसंधान में महत्वपूर्ण योगदान दिया।",
+      "pieces": [
+        "▁विश्वविद्यालय",
+        "▁के",
+        "▁विद्यार्थियों",
+        "▁ने",
+        "▁वैज्ञानिक",
+        "▁अनुसंधान",
+        "▁में",
+        "▁महत्वपूर्ण",
+        "▁योगदान",
+        "▁दिया",
+        "।"
+      ],
+      "n_tokens": 11,
+      "n_words": 10
+    },
+    {
+      "text": "प्रधानमंत्री ने कहा कि अर्थव्यवस्था तेज़ी से आगे बढ़ रही है।",
+      "pieces": [
+        "▁प्रधानमंत्री",
+        "▁ने",
+        "▁कहा",
+        "▁कि",
+        "▁अर्थव्यवस्था",
+        "▁ते",
+        "ज़ी",
+        "▁से",
+        "▁आगे",
+        "▁बढ़",
+        "▁रही",
+        "▁है",
+        "।"
+      ],
+      "n_tokens": 13,
+      "n_words": 11
+    },
+    {
+      "text": "उन्होंने 2026 में लगभग 15 प्रतिशत की वृद्धि दर्ज की।",
+      "pieces": [
+        "▁उन्होंने",
+        "▁",
+        "2",
+        "0",
+        "2",
+        "6",
+        "▁में",
+        "▁लगभग",
+        "▁",
+        "1",
+        "5",
+        "▁प्रतिशत",
+        "▁की",
+        "▁वृद्धि",
+        "▁दर्ज",
+        "▁की",
+        "।"
+      ],
+      "n_tokens": 17,
+      "n_words": 10
+    }
+  ],
+  "sweep": [
+    {
+      "documents": 59713,
+      "characters": 12211815,
+      "words": 2355109,
+      "tokens": 3506656,
+      "fertility_tokens_per_word": 1.489,
+      "characters_per_token": 3.4825,
+      "broken_grapheme_rate_pct": 6.0769,
+      "unknown_tokens": 0,
+      "unknown_token_rate_pct": 0.0,
+      "vocab_size": 8000,
+      "vocab_types_observed": 7760,
+      "vocab_coverage_pct": 97.0,
+      "shannon_entropy_bits": 10.391,
+      "renyi_entropy_alpha2_bits": 7.7477,
+      "model_type": "bpe",
+      "requested_vocab": 8000,
+      "input_sentence_size": 1000000
+    },
+    {
+      "documents": 59713,
+      "characters": 12211815,
+      "words": 2355109,
+      "tokens": 3433344,
+      "fertility_tokens_per_word": 1.4578,
+      "characters_per_token": 3.5568,
+      "broken_grapheme_rate_pct": 4.7536,
+      "unknown_tokens": 0,
+      "unknown_token_rate_pct": 0.0,
+      "vocab_size": 8000,
+      "vocab_types_observed": 7788,
+      "vocab_coverage_pct": 97.35,
+      "shannon_entropy_bits": 10.2282,
+      "renyi_entropy_alpha2_bits": 7.5854,
+      "model_type": "unigram",
+      "requested_vocab": 8000,
+      "input_sentence_size": 1000000
+    }
+  ]
+}

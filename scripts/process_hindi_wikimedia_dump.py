@@ -144,10 +144,10 @@ def upload(path: Path, remote: str, dry_run: bool) -> None:
          "--retries", "5", "--low-level-retries", "10"],
         capture_output=True, text=True)
     if proc.returncode != 0:
-        print(f"  ⚠️  upload failed for {path.name}: {proc.stderr.strip()[:300]}",
+        print(f"  WARNING: upload failed for {path.name}: {proc.stderr.strip()[:300]}",
               file=sys.stderr)
     else:
-        print(f"  ⬆️  {path.name} → Drive")
+        print(f"  uploaded {path.name} → Drive")
 
 
 def main() -> int:

@@ -162,7 +162,7 @@ def run_concurrency_test():
     print(f"  Duplicate test doc_ids in manifest:{dup_ids}")
 
     if dup_urls == 0 and dup_ids == 0 and len(test_records) == len(test_urls):
-        print("\nCONCURRENCY TEST PASSED: Exactly 1 record per unique URL, 0 duplicates! ✅")
+        print("\nCONCURRENCY TEST PASSED: Exactly 1 record per unique URL, 0 duplicates! OK")
     else:
         print("\nFAILED: Duplicate records or missing records detected!")
         sys.exit(1)

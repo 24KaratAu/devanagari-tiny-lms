@@ -99,7 +99,7 @@ def audit_corpus_language():
             print()
 
     print("=" * 65)
-    print("AUDIT COMPLETE — NO PRODUCTION DATA WAS MODIFIED ✅")
+    print("AUDIT COMPLETE — NO PRODUCTION DATA WAS MODIFIED OK")
     print("=" * 65)
 
 

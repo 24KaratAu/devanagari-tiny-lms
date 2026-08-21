@@ -83,7 +83,7 @@ def run_pilot():
         print(f"FAILED Step 8: Local temporary shard {local_path} still exists!")
         sys.exit(1)
     else:
-        print(f"STEP 8 PASSED: Local temporary shard file {local_path.name} was cleaned cleanly. ✅")
+        print(f"STEP 8 PASSED: Local temporary shard file {local_path.name} was cleaned cleanly. OK")
 
     # 9. Verify remote shard remains on Google Drive via rclone
     drive_path = manifest_rec["drive_path"]
@@ -94,7 +94,7 @@ def run_pilot():
         sys.exit(1)
     else:
         info = json.loads(res.stdout)[0]
-        print(f"STEP 9 PASSED: Remote shard verified on Google Drive (Name: {info['Name']}, Size: {info['Size']:,} bytes). ✅")
+        print(f"STEP 9 PASSED: Remote shard verified on Google Drive (Name: {info['Name']}, Size: {info['Size']:,} bytes). OK")
 
     # 10 & 11. Run process again & verify idempotency
     print(f"\n--- Running Pilot Pass 2 (Idempotency Test) for Shard ID: {shard_id} ---")
@@ -107,13 +107,13 @@ def run_pilot():
     )
 
     if pass2_ok:
-        print("STEP 10 & 11 PASSED: Second run detected existing verified shard and skipped re-upload cleanly. ✅")
+        print("STEP 10 & 11 PASSED: Second run detected existing verified shard and skipped re-upload cleanly. OK")
     else:
         print("FAILED Step 10 & 11: Idempotency check failed during Pass 2.")
         sys.exit(1)
 
     print("\n" + "=" * 60)
-    print("PILOT TEST COMPLETED SUCCESSFULLY! ALL ASSERTIONS PASSED ✅")
+    print("PILOT TEST COMPLETED SUCCESSFULLY! ALL ASSERTIONS PASSED OK")
     print("=" * 60)
 
 

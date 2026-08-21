@@ -53,7 +53,7 @@ def run_recovery_test():
     print(f"Worker B check_and_clean_reservation result: is_reserved={is_reserved}, msg='{msg}'")
 
     if not is_reserved and "stale" in msg:
-        print("STEP 1 PASSED: Worker B correctly identified and recovered stale reservation! ✅")
+        print("STEP 1 PASSED: Worker B correctly identified and recovered stale reservation! OK")
     else:
         print(f"FAILED Step 1: Stale reservation was not recovered: {msg}")
         sys.exit(1)
@@ -61,12 +61,12 @@ def run_recovery_test():
     # 3. Worker B reserves and cleans up
     with ManifestLock():
         reserve_url(test_url, doc_id)
-        print("Worker B successfully placed fresh reservation! ✅")
+        print("Worker B successfully placed fresh reservation! OK")
         # Clean test reservation file
         res_file.unlink(missing_ok=True)
 
     print("\n" + "=" * 65)
-    print("STALE RESERVATION RECOVERY TEST PASSED ✅")
+    print("STALE RESERVATION RECOVERY TEST PASSED OK")
     print("=" * 65)
 
 

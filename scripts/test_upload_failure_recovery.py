@@ -30,7 +30,7 @@ def run_failure_test():
     os.environ["LOCAL_TEMP_MAX_GB"] = "0.000001"
     safe, msg = check_storage_safety(verbose=False)
     if not safe and "exceeded" in msg:
-        print("STEP 1 PASSED: Storage guard correctly rejected operation when max limit exceeded! ✅")
+        print("STEP 1 PASSED: Storage guard correctly rejected operation when max limit exceeded! OK")
     else:
         print(f"FAILED Step 1: Storage guard did not reject exceeded limit: {msg}")
         sys.exit(1)
@@ -69,13 +69,13 @@ def run_failure_test():
     local_shard_path = Path(manifest_rec["local_path_before_upload"])
 
     if not success and manifest_rec["upload_status"] == "failed":
-        print("STEP 2 PASSED: Upload failure detected and recorded as 'failed' in manifest! ✅")
+        print("STEP 2 PASSED: Upload failure detected and recorded as 'failed' in manifest! OK")
     else:
         print(f"FAILED Step 2: Upload failure was not handled properly.")
         sys.exit(1)
 
     if local_shard_path.exists():
-        print(f"STEP 3 PASSED: Local temporary shard file {local_shard_path.name} PRESERVED on disk after upload failure! ✅")
+        print(f"STEP 3 PASSED: Local temporary shard file {local_shard_path.name} PRESERVED on disk after upload failure! OK")
         # Clean test shard file manually
         local_shard_path.unlink()
     else:
@@ -83,7 +83,7 @@ def run_failure_test():
         sys.exit(1)
 
     print("\n" + "=" * 60)
-    print("STORAGE GUARD & UPLOAD FAILURE RECOVERY TEST PASSED ✅")
+    print("STORAGE GUARD & UPLOAD FAILURE RECOVERY TEST PASSED OK")
     print("=" * 60)
 
 

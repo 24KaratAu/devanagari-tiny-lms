@@ -15,13 +15,13 @@
 
 | | Hindi (Model H) | Nepali (Model L) | Requirement |
 | :--- | ---: | ---: | :--- |
-| Active corpus | **520,409,408 tokens** | **632,711,308 tokens** | ~500M ✅ |
-| Manual share | **26.87%** | **21.20%** | ≥20% ✅ |
+| Active corpus | **520,409,408 tokens** | **632,711,308 tokens** | ~500M OK  |
+| Manual share | **26.87%** | **21.20%** | ≥20% OK  |
 | Documents | 848,815 | 1,367,965 | — |
-| Tokenizer | `hindi_bpe_8k` | `nepali_bpe_8k` | from scratch, not shared ✅ |
-| Fertility (tok/word) | 1.4938 | 1.5566 | >1 (sub-word) ✅ |
+| Tokenizer | `hindi_bpe_8k` | `nepali_bpe_8k` | from scratch, not shared OK  |
+| Fertility (tok/word) | 1.4938 | 1.5566 | >1 (sub-word) OK  |
 | Unknown-token rate | 0.00% | 0.00% | — |
-| Shared documents between corpora | 0 | 0 | none allowed ✅ |
+| Shared documents between corpora | 0 | 0 | none allowed OK  |
 
 **Tokenizer files are committed**, not Drive-only:
 [`tokenizers/hindi/`](tokenizers/hindi) · [`tokenizers/nepali/`](tokenizers/nepali)
@@ -449,7 +449,7 @@ python -m src.tokenizer.train_bpe train \
 
 All large artifacts live in a single shared Google Drive folder:
 
-## 🔗 [**`24KaratAu/` — all datasets, splits and tokenizers**](https://drive.google.com/drive/folders/19EANSjwyIp-z36jwCvKhwlWdcwA1Ohhq)
+## [**`24KaratAu/` — all datasets, splits and tokenizers**](https://drive.google.com/drive/folders/19EANSjwyIp-z36jwCvKhwlWdcwA1Ohhq)
 
 `https://drive.google.com/drive/folders/19EANSjwyIp-z36jwCvKhwlWdcwA1Ohhq`
 

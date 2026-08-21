@@ -336,7 +336,7 @@ def process_wiki_dump(
                 for doc in shard_docs:
                     f.write(json.dumps(doc, ensure_ascii=False) + "\n")
             print(
-                f"  ✅ Wrote {shard_file.name}: {len(shard_docs):,} docs, "
+                f"  OK  Wrote {shard_file.name}: {len(shard_docs):,} docs, "
                 f"{sum(d['clean_text_characters'] for d in shard_docs):,} chars"
             )
             shard_docs = []
@@ -349,7 +349,7 @@ def process_wiki_dump(
             for doc in shard_docs:
                 f.write(json.dumps(doc, ensure_ascii=False) + "\n")
         print(
-            f"  ✅ Wrote {shard_file.name}: {len(shard_docs):,} docs, "
+            f"  OK  Wrote {shard_file.name}: {len(shard_docs):,} docs, "
             f"{sum(d['clean_text_characters'] for d in shard_docs):,} chars"
         )
 

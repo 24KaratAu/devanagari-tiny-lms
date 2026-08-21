@@ -100,7 +100,7 @@ def run_rollover_test():
     # Verify zero document loss or duplication
     all_shard_urls = [r["url"] for s_id, docs in shards_created for r in docs]
     if len(all_shard_urls) == len(unique_records) and len(set(all_shard_urls)) == len(unique_records):
-        print("ROLLOVER VERIFICATION PASSED: Zero document loss and zero document duplication across shard boundaries! ✅")
+        print("ROLLOVER VERIFICATION PASSED: Zero document loss and zero document duplication across shard boundaries! OK")
     else:
         print("FAILED: Document count mismatch or duplicates found across shards!")
         sys.exit(1)

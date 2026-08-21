@@ -195,12 +195,12 @@ def main() -> int:
               f"{int(reachable):,} tokens")
         if reachable >= TOTAL_TOKEN_TARGET:
             share = manual_tokens / TOTAL_TOKEN_TARGET * 100
-            print(f"✅ {TOTAL_TOKEN_TARGET:,}-token target reachable "
+            print(f"OK  {TOTAL_TOKEN_TARGET:,}-token target reachable "
                   f"(manual would be {share:.1f}%)")
         else:
             need_chars_hint = ""
             deficit = TOTAL_TOKEN_TARGET * MIN_MANUAL_SHARE - manual_tokens
-            print(f"❌ Short by {int(deficit):,} manual tokens for a "
+            print(f"FAIL Short by {int(deficit):,} manual tokens for a "
                   f"{TOTAL_TOKEN_TARGET:,}-token corpus{need_chars_hint}")
 
     if args.out:

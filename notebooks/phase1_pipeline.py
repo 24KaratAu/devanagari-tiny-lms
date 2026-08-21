@@ -28,7 +28,7 @@ import sys
 def install_deps():
     subprocess.check_call([sys.executable, "-m", "pip", "install", "-q",
                            "wikiextractor", "datasets", "sentencepiece"])
-    print("✅ Dependencies installed")
+    print("OK  Dependencies installed")
 
 
 # ── Step 1: Download Wikipedia Dumps ─────────────────────────────────────
@@ -57,7 +57,7 @@ def download_wiki_dumps(base_dir="data"):
             print(f"  Downloading {lang} Wikipedia dump...")
             subprocess.run(["wget", "-q", "--show-progress", "-O", info["path"], info["url"]])
             size_mb = os.path.getsize(info["path"]) / (1024 * 1024)
-            print(f"  ✅ {lang}: {size_mb:.1f} MB")
+            print(f"  OK  {lang}: {size_mb:.1f} MB")
 
     return dumps
 
@@ -142,7 +142,7 @@ def download_hf_corpora(base_dir="data"):
             )
             results[f"{task['language']}_{task['dataset']}"] = result
         except Exception as e:
-            print(f"  ⚠️ Error: {e}")
+            print(f"  WARNING: Error: {e}")
             print(f"  Trying fallback datasets...")
 
     return results
@@ -248,35 +248,35 @@ def main():
 
     base = "data"
 
-    print("\n📦 Step 0: Installing dependencies...")
+    print("\nshard Step 0: Installing dependencies...")
     install_deps()
 
-    print("\n📥 Step 1: Downloading Wikipedia dumps...")
+    print("\nStep 1: Downloading Wikipedia dumps...")
     download_wiki_dumps(base)
 
-    print("\n🔧 Step 2: Processing Wikipedia dumps...")
+    print("\nStep 2: Processing Wikipedia dumps...")
     process_wiki_dumps(base)
 
-    print("\n📥 Step 3: Downloading HuggingFace corpora...")
+    print("\nStep 3: Downloading HuggingFace corpora...")
     download_hf_corpora(base)
 
-    print("\n🔄 Step 4: Deduplicating...")
+    print("\nStep 4: Deduplicating...")
     deduplicate_all(base)
 
-    print("\n🔗 Step 5: Merging manual + automated...")
+    print("\nStep 5: Merging manual + automated...")
     merge_corpora(base)
 
-    print("\n✂️ Step 6: Creating train/val/test splits...")
+    print("\nStep 6: Creating train/val/test splits...")
     create_all_splits(base)
 
-    print("\n🔤 Step 7: Training tokenizers...")
+    print("\nStep 7: Training tokenizers...")
     train_tokenizers(base)
 
-    print("\n📊 Step 8: Tokenizing corpora...")
+    print("\nStep 8: Tokenizing corpora...")
     tokenize_all(base)
 
     print("\n" + "=" * 60)
-    print("🎉 PHASE 1 PIPELINE COMPLETE!")
+    print("PHASE 1 PIPELINE COMPLETE!")
     print("=" * 60)
 
 

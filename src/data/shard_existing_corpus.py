@@ -46,7 +46,7 @@ def shard_existing_corpus(shard_id: str = "shard-000000"):
     )
 
     if success:
-        print("\nExisting corpus successfully sharded, uploaded to Google Drive, and verified! ✅")
+        print("\nExisting corpus successfully sharded, uploaded to Google Drive, and verified! OK")
         print(f"Shard ID:           {manifest_rec['shard_id']}")
         print(f"Drive Path:         {manifest_rec['drive_path']}")
         print(f"Raw Archive Path:   {manifest_rec.get('raw_archive_drive_path')}")

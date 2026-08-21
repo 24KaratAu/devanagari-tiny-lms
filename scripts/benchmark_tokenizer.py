@@ -86,12 +86,13 @@ def evaluate(sp: spm.SentencePieceProcessor, docs: list[str]) -> dict:
 
 
 def train_variant(train_file: Path, vocab_size: int, model_type: str,
-                  workdir: Path) -> spm.SentencePieceProcessor:
+                  workdir: Path, input_sentence_size: int = 200_000
+                  ) -> spm.SentencePieceProcessor:
     prefix = workdir / f"{model_type}_{vocab_size}"
     spm.SentencePieceTrainer.train(
         input=str(train_file), model_prefix=str(prefix), vocab_size=vocab_size,
         model_type=model_type, character_coverage=0.9995, num_threads=8,
-        max_sentence_length=8192, input_sentence_size=200_000,
+        max_sentence_length=8192, input_sentence_size=input_sentence_size,
         shuffle_input_sentence=True,
         pad_id=0, unk_id=1, bos_id=2, eos_id=3,
         pad_piece="<pad>", unk_piece="<unk>", bos_piece="<bos>", eos_piece="<eos>",
@@ -129,6 +130,14 @@ def main() -> int:
     ap.add_argument("--sweep", default="4000,8000,16000,32000")
     ap.add_argument("--skip-sweep", action="store_true",
                     help="Only evaluate --model; do not fit comparison tokenizers.")
+    ap.add_argument("--algorithms", default=None,
+                    help="Head-to-head at one vocab size, e.g. 'bpe,unigram'. Fits each "
+                         "on identical data with identical settings, which is what makes "
+                         "the algorithm comparison fair (report 6.2.2).")
+    ap.add_argument("--algorithms-vocab", type=int, default=8000)
+    ap.add_argument("--input-sentence-size", type=int, default=200_000,
+                    help="SentencePiece samples at most this many lines. The shipped "
+                         "tokenizers used 1,000,000; match it for a like-for-like test.")
     ap.add_argument("--language", choices=sorted(SAMPLES), default="hindi",
                     help="Selects the example sentences shown in the report.")
     args = ap.parse_args()
@@ -172,7 +181,19 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as td:
         workdir = Path(td)
         train_file = Path(args.train)
-        for vs in ([] if args.skip_sweep else [int(v) for v in args.sweep.split(",")]):
+        if args.algorithms:
+            for mt in [x.strip() for x in args.algorithms.split(",")]:
+                print(f"  fitting {mt} {args.algorithms_vocab} on "
+                      f"{args.input_sentence_size:,} sentences...", flush=True)
+                v = evaluate(train_variant(train_file, args.algorithms_vocab, mt,
+                                           workdir, args.input_sentence_size), val_docs)
+                v.pop("_freq")
+                v["model_type"] = mt
+                v["requested_vocab"] = args.algorithms_vocab
+                v["input_sentence_size"] = args.input_sentence_size
+                sweep.append(v)
+        for vs in ([] if (args.skip_sweep or args.algorithms)
+                   else [int(v) for v in args.sweep.split(",")]):
             for mt in (("bpe", "unigram") if vs == 8000 else ("bpe",)):
                 print(f"  fitting {mt} {vs}...", flush=True)
                 v = evaluate(train_variant(train_file, vs, mt, workdir), val_docs)

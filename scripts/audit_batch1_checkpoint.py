@@ -75,7 +75,7 @@ def run_batch1_audit():
         print(f"ERROR: Shard packaging/upload failed for {shard_id}!")
         sys.exit(1)
 
-    print(f"Shard {shard_id} successfully packaged, uploaded to Google Drive, remotely verified, and cleaned locally! ✅")
+    print(f"Shard {shard_id} successfully packaged, uploaded to Google Drive, remotely verified, and cleaned locally! OK")
 
     # 3. Compute Corpus Statistics
     clean_lengths = [r["clean_text_characters"] for r in unique_accepted_records]
@@ -259,9 +259,9 @@ def run_batch1_audit():
         and empty_docs == 0
         and missing_txt == 0
     ):
-        print("READY FOR BATCH 2 ✅")
+        print("READY FOR BATCH 2 OK")
     else:
-        print("NOT READY FOR BATCH 2 ❌")
+        print("NOT READY FOR BATCH 2 FAIL")
     print("=" * 70)
 
 

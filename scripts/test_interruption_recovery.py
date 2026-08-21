@@ -60,7 +60,7 @@ def run_interruption_test():
     print(f"\n--- Pass 2: Resuming Pipeline for Shard {shard_id} ---")
     already_uploaded = is_shard_already_uploaded(shard_id)
     if already_uploaded:
-        print(f"STEP 1 PASSED: Resumed pipeline detected shard {shard_id} is already uploaded & verified! ✅")
+        print(f"STEP 1 PASSED: Resumed pipeline detected shard {shard_id} is already uploaded & verified! OK")
 
     pass2_ok, pass2_rec = package_and_upload_shard(
         shard_id=shard_id,
@@ -72,10 +72,10 @@ def run_interruption_test():
     # Clean leftover test file
     if local_path.exists():
         local_path.unlink()
-        print(f"STEP 2 PASSED: Leftover temporary shard file cleaned up safely after resumption! ✅")
+        print(f"STEP 2 PASSED: Leftover temporary shard file cleaned up safely after resumption! OK")
 
     print("\n" + "=" * 60)
-    print("INTERRUPTION RECOVERY TEST PASSED ✅")
+    print("INTERRUPTION RECOVERY TEST PASSED OK")
     print("=" * 60)
 
 
