@@ -5,7 +5,7 @@
 Definitive record of what was collected, by which script or notebook, at which commit, and into which shards. Times are IST (Drive stores UTC; +05:30 applied). Document and character counts are measured unless marked 'estimated', which means extrapolated from a sampled subset by byte size.
 
 `where` is **colab** for a notebook cell run on a Google Colab runtime writing
-to the mounted Drive, and **local** for a script run on the author's machine
+to the mounted Drive, and **local** for a script run on my machine
 streaming to Drive over `rclone`.
 
 ---
