@@ -6,6 +6,37 @@
 
 ---
 
+## Phase 1 at a Glance
+
+> **Report** → [`report/phase1_report.md`](report/phase1_report.md) ·
+> **Collection ledger** → [`report/collection_ledger.md`](report/collection_ledger.md) ·
+> **All data** → [**Google Drive**](https://drive.google.com/drive/folders/19EANSjwyIp-z36jwCvKhwlWdcwA1Ohhq)
+> (Anyone with the link → Viewer)
+
+| | Hindi (Model H) | Nepali (Model L) | Requirement |
+| :--- | ---: | ---: | :--- |
+| Active corpus | **520,409,408 tokens** | **632,711,308 tokens** | ~500M ✅ |
+| Manual share | **26.87%** | **21.20%** | ≥20% ✅ |
+| Documents | 848,815 | 1,367,965 | — |
+| Tokenizer | `hindi_bpe_8k` | `nepali_bpe_8k` | from scratch, not shared ✅ |
+| Fertility (tok/word) | 1.4938 | 1.5566 | >1 (sub-word) ✅ |
+| Unknown-token rate | 0.00% | 0.00% | — |
+| Shared documents between corpora | 0 | 0 | none allowed ✅ |
+
+**Tokenizer files are committed**, not Drive-only:
+[`tokenizers/hindi/`](tokenizers/hindi) · [`tokenizers/nepali/`](tokenizers/nepali)
+
+**Every measured claim in the report is reproducible** — report §7.6 maps each
+figure to the command that regenerates it, e.g.:
+
+```bash
+python scripts/verify_corpus_claims.py cross-corpus     # corpora share no documents
+python scripts/verify_corpus_claims.py uniqueness --language nepali
+python scripts/benchmark_tokenizer.py --language hindi --model tokenizers/hindi/hindi_bpe_8k.model ...
+```
+
+---
+
 ## Project Overview
 
 This project builds two completely independent, from-scratch decoder-only Transformer language models (~25M parameters each) for two Indian languages sharing the Devanagari script:
