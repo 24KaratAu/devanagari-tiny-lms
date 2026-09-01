@@ -52,6 +52,39 @@ This project builds two completely independent, from-scratch decoder-only Transf
 
 ## Repository Structure
 
+> [!NOTE]
+> **Phase 2 layout: shared implementation, per-language artifacts.**
+> Guideline 7 of the brief asks for the repository organized by language; guideline 1
+> asks for modular, non-duplicated code. Both Phase 1 vocabularies came out at exactly
+> **8,000**, so Model H and Model L are *architecturally identical* — same 25,379,840
+> parameters, same tensor shapes. Duplicating `model/`, `train/`, and `eval/` into two
+> trees would mean maintaining two copies of the same network, where a fix applied to
+> one and missed in the other silently breaks the very H-vs-L comparison the project
+> is built on.
+>
+> So the Transformer implementation lives once under `src/`, while **`hindi/` and
+> `nepali/` are self-contained for everything that actually differs**: configs, training
+> logs, loss curves, evaluation outputs, generated samples, attention figures, and
+> checkpoint links. The constraint guideline 7 protects is fully met — **the two models
+> share no data, tokenizer, vocabulary, or weights.** Phase 1 already set this precedent
+> with a shared `src/data/` alongside `data/{lang}` and `tokenizers/{lang}`.
+
+```text
+hindi/                               # Model H — self-contained artifacts
+├── README.md                        #   corpus counts, run command, Drive links
+├── configs/model.yaml               #   architecture (25,379,840 params)
+├── configs/train.yaml               #   optimizer, schedule, paths
+├── logs/train.jsonl                 #   per-step log -> loss curve
+├── figures/ eval/ samples/          #   plots, metrics, generations
+nepali/                              # Model L — same structure
+src/
+├── data/pack_tokens.py              # JSONL -> uint16 token stream
+├── model/                           # embeddings, attention, block, GPT
+├── train/                           # dataset, trainer, checkpointing
+└── eval/                            # PPL/BPB, generation, metrics, attention
+tests/                               # causal mask, param count, checkpoint resume
+```
+
 ```text
 .
 ├── configs/                         # Model & training configurations
@@ -495,7 +528,7 @@ source produced which file.
 | Cleaned dataset — manual (JSONL) | `ne` | `nepali/cleaned/manual/` | 2.217 GiB |
 | Raw crawled HTML (gzipped per shard) | `ne` | `nepali/raw/manual_web/` | 2.193 GiB |
 | Raw Wikimedia dump (`.xml.bz2`) | `ne` | `nepali/raw/wiki_dump/` | 0.051 GiB |
-| Train / val / test splits | `ne` | `nepali/splits/` | 2.659 GiB |
+| Train / val / test splits | `ne` | `nepali/splits/` | 13.348 GiB |
 | BPE tokenizer model + vocab (`8k`) | `ne` | `nepali/tokenizer/nepali_bpe_8k.{model,vocab}` | 599 KiB |
 | Superseded tokenizer (`32k` BPE + Unigram) | `ne` | `nepali/tokenizer/` | 4 MiB |
 | Pretrained checkpoints | H / L | *Coming in Phase 2* | — |

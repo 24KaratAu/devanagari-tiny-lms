@@ -61,7 +61,8 @@ env/
 .DS_Store
 *.swp
 
-logs/
+/logs/          # root-level scratch logs only -- NOT hindi/logs/ or nepali/logs/,
+                # which hold train.jsonl and are graded deliverables
 *.log
 
 doubts-answers.md
@@ -71,4 +72,7 @@ LMA_Individual_Project_v1.pdf
 are_there_any_papers_on_how_to_tokenize_devnagri.pdf
 devanagari_paper_notes.txt
 pdf_text.txt
-pdf_text.txt
+phase2_plan.md
+
+
+.claude/

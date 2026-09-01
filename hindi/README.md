@@ -1,0 +1,68 @@
+# Model H — `hindi`
+
+Everything specific to Model H lives here. The Transformer implementation itself is
+shared with Model L under `src/` — the two models are architecturally
+identical (both Phase 1 vocabularies came out at exactly 8,000), so duplicating the
+code would mean maintaining two copies of the same 25,379,840-parameter network.
+
+**The models share no data, tokenizer, vocabulary, or weights.** Only the
+implementation is common; every artifact below is this language's alone.
+
+## Contents
+
+| Path | What |
+| :--- | :--- |
+| `configs/model.yaml` | Architecture — 25,379,840 params |
+| `configs/train.yaml` | Optimizer, schedule, data and checkpoint paths |
+| `logs/train.jsonl` | Per-step training log; the loss curve is plotted from this |
+| `figures/` | Loss curves, attention heatmaps, entropy / distance plots |
+| `eval/` | PPL / BPB, BLEU / chrF++ / ROUGE-L, diversity metrics |
+| `samples/` | Generated continuations (greedy, T=0.5, 1.0, 1.5) |
+
+Tokenizer: `tokenizers/hindi/hindi_bpe_8k.model` (Phase 1 deliverable, kept at its
+Phase 1 path so the Phase 1 report's references stay valid).
+
+## Corpus
+
+Token counts **measured** on 2026-09-02 by tokenizing every byte of the split
+files with the Phase 1 model — not estimated.
+
+| Split | Tokens |
+| :--- | ---: |
+| train | 467,874,360 |
+| val | 26,127,194 |
+| test | 26,391,043 |
+| **total** | **520,392,597** |
+
+Measured chars/token: **3.481**.
+
+## Training
+
+Platform: **Google Colab (T4)**. One pass over the training split = **14,329 steps**
+at 64 x 512 = 32,768 tokens per step.
+
+```bash
+python -m src.train.trainer --config hindi/configs/train.yaml
+```
+
+Resume is automatic: the trainer looks for `checkpoint_latest.pt` in the checkpoint
+directory and continues from it, restoring model, optimizer, scheduler, GradScaler,
+step, and RNG state. Nothing extra to pass.
+
+## Checkpoints
+
+Drive: `gdrive:24KaratAu/hindi/checkpoints/`
+(shared as *Anyone with the link -> Viewer*)
+
+| File | Cadence |
+| :--- | :--- |
+| `checkpoint_latest.pt` | every 500 steps |
+| `checkpoint_best.pt` | on validation-loss improvement |
+| `checkpoint_step_N.pt` | every 2,000 steps |
+| `config.json` | hyperparameters, saved alongside the weights |
+
+Each is ~305 MB (101.5 MB fp32 weights + AdamW moment buffers) and contains model
+weights, optimizer state, scheduler state, training step, and configuration, per
+the brief's mandatory checkpointing requirement.
+
+> **Drive links to be filled in once the run completes.**

@@ -1,0 +1,38 @@
+# Model L — Nepali decoder-only Transformer (Phase 2)
+#
+# Exact trainable parameter count: 25,379,840
+# Both Phase 1 vocabularies are exactly 8,000, so Model H and Model L are
+# identical in shape. That is deliberate: it makes the H-vs-L comparison a test
+# of the *data* rather than of capacity.
+
+name: model_l_nepali
+language: nepali
+
+architecture:
+  vocab_size: 8000        # Phase 1 BPE (tokenizers/nepali/nepali_bpe_8k.model)
+  d_model: 512            # 8 heads x 64-dim head; standard small-LM width
+  n_layers: 8             # depth favoured over FFN width at a fixed budget
+  n_heads: 8              # d_k = d_model / n_heads = 64
+  d_ff: 1536              # 3x d_model. 4x (2048) would give 29.6M, over target
+  ctx_len: 512            # learned absolute positions cap sequences at exactly this
+  dropout: 0.1            # embeddings, attention probabilities, sublayer outputs
+  tie_weights: true       # LM head shares the token embedding; saves 4,096,000 params
+  pos_encoding: learned   # learned | none  ("none" drives the bonus ablation)
+  norm: pre               # pre-norm LayerNorm: stable gradients through 8 residual blocks
+  activation: gelu
+
+tokenizer:
+  model: tokenizers/nepali/nepali_bpe_8k.model
+  eos_id: 3
+  bos_id: 2
+  pad_id: 0
+  unk_id: 1
+
+# Measured 2026-09-02 by tokenizing every byte of the split files.
+data:
+  tokens:
+    train: 569684621
+    val: 31676467
+    test: 31385814
+  chars_per_token: 4.126
+  bytes_per_token: 10.99

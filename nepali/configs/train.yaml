@@ -1,0 +1,46 @@
+# Model L training configuration — Kaggle (T4), /kaggle/working checkpoints.
+run_name: model_l_nepali
+model_config: nepali/configs/model.yaml
+seed: 42
+
+data:
+  # Written by src/data/pack_tokens.py — flat uint16 token streams.
+  train_bin: /kaggle/input/nepali-tokens/nepali_train.bin
+  val_bin:   /kaggle/input/nepali-tokens/nepali_val.bin
+  test_bin:  /kaggle/input/nepali-tokens/nepali_test.bin
+
+optim:
+  optimizer: adamw
+  lr: 3.0e-4              # peak LR, reached at the end of warmup
+  betas: [0.9, 0.95]      # GPT-style; beta2=0.95 suits short runs
+  eps: 1.0e-8
+  weight_decay: 0.1       # applied to matmul weights only, not biases/LayerNorm
+  grad_clip: 1.0
+
+schedule:
+  type: cosine
+  warmup_steps: 500
+  min_lr: 3.0e-5          # cosine floor = peak / 10
+
+train:
+  batch_size: 64          # 64 x 512 = 32,768 tokens per step
+  grad_accum: 1           # raise to 2 (and halve batch_size) if the T4 OOMs
+  max_steps: 17429        # one pass over 571,116,946 train tokens (incl. <eos>)
+  precision: fp16         # T4 has no bf16; AMP + GradScaler
+  compile: false          # torch.compile is not worth the warmup on a 4-day budget
+
+eval:
+  every: 500              # steps between validation passes
+  val_tokens: 2000000     # fixed 2M-token slice during training; full val at the end
+  batch_size: 64
+
+checkpoint:
+  # Kaggle has no Drive mount; persist via "Save Version" and re-attach on resume.
+  dir: /kaggle/working/checkpoints
+  save_latest_every: 500  # overwrites checkpoint_latest.pt
+  save_milestone_every: 2000
+  keep_best: true         # checkpoint_best.pt, on validation-loss improvement
+
+log:
+  jsonl: nepali/logs/train.jsonl   # loss curve; committed, not Drive-only
+  every: 20
