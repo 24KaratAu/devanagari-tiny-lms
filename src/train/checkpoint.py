@@ -54,21 +54,41 @@ def _rng_state() -> dict:
     }
 
 
+def _as_cpu_byte(t):
+    """Coerce a saved RNG state back to the CPU uint8 tensor torch requires.
+
+    ``torch.load(map_location="cuda")`` moves *every* tensor in the payload to
+    the GPU, RNG states included, and ``set_rng_state``/``set_rng_state_all``
+    reject anything that is not a CPU ByteTensor.
+    """
+    if hasattr(t, "cpu"):
+        return t.cpu().to(torch.uint8)
+    return t
+
+
 def _restore_rng(state: dict):
-    """Restore RNGs saved by :func:`_rng_state`, tolerating a device change."""
+    """Restore RNGs saved by :func:`_rng_state`, tolerating a device change.
+
+    Best-effort by design. Replaying the exact sample and dropout streams is
+    desirable but not worth aborting a multi-hour run over: if the states cannot
+    be restored (different GPU count, a checkpoint written on another device),
+    training continues from correct weights with a fresh RNG stream.
+    """
     if not state:
         return
-    random.setstate(state["python"])
-    np.random.set_state(state["numpy"])
-    torch.set_rng_state(state["torch"].cpu() if hasattr(state["torch"], "cpu")
-                        else state["torch"])
-    if state.get("cuda") is not None and torch.cuda.is_available():
-        try:
-            torch.cuda.set_rng_state_all(state["cuda"])
-        except (RuntimeError, ValueError):
-            # Resuming on a different GPU count: model/optimizer state is still
-            # valid, only the CUDA RNG stream restarts.
-            pass
+    try:
+        random.setstate(state["python"])
+        np.random.set_state(state["numpy"])
+        torch.set_rng_state(_as_cpu_byte(state["torch"]))
+
+        cuda_states = state.get("cuda")
+        if cuda_states and torch.cuda.is_available():
+            states = [_as_cpu_byte(t) for t in cuda_states]
+            if len(states) == torch.cuda.device_count():
+                torch.cuda.set_rng_state_all(states)
+    except (RuntimeError, ValueError, TypeError, KeyError, IndexError) as e:
+        print(f"  [warn] RNG state not restored ({type(e).__name__}: {e}); "
+              f"continuing with a fresh stream")
 
 
 def save_checkpoint(path, model, optimizer, scheduler, scaler, step,

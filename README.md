@@ -37,6 +37,63 @@ python scripts/benchmark_tokenizer.py --language hindi --model tokenizers/hindi/
 
 ---
 
+## Phase 2 at a Glance
+
+> **Report** → [`report/phase2_report.md`](report/phase2_report.md) ·
+> **Model H** → [`hindi/`](hindi) · **Model L** → [`nepali/`](nepali) ·
+> **Checkpoints** → [**Google Drive**](https://drive.google.com/drive/folders/19EANSjwyIp-z36jwCvKhwlWdcwA1Ohhq)
+> (Anyone with the link → Viewer)
+
+Two independently pretrained decoder-only Transformers, identical in shape,
+sharing no data, tokenizer, vocabulary, or weights.
+
+| | Model H (Hindi) | Model L (Nepali) |
+| :--- | ---: | ---: |
+| Trainable parameters | **25,379,840** | **25,379,840** |
+| Training tokens (1 epoch) | 468,638,315 | 571,113,472 |
+| Steps × tokens/step | 14,329 × 32,768 | 17,429 × 32,768 |
+| Wall-clock (T4, fp16) | 3.69 h | 4.87 h |
+| Throughput | 36,898 tok/s | 37,549 tok/s |
+| Final train loss | 3.4603 | 3.5265 |
+| **Best val cross-entropy** | **3.0053** | **3.1682** |
+| **Perplexity** | **20.19** | 23.77 |
+| **Bits-per-byte** | 0.4905 | **0.4159** |
+| Bits-per-character | 1.2455 | **1.1078** |
+
+**The three metrics disagree, and that is the finding.** Hindi wins on perplexity
+by 15%; Nepali wins on bits-per-byte by 15% and bits-per-character by 11%. The
+cause is tokenizer fertility: Nepali's 8k BPE packs **4.126 chars/token against
+Hindi's 3.481** (+18.5%), so a Nepali token is a harder prediction that covers
+more text. Per-token perplexity penalises this; per-character and per-byte
+normalisation reward it. This is precisely why the brief requires BPB *"to make
+the two languages more comparable when tokenizers differ"* — and why the naive
+reading, *"Hindi is the better model because its perplexity is lower"*, is wrong.
+
+BPB is not fully neutral either: Nepali averages **10.99 bytes/token** against
+Hindi's **8.84**, so BPB is deflated for Nepali by UTF-8 encoding density rather
+than by model quality. Bits-per-character is the fairest of the three and still
+favours Nepali, by a smaller margin. Report §2 works through all three.
+
+**Neither model overfitted.** Best validation loss landed on the *final* step in
+both runs, across 29 and 35 evaluations, with monotonically decreasing validation
+loss throughout. Both runs are data-limited rather than converged — they were
+still improving when the token budget was exhausted.
+
+**Corpus sizes are measured, not estimated.** Every byte of all six split files
+was tokenized with the committed Phase 1 models on 2026-09-02: Hindi
+**520,392,597** tokens and Nepali **632,746,902**. These confirm the Phase 1
+estimates above to within **0.006%** — Phase 1 derived its counts as
+characters ÷ measured chars-per-token, and that approximation holds.
+
+> [!NOTE]
+> **Model H and Model L have identical parameter counts** because both Phase 1
+> vocabularies came out at exactly 8,000. That makes the H-vs-L comparison a
+> controlled test of the *data* rather than of capacity, and it is why the
+> Transformer implementation lives once in `src/` instead of being duplicated
+> per language.
+
+---
+
 ## Project Overview
 
 This project builds two completely independent, from-scratch decoder-only Transformer language models (~25M parameters each) for two Indian languages sharing the Devanagari script:
@@ -155,7 +212,11 @@ tests/                               # causal mask, param count, checkpoint resu
 
 ---
 
-## The Data Collection and Engineering Journey
+## The Engineering Journey
+
+*Lessons 1–14 are Phase 1 (collection, cleaning, tokenizer); 15–19 are Phase 2
+(packing, training, checkpointing). Each records a decision that cost something
+to learn.*
 
 Building a ~500M token corpus per language on student-tier compute (free Google Colab GPUs/CPUs) required significant architectural iteration. Below is the technical log of the engineering challenges encountered and how our pipeline evolved into a zero-RAM, crash-resilient streaming system.
 
@@ -275,6 +336,77 @@ Building a ~500M token corpus per language on student-tier compute (free Google 
 ### 14. Final High-Yield Convergence (~400M Tokens in ~25 Minutes)
 * **The Breakthrough**: Originally, we filtered Sangraha strictly for PDF and ASR transcripts. However, because each 340MB parquet chunk contained mixed document types, discarding web text meant each file yielded only 2–3M tokens, requiring over 50 files to hit our target.
 * **The Final Architecture**: Sangraha Verified documents are human-curated and clean. By accepting all verified documents (PDF, ASR, and Web), each 340MB file yielded **35M+ clean tokens**. The entire 400M automated token target is now reached in just **11–12 parquet files (~25 minutes total runtime)**.
+
+---
+
+### Phase 2 — Packing, Training, and Checkpointing
+
+### 15. Pack the Corpus Once, Not Once Per Step
+
+* **The Challenge**: Tokenizing on the fly inside the training loop would have put
+  SentencePiece encoding and Drive I/O on the critical path of all 31,758 steps.
+* **The Solution**: `src/data/pack_tokens.py` encodes each split once into a flat
+  `uint16` array. The vocabulary is 8,000, so a token id fits in two bytes:
+  Hindi's training text drops **3.86 GiB → 0.87 GiB** and Nepali's
+  **5.83 GiB → 1.06 GiB**. The trainer memory-maps the result, so a batch is a
+  slice rather than a parse. This is a lossless change of representation — the
+  packed output was verified byte-identical to a sequential single-process
+  encode — not a subsample.
+
+### 16. `\n\n` Is Not a Document Boundary
+
+* **The Challenge**: `create_splits.py` writes the plain-text splits as
+  `text.strip() + "\n\n"`, so the obvious way to place `<eos>` is to split on a
+  blank line. But **81.9% of documents contain internal blank lines**. Splitting
+  Hindi's `train.txt` that way yields **1,859,604 blocks against 848,815 real
+  documents — 2.19×**.
+* **Why it matters**: `<eos>` at 2.2× too many positions teaches the model that
+  documents end mid-article, which is exactly what makes generation terminate
+  early.
+* **The Solution**: Pack from the `.jsonl`, one JSON object per line. The
+  resulting `<eos>` counts came to **848,815** and **1,367,965** — matching the
+  Phase 1 document counts exactly, to the document.
+
+### 17. Bits-Per-Byte Must Count Text Bytes, Not File Bytes
+
+* **The Challenge**: The packer's first version counted `len(raw)` per JSONL line
+  for its `n_bytes_utf8` statistic. That line also carries `doc_id`, `source`,
+  `collection_type`, `language`, and `text_sha256` — **45% envelope on a typical
+  record**.
+* **Why it matters**: `BPB = CE / (ln2 × bytes_per_token)`. Inflating
+  bytes/token by 6% **understates BPB by 5.7%**, flattering both models, and the
+  envelope ratio differs between the two languages — so it would have skewed the
+  H-vs-L comparison in an unpredictable direction.
+* **How it surfaced**: the packer reported 9.38 bytes/token for Hindi where an
+  earlier independent pass over the `.txt` files had measured **8.85**. One
+  number disagreeing with another is the only reason it was caught.
+* **The Solution**: count `len(text.encode("utf-8"))`, and a `--repair-bytes`
+  mode that corrects existing sidecars without re-tokenizing.
+
+### 18. A Resume Test That Passes on CPU Proves Nothing About the GPU
+
+* **The Challenge**: `test_checkpoint_resume.py` asserted that training after a
+  save/load cycle reproduces uninterrupted training *exactly* — and it passed.
+  The first real GPU resume then died with
+  `TypeError: RNG state must be a torch.ByteTensor`.
+* **The Cause**: the trainer loaded with `map_location="cuda"`, which moves
+  **every** tensor in the payload to the GPU, RNG states included.
+  `set_rng_state_all()` requires CPU byte tensors. The tests saved and loaded on
+  CPU, so the only code path that ever runs in production was never exercised.
+* **The Solution**: load with `map_location="cpu"` (`load_state_dict` copies into
+  an already-on-GPU model regardless), coerce RNG states back to CPU `uint8`
+  anyway, and make restoration **best-effort** — correct weights matter, an
+  exactly replayed dropout stream does not. Plus two regression tests that
+  simulate a GPU-shaped payload.
+
+### 19. A Smoke Run Must Not Be Able to Touch Real Checkpoints
+
+* **The Challenge**: the 100-step smoke run wrote to a throwaway `--ckpt-dir`,
+  but `mirror_to` was still active in the config, so its toy checkpoints were
+  pushed to the real Drive folder. The subsequent full run found them and
+  resumed a 4-hour job from a 100-step model.
+* **The Solution**: a `--no-mirror` flag, used by both notebooks' smoke cells, and
+  the contaminated remote purged before relaunching.
 
 ---
 
@@ -406,6 +538,123 @@ at equal data: [`report/hindi_tokenizer_benchmark.json`](report/hindi_tokenizer_
 
 ---
 
+## Model Architecture and Pretraining
+
+Built from primitive PyTorch layers only — `nn.Linear`, `nn.Embedding`,
+`nn.LayerNorm`, `nn.Dropout`. No `nn.Transformer*`, no HuggingFace model classes,
+no pre-built attention. Implementation in [`src/model/`](src/model); configs in
+[`hindi/configs/model.yaml`](hindi/configs/model.yaml) and
+[`nepali/configs/model.yaml`](nepali/configs/model.yaml).
+
+| Hyperparameter | Value | Why |
+| :--- | ---: | :--- |
+| `d_model` | 512 | 8 heads × 64-dim head, the standard small-LM width |
+| `n_layers` | 8 | Depth preferred over FFN width at a fixed budget |
+| `n_heads` | 8 | `d_k = d_model / n_heads = 64` |
+| `d_ff` | 1536 | 3× `d_model`. See the depth/width note below |
+| `ctx_len` | 512 | Learned absolute positions cap sequences at exactly this |
+| `dropout` | 0.1 | Embeddings, attention probabilities, sublayer outputs |
+| `vocab_size` | 8,000 | Phase 1 BPE, one per language, never shared |
+| Weight tying | yes | LM head shares the token embedding: saves 4,096,000 params |
+| Positional encoding | learned absolute | Simple at fixed length, and trivially ablatable |
+| Normalisation | pre-norm LayerNorm | Stable gradients through 8 residual blocks |
+| Activation | GELU | GPT-2 standard |
+
+### Exact parameter count — 25,379,840
+
+| Component | Formula | Parameters |
+| :--- | :--- | ---: |
+| Token embedding | `8000 × 512` | 4,096,000 |
+| Positional embedding | `512 × 512` | 262,144 |
+| Per block — attention (Q,K,V,O + biases) | `4 × (512×512 + 512)` | 1,050,624 |
+| Per block — FFN (+ biases) | `(512×1536+1536) + (1536×512+512)` | 1,574,912 |
+| Per block — 2 LayerNorms | `2 × 2 × 512` | 2,048 |
+| **Per block** | | **2,627,584** |
+| × 8 blocks | | 21,020,672 |
+| Final LayerNorm | `2 × 512` | 1,024 |
+| LM head | tied — no extra | 0 |
+| **Total** | | **25,379,840** |
+
+`TransformerLMConfig.expected_params()` computes this in closed form and
+[`tests/test_model_shapes.py`](tests/test_model_shapes.py) asserts the built model
+matches it, so a wiring mistake cannot pass silently.
+
+### Why `d_ff = 1536` and not 2048
+
+The conventional 4× expansion (`d_ff = 2048`) yields **29.6M** parameters, well
+over the ~25M target. Two ways to come back: drop to 6 layers at 4× (23.3M), or
+keep 8 layers at 3× (25.4M). We kept the depth. For a model this small, additional
+blocks buy compositional depth — more opportunities to re-attend and re-combine —
+whereas a wider FFN only enlarges a per-position transform that is already
+generously sized. A 2.67–3× expansion is also standard practice in SwiGLU-era
+models, so 3× is well precedented rather than an arbitrary trim.
+
+> [!NOTE]
+> **Reconciling the Phase 1 vocabulary argument.** The *Why 8,000* section below
+> reasons about the embedding budget assuming `d_model = 256`, where an 8k table
+> costs 8.1% of the parameter budget. The shipped model uses `d_model = 512`, so
+> the real figure is **16.1%** (4,096,000 of 25,379,840) — halved back to an
+> effective 8.1% by weight tying, which reuses that same matrix as the output
+> head. The Phase 1 conclusion is unchanged and the direction of the argument
+> holds: at 32k the tied table alone would be 65.5% of the budget.
+
+### Training configuration
+
+| Setting | Value | Why |
+| :--- | :--- | :--- |
+| Optimizer | AdamW, `betas=(0.9, 0.95)` | `beta2=0.95` suits short runs |
+| Weight decay | 0.1, matmul weights only | Biases and LayerNorm gains are 1-D and get none |
+| Peak LR | 3e-4 | Standard for ~25M at this batch size |
+| Schedule | 500-step linear warmup → cosine to 3e-5 | Adam's second moment is unreliable early; full-size steps then can land the model somewhere it never recovers from |
+| Tokens/step | 32,768 | Hindi 16×512×4, Nepali 32×512×2 |
+| Precision | fp16 AMP + GradScaler | The T4 has no bf16 |
+| Gradient clipping | 1.0 | Observed grad norms settled at 0.7–1.0 |
+| Epochs | 1 | ≈500M tokens, ~18.5 and 22.5 tokens/parameter |
+
+**On the token budget.** Both runs land near the Chinchilla-optimal ratio of ~20
+tokens per parameter (Hindi 18.5, Nepali 22.5), so the models are neither
+undertrained nor overtrained for their size. A second epoch was considered and
+rejected: extrapolating the late-run improvement rate gives roughly ppl
+20.19 → 17.2 for Hindi, the learning rate has already annealed to its floor
+(so a second epoch means retraining from scratch at 2× cost, not continuing),
+and the brief attaches no marks to perplexity. The same GPU hours are worth more
+spent on the no-positional-embedding ablation.
+
+**On batch size and gradient accumulation.** Both models see 32,768 tokens per
+optimisation step, but reach it differently: Hindi at `16 × 4` and Nepali at
+`32 × 2`. The gradient is mathematically identical either way. Batch 64 in a
+single pass runs out of memory on a 15 GB T4 — cross-entropy upcasts logits to
+fp32, making `64 × 512 × 8000 × 4 B = 1000 MiB` in one tensor, and the explicit
+`(B, h, T, T)` attention matrices scale with batch size too. Hindi ran first and
+peaked at 3.9 GiB, which showed batch 32 was safe for Nepali.
+
+### Checkpointing
+
+Mandatory per the brief: *"A run that cannot resume after interruption will lose
+marks."* Every checkpoint in [`src/train/checkpoint.py`](src/train/checkpoint.py)
+carries the five required fields — model weights, optimizer state, scheduler
+state, training step, configuration — plus four more that an interrupted run
+actually needs: **GradScaler state** (its loss scale adapts during training),
+**RNG states**, `best_val_loss`, and `tokens_seen`.
+
+Writes are **atomic** (`.tmp` → `fsync` → `os.replace`). A session killed midway
+through a 305 MB write to a network mount would otherwise leave a truncated file
+exactly where the resume path expects a valid one, converting a recoverable
+disconnect into a lost run. `find_resume_point()` falls back to the newest intact
+milestone if `latest` is unreadable.
+
+| | Cadence | Size |
+| :--- | :--- | ---: |
+| `checkpoint_latest.pt` | every 500 steps | 304.7 MB |
+| `checkpoint_best.pt` | on validation improvement | 304.7 MB |
+| `checkpoint_step_N.pt` | every 2,000 steps, 6 kept | 304.7 MB |
+| `config.json` | once, beside the weights | — |
+
+304.7 MB is fp32 weights (101.5 MB) plus AdamW's two moment buffers. At a
+500-step cadence a crash costs at most ~3 minutes of compute.
+
+---
+
 ## How to Reproduce
 
 ### Option A: Run on Google Colab (Recommended)
@@ -503,6 +752,80 @@ python -m src.tokenizer.train_bpe train \
 
 ---
 
+## Reproducing Phase 2
+
+All Phase 2 work runs on free Colab / Kaggle GPUs. Notebooks are thin
+orchestration; the logic lives in `src/`.
+
+### 1. Pack the corpus (CPU, ~30–50 min)
+
+[`notebooks/phase2_setup_colab.ipynb`](notebooks/phase2_setup_colab.ipynb) —
+mounts Drive, encodes the JSONL splits into `uint16` streams, verifies the token
+counts, runs the test suite, and prints the parameter breakdown.
+
+```bash
+python -m src.data.pack_tokens \
+    --input-dir  <drive>/hindi/splits \
+    --tokenizer  tokenizers/hindi/hindi_bpe_8k.model \
+    --output-dir <drive>/hindi/tokens \
+    --language   hindi
+```
+
+Verification asserts the packed counts against figures measured independently by
+streaming and tokenizing every byte of all six split files:
+
+| | train | val | test | total |
+| :--- | ---: | ---: | ---: | ---: |
+| Hindi | 467,874,360 | 26,127,194 | 26,391,043 | **520,392,597** |
+| Nepali | 569,684,621 | 31,676,467 | 31,385,814 | **632,746,902** |
+
+### 2. Tests (~15 s)
+
+```bash
+python -m pytest tests/ -v
+```
+
+23 tests. The load-bearing ones: `test_causal_mask.py` verifies empirically that
+changing the token at `t+1` leaves the logits at every position `≤ t` bit-for-bit
+unchanged (required by §2.1 — a broken mask trains normally and reports an
+excellent validation loss while copying from the future);
+`test_checkpoint_resume.py` asserts that resumed training produces *identical*
+losses to uninterrupted training, not merely that weights match.
+
+### 3. Pretrain
+
+```bash
+python -m src.train.trainer --config hindi/configs/train.yaml     # Colab,  3.69 h
+python -m src.train.trainer --config nepali/configs/train.yaml    # Kaggle, 4.87 h
+```
+
+[`notebooks/pretrain_hindi_colab.ipynb`](notebooks/pretrain_hindi_colab.ipynb) ·
+[`notebooks/pretrain_nepali_kaggle.ipynb`](notebooks/pretrain_nepali_kaggle.ipynb)
+
+Both notebooks run a 100-step smoke test first — it catches a bad config or an
+OOM in about a minute rather than hours into a run, and it is what caught the
+batch-64 out-of-memory failure described above.
+
+**Resume needs no flag.** The trainer looks for `checkpoint_latest.pt` in the
+configured directory and continues from it, restoring model, optimizer,
+scheduler, GradScaler, step, and RNG state. Re-running the same command after a
+disconnect is the entire recovery procedure.
+
+Kaggle has no `drive.mount`, so the Nepali notebook uses **rclone** instead: it
+pulls the packed tokens in at session start and mirrors every checkpoint back out
+to Drive. That second half is not optional — `/kaggle/working` is discarded when
+an interactive session dies, so an unmirrored run would lose everything on a
+disconnect.
+
+### 4. Logs and figures
+
+Training logs are written to persistent storage during the run, then pulled into
+the repository, because *"if it is not in the branch, it is not graded"*:
+[`hindi/logs/train.jsonl`](hindi/logs/train.jsonl) ·
+[`nepali/logs/train.jsonl`](nepali/logs/train.jsonl)
+
+---
+
 ## Google Drive Artifacts and Checkpoints
 
 All large artifacts live in a single shared Google Drive folder:
@@ -531,7 +854,12 @@ source produced which file.
 | Train / val / test splits | `ne` | `nepali/splits/` | 13.348 GiB |
 | BPE tokenizer model + vocab (`8k`) | `ne` | `nepali/tokenizer/nepali_bpe_8k.{model,vocab}` | 599 KiB |
 | Superseded tokenizer (`32k` BPE + Unigram) | `ne` | `nepali/tokenizer/` | 4 MiB |
-| Pretrained checkpoints | H / L | *Coming in Phase 2* | — |
+| Packed token streams (`uint16`) | `hi` | `hindi/tokens/hindi_{train,val,test}.bin` | 0.97 GiB |
+| Packed token streams (`uint16`) | `ne` | `nepali/tokens/nepali_{train,val,test}.bin` | 1.18 GiB |
+| **Pretrained checkpoint — Model H** | `hi` | `hindi/checkpoints/checkpoint_best.pt` | 304.7 MB |
+| Model H milestones + latest | `hi` | `hindi/checkpoints/` | 2.4 GiB |
+| **Pretrained checkpoint — Model L** | `ne` | `nepali/checkpoints/checkpoint_best.pt` | 304.7 MB |
+| Model L milestones + latest | `ne` | `nepali/checkpoints/` | 3.0 GiB |
 | Finetuned checkpoints | H / L | *Coming in Phase 3* | — |
 
 ### Provenance files (Hindi collection)

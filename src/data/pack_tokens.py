@@ -72,16 +72,23 @@ def _encode_batch(payload):
 
 
 def _iter_batches(path: Path, batch_size: int):
-    """Yield (texts, sources, n_bytes, n_chars) batches from a JSONL split.
+    """Yield (texts, sources, n_bytes, n_chars, n_raw) batches from a JSONL split.
 
     Reads in binary and decodes per line so a malformed line cannot abort the
     pass. Document order is preserved, which keeps the packed stream
     reproducible from the same input file.
+
+    ``n_bytes`` counts the UTF-8 bytes of the *document text only*. It must not
+    include the JSON envelope (``doc_id``, ``source``, ``text_sha256``, ...),
+    which is ~45% of a typical line here: bits-per-byte is defined over the text
+    the model is scored on, so counting envelope bytes would inflate
+    bytes/token and silently understate BPB by roughly 6%. ``n_raw`` keeps the
+    on-disk line size separately, for reporting only.
     """
-    texts, sources, n_bytes, n_chars = [], [], 0, 0
+    texts, sources, n_bytes, n_chars, n_raw = [], [], 0, 0, 0
     with open(path, "rb") as fh:
         for raw in fh:
-            n_bytes += len(raw)
+            n_raw += len(raw)
             if not raw.strip():
                 continue
             try:
@@ -94,11 +101,12 @@ def _iter_batches(path: Path, batch_size: int):
             texts.append(text)
             sources.append(doc.get("source", "unknown"))
             n_chars += len(text)
+            n_bytes += len(text.encode("utf-8"))   # text only, no JSON envelope
             if len(texts) >= batch_size:
-                yield texts, sources, n_bytes, n_chars
-                texts, sources, n_bytes, n_chars = [], [], 0, 0
+                yield texts, sources, n_bytes, n_chars, n_raw
+                texts, sources, n_bytes, n_chars, n_raw = [], [], 0, 0, 0
     if texts:
-        yield texts, sources, n_bytes, n_chars
+        yield texts, sources, n_bytes, n_chars, n_raw
 
 
 def pack_split(
@@ -128,7 +136,7 @@ def pack_split(
     if vocab_size > MAX_ID + 1:
         raise ValueError(f"vocab {vocab_size} does not fit in uint16")
 
-    n_docs = n_tok_raw = n_tok_out = n_bytes = n_chars = 0
+    n_docs = n_tok_raw = n_tok_out = n_bytes = n_chars = n_raw = 0
     per_source = Counter()
     t0 = time.time()
 
@@ -149,9 +157,10 @@ def pack_split(
                 n_tok_out += arr.size
             pending.clear()
 
-        for texts, sources, nb, nc in _iter_batches(input_path, batch_size):
+        for texts, sources, nb, nc, nr in _iter_batches(input_path, batch_size):
             n_bytes += nb
             n_chars += nc
+            n_raw += nr
             for s in sources:
                 per_source[s] += 1
             pending.append((texts, eos_id))
@@ -159,7 +168,7 @@ def pack_split(
                 flush()
                 el = time.time() - t0
                 print(f"    {n_docs:>10,} docs  {n_tok_out:>13,} tok  "
-                      f"{n_bytes / 2**30:5.2f} GiB  {n_bytes / 2**20 / el:5.1f} MiB/s",
+                      f"{n_raw / 2**30:5.2f} GiB  {n_raw / 2**20 / el:5.1f} MiB/s",
                       file=sys.stderr, flush=True)
         flush()
 
@@ -171,7 +180,8 @@ def pack_split(
         "n_tokens_no_eos": n_tok_raw,     # comparable to the Phase 1 figures
         "n_eos": n_docs,
         "n_chars": n_chars,
-        "n_bytes_utf8": n_bytes,          # required for bits-per-byte at eval time
+        "n_bytes_utf8": n_bytes,          # TEXT ONLY -- required for bits-per-byte
+        "n_bytes_jsonl": n_raw,           # on-disk line size, reporting only
         "bytes_per_token": n_bytes / n_tok_raw if n_tok_raw else 0.0,
         "chars_per_token": n_chars / n_tok_raw if n_tok_raw else 0.0,
         "docs_per_source": dict(per_source.most_common()),
@@ -221,6 +231,52 @@ def verify(bin_path: Path, input_path: Path, model_path: str, n: int = 2000) -> 
     return bool(ok)
 
 
+def repair_bytes(input_path: Path, sidecar_path: Path) -> dict:
+    """Recompute ``n_bytes_utf8`` in an existing sidecar, without re-tokenizing.
+
+    Sidecars written before the text-bytes fix counted whole JSONL lines, so
+    ``bytes_per_token`` included the JSON envelope and BPB would come out ~6%
+    too low. This re-reads the source and corrects the byte fields in place;
+    the ``.bin`` is untouched because token ids were never affected.
+
+    Args:
+        input_path: The ``{split}.jsonl`` the sidecar was built from.
+        sidecar_path: The ``{lang}_{split}.json`` to correct.
+
+    Returns:
+        The updated stats dict.
+    """
+    stats = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    n_bytes = n_raw = n_chars = 0
+    with open(input_path, "rb") as fh:
+        for raw in fh:
+            n_raw += len(raw)
+            if not raw.strip():
+                continue
+            try:
+                text = (json.loads(raw.decode("utf-8")).get("text") or "").strip()
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                continue
+            if text:
+                n_bytes += len(text.encode("utf-8"))
+                n_chars += len(text)
+
+    before = stats.get("bytes_per_token", 0.0)
+    ntok = stats["n_tokens_no_eos"]
+    stats["n_bytes_utf8"] = n_bytes
+    stats["n_bytes_jsonl"] = n_raw
+    stats["n_chars"] = n_chars
+    stats["bytes_per_token"] = n_bytes / ntok
+    stats["chars_per_token"] = n_chars / ntok
+    stats["bytes_repaired_at"] = datetime.now(timezone.utc).isoformat()
+    sidecar_path.write_text(json.dumps(stats, indent=2, ensure_ascii=False),
+                            encoding="utf-8")
+    print(f"  {sidecar_path.name}: {before:.2f} -> {stats['bytes_per_token']:.2f} B/tok "
+          f"(BPB was understated {100 * (1 - stats['bytes_per_token'] / before):.1f}%)"
+          if before else f"  {sidecar_path.name}: {stats['bytes_per_token']:.2f} B/tok")
+    return stats
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -231,9 +287,20 @@ def main():
     ap.add_argument("--splits", default="train,val,test")
     ap.add_argument("--workers", type=int, default=min(8, os.cpu_count() or 4))
     ap.add_argument("--batch-size", type=int, default=512)
+    ap.add_argument("--repair-bytes", action="store_true",
+                    help="only recompute n_bytes_utf8 in existing sidecars "
+                         "(no tokenization, no .bin rewrite)")
     args = ap.parse_args()
 
     in_dir, out_dir = Path(args.input_dir), Path(args.output_dir)
+
+    if args.repair_bytes:
+        print(f"[{args.language}] repairing byte counts (text only, no envelope)")
+        for split in args.splits.split(","):
+            repair_bytes(in_dir / f"{split}.jsonl",
+                         out_dir / f"{args.language}_{split}.json")
+        return
+
     summary = {}
     for split in args.splits.split(","):
         src = in_dir / f"{split}.jsonl"

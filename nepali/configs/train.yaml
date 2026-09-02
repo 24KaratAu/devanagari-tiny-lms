@@ -5,9 +5,11 @@ seed: 42
 
 data:
   # Written by src/data/pack_tokens.py — flat uint16 token streams.
-  train_bin: /kaggle/input/nepali-tokens/nepali_train.bin
-  val_bin:   /kaggle/input/nepali-tokens/nepali_val.bin
-  test_bin:  /kaggle/input/nepali-tokens/nepali_test.bin
+  # Pulled from Drive with rclone at session start (~1.18 GiB). /tmp is scratch,
+  # so it does not count against Kaggle's 20 GB output limit.
+  train_bin: /tmp/tokens/nepali_train.bin
+  val_bin:   /tmp/tokens/nepali_val.bin
+  test_bin:  /tmp/tokens/nepali_test.bin
 
 optim:
   optimizer: adamw
@@ -23,8 +25,14 @@ schedule:
   min_lr: 3.0e-5          # cosine floor = peak / 10
 
 train:
-  batch_size: 64          # 64 x 512 = 32,768 tokens per step
-  grad_accum: 1           # raise to 2 (and halve batch_size) if the T4 OOMs
+  # 16 x 512 x 4 = 32,768 tokens per step -- same optimisation step as a single
+  # batch of 64, but a quarter of the peak memory. Batch 64 OOMs a 15 GB T4:
+  # cross-entropy upcasts logits to fp32, so 64 x 512 x 8000 x 4B = 1000 MiB in
+  # one tensor, and the (B, h, T, T) attention matrices scale with B as well.
+  # Hindi peaked at 3.9 GiB of 14.6 with batch 16, so batch 32 (~7.3 GiB) is
+  # safe and runs ~20% faster: 2 sequential sub-batches per step instead of 4.
+  batch_size: 32
+  grad_accum: 2
   max_steps: 17429        # one pass over 571,116,946 train tokens (incl. <eos>)
   precision: fp16         # T4 has no bf16; AMP + GradScaler
   compile: false          # torch.compile is not worth the warmup on a 4-day budget
@@ -32,7 +40,7 @@ train:
 eval:
   every: 500              # steps between validation passes
   val_tokens: 2000000     # fixed 2M-token slice during training; full val at the end
-  batch_size: 64
+  batch_size: 32          # same logits-memory constraint as training
 
 checkpoint:
   # Kaggle has no Drive mount; persist via "Save Version" and re-attach on resume.
@@ -40,7 +48,15 @@ checkpoint:
   save_latest_every: 500  # overwrites checkpoint_latest.pt
   save_milestone_every: 2000
   keep_best: true         # checkpoint_best.pt, on validation-loss improvement
+  keep_milestones: 6      # older milestones are pruned (Kaggle caps output at 20 GB)
+  # Kaggle discards /kaggle/working when an interactive session dies, so every
+  # save is mirrored off-box. Needs rclone + rclone.conf from Kaggle Secrets.
+  # Leave empty to disable mirroring.
+  mirror_to: gdrive:24KaratAu/nepali/checkpoints
 
 log:
-  jsonl: nepali/logs/train.jsonl   # loss curve; committed, not Drive-only
+  # /kaggle/working is discarded when a session dies, so the log is mirrored to
+  # Drive alongside each checkpoint save, then pulled into nepali/logs/.
+  jsonl: /kaggle/working/logs/train.jsonl
+  mirror_to: gdrive:24KaratAu/nepali/logs
   every: 20

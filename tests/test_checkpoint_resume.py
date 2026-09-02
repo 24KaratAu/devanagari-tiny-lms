@@ -147,3 +147,42 @@ def test_prune_keeps_latest_and_best(tmp_path):
     names = {p.name for p in tmp_path.glob("*.pt")}
     assert names == {LATEST, BEST, "checkpoint_step_3000.pt",
                      "checkpoint_step_4000.pt"}, names
+
+
+def test_rng_restore_survives_a_gpu_style_payload(tmp_path):
+    """A checkpoint loaded with map_location="cuda" must not crash the resume.
+
+    torch.load moves every tensor in the payload to the target device, RNG
+    states included, and set_rng_state rejects anything that is not a CPU
+    ByteTensor. The earlier tests all saved and loaded on CPU, so this path went
+    untested and raised TypeError in a real GPU run. RNG restoration is
+    best-effort: correct weights matter, an exactly replayed dropout stream does
+    not.
+    """
+    model, opt, sched = _build()
+    p = save_checkpoint(tmp_path / LATEST, model, opt, sched, None,
+                        step=3, best_val_loss=1.0, config=RUN_CONFIG)
+
+    # Mimic what map_location="cuda" does to the saved states.
+    blob = torch.load(p, map_location="cpu", weights_only=False)
+    blob["rng_states"]["torch"] = blob["rng_states"]["torch"].float()
+    blob["rng_states"]["cuda"] = [torch.zeros(16).float()]
+    torch.save(blob, p)
+
+    model2, opt2, sched2 = _build(seed=99)
+    meta = load_checkpoint(p, model2, opt2, sched2, None)   # must not raise
+    assert meta["step"] == 3
+    for a, b in zip(model.parameters(), model2.parameters()):
+        torch.testing.assert_close(a, b)
+
+
+def test_rng_restore_tolerates_missing_state(tmp_path):
+    """A checkpoint with no RNG block still resumes."""
+    model, opt, sched = _build()
+    p = save_checkpoint(tmp_path / LATEST, model, opt, sched, None, 5, 1.0, RUN_CONFIG)
+    blob = torch.load(p, map_location="cpu", weights_only=False)
+    blob["rng_states"] = None
+    torch.save(blob, p)
+
+    model2, opt2, sched2 = _build(seed=11)
+    assert load_checkpoint(p, model2, opt2, sched2, None)["step"] == 5
