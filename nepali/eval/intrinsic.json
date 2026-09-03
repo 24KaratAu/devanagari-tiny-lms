@@ -1,0 +1,89 @@
+{
+  "provenance": {
+    "module": "src.eval.intrinsic",
+    "generated_at": "2026-09-03T19:55:39+00:00",
+    "command": "python -m src.eval.intrinsic --checkpoint /content/drive/MyDrive/24KaratAu/nepali/checkpoints/checkpoint_best.pt --model-config nepali/configs/model.yaml --tokens-dir /content/drive/MyDrive/24KaratAu/nepali/tokens --language nepali --splits val,test --out nepali/eval/intrinsic.json",
+    "git_commit": null,
+    "git_branch": null,
+    "git_dirty": false,
+    "python": "3.13.15",
+    "inputs": {
+      "checkpoint": {
+        "path": "/content/drive/MyDrive/24KaratAu/nepali/checkpoints/checkpoint_best.pt",
+        "bytes": 304695065,
+        "mtime": "2026-09-02T16:10:31+00:00",
+        "digested": false
+      },
+      "model_config": {
+        "path": "nepali/configs/model.yaml",
+        "bytes": 1463,
+        "sha256": "47374ce1e1ba37184be6bc776ba57496efd7c5261365af543c579e0791e699d0",
+        "digested": true
+      },
+      "val_bin": {
+        "path": "/content/drive/MyDrive/24KaratAu/nepali/tokens/nepali_val.bin",
+        "bytes": 63490100,
+        "sha256": "0b434d5aa191e8aedc9d94f2df8983bea140cb0b04622ab210697db12be85b12",
+        "digested": true
+      },
+      "val_sidecar": {
+        "path": "/content/drive/MyDrive/24KaratAu/nepali/tokens/nepali_val.json",
+        "bytes": 1367,
+        "sha256": "d72bcdc8859a3ef011fd1634a09c6cf189bce03028fc44ca5efcd65baf5d5eb7",
+        "digested": true
+      },
+      "test_bin": {
+        "path": "/content/drive/MyDrive/24KaratAu/nepali/tokens/nepali_test.bin",
+        "bytes": 62908120,
+        "sha256": "dd47a37c3758b53dde5c187bdb6406108ba167e4595ba9f52177a5d2ecd65089",
+        "digested": true
+      },
+      "test_sidecar": {
+        "path": "/content/drive/MyDrive/24KaratAu/nepali/tokens/nepali_test.json",
+        "bytes": 1347,
+        "sha256": "dced7f582e993581795a7c3731597202b634825b1f897a4397e1bd44bbe19e10",
+        "digested": true
+      }
+    },
+    "torch": "2.11.0+cu128",
+    "device": "cuda",
+    "amp_dtype": "torch.float16",
+    "batch_size": 16
+  },
+  "language": "nepali",
+  "checkpoint": "/content/drive/MyDrive/24KaratAu/nepali/checkpoints/checkpoint_best.pt",
+  "checkpoint_step": 17429,
+  "n_params": 25379840,
+  "ctx_len": 512,
+  "vocab_size": 8000,
+  "splits": {
+    "val": {
+      "cross_entropy_nats": 3.4224256037635223,
+      "cross_entropy_bits": 4.93751644636105,
+      "perplexity": 30.643654310324447,
+      "bits_per_byte": 0.4494732044179297,
+      "bits_per_char": 1.1966021938390787,
+      "bytes_per_token": 10.985118573987434,
+      "chars_per_token": 4.126280623404119,
+      "n_bytes_utf8": 347969746,
+      "n_chars": 130705992,
+      "n_docs": 68583,
+      "n_tokens_scored": 31745024,
+      "n_windows": 62002
+    },
+    "test": {
+      "cross_entropy_nats": 3.422751045416441,
+      "cross_entropy_bits": 4.937985959419815,
+      "perplexity": 30.65362865478021,
+      "bits_per_byte": 0.449515527161663,
+      "bits_per_char": 1.1964221108540813,
+      "bytes_per_token": 10.985128790988183,
+      "chars_per_token": 4.12729413358532,
+      "n_bytes_utf8": 344777209,
+      "n_chars": 129538486,
+      "n_docs": 68246,
+      "n_tokens_scored": 31453696,
+      "n_windows": 61433
+    }
+  }
+}

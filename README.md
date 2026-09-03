@@ -53,30 +53,59 @@ sharing no data, tokenizer, vocabulary, or weights.
 | Training tokens (1 epoch) | 468,638,315 | 571,113,472 |
 | Steps × tokens/step | 14,329 × 32,768 | 17,429 × 32,768 |
 | Wall-clock (T4, fp16) | 3.69 h | 4.87 h |
-| Throughput | 36,898 tok/s | 37,549 tok/s |
+| Throughput | 36,898 tok/s | 36,457 tok/s |
 | Final train loss | 3.4603 | 3.5265 |
-| **Best val cross-entropy** | **3.0053** | **3.1682** |
-| **Perplexity** | **20.19** | 23.77 |
-| **Bits-per-byte** | 0.4905 | **0.4159** |
-| Bits-per-character | 1.2455 | **1.1078** |
+
+Held-out metrics, measured after training over the **complete** validation and
+test splits (`src/eval/intrinsic.py`, 58M tokens scored, every token predicted
+exactly once):
+
+| | Model H (Hindi) | Model L (Nepali) |
+| :--- | ---: | ---: |
+| Test cross-entropy | 3.2885 | 3.4228 |
+| **Test perplexity** | **26.80** | 30.65 |
+| **Test bits-per-byte** | 0.5371 | **0.4495** |
+| Test bits-per-character | 1.3636 | **1.1964** |
+| Validation perplexity | 26.77 | 30.64 |
+| Bytes / token | 8.833 | 10.985 |
+| Characters / token | 3.479 | 4.127 |
+
+**These are not the numbers the training curve shows, and the difference is
+itself a finding.** During training the loop validated on `val_tokens:
+2000000` — a fixed 2M-token *prefix* of the validation split. The Phase 1 splits
+are written grouped by source, so that prefix contains Wikibooks, Wikiquote, the
+news crawl and part of the manual web crawl, and never reaches `sangraha`, which
+is **71.6%** of Hindi validation documents and **77.5%** of Nepali's. The prefix
+is both unrepresentative and easier, and it reports perplexity about 30% below
+the truth (H: 20.19 → 26.77; L: 23.77 → 30.64).
+
+Checkpoint selection is unaffected: validation loss was *strictly* monotonic
+across all 29 and 35 evaluations, so the best checkpoint is the last one under
+any consistent measure. But the curve must be read as "a consistent progress
+signal on one slice", not "the model's perplexity", and
+`report/figures/val_perplexity.png` plots both so the gap is visible rather than
+buried. Every number quoted in the report is the full-split one.
 
 **The three metrics disagree, and that is the finding.** Hindi wins on perplexity
-by 15%; Nepali wins on bits-per-byte by 15% and bits-per-character by 11%. The
-cause is tokenizer fertility: Nepali's 8k BPE packs **4.126 chars/token against
-Hindi's 3.481** (+18.5%), so a Nepali token is a harder prediction that covers
-more text. Per-token perplexity penalises this; per-character and per-byte
+by 14.4%; Nepali wins on bits-per-byte by 19.5% and bits-per-character by 14.0%.
+The cause is tokenizer fertility: Nepali's 8k BPE packs **4.127 chars/token
+against Hindi's 3.479** (+18.6%), so a Nepali token is a harder prediction that
+covers more text. Per-token perplexity penalises this; per-character and per-byte
 normalisation reward it. This is precisely why the brief requires BPB *"to make
 the two languages more comparable when tokenizers differ"* — and why the naive
 reading, *"Hindi is the better model because its perplexity is lower"*, is wrong.
 
-BPB is not fully neutral either: Nepali averages **10.99 bytes/token** against
-Hindi's **8.84**, so BPB is deflated for Nepali by UTF-8 encoding density rather
+BPB is not fully neutral either: Nepali averages **10.985 bytes/token** against
+Hindi's **8.833**, so BPB is deflated for Nepali by UTF-8 encoding density rather
 than by model quality. Bits-per-character is the fairest of the three and still
 favours Nepali, by a smaller margin. Report §2 works through all three.
 
 **Neither model overfitted.** Best validation loss landed on the *final* step in
 both runs, across 29 and 35 evaluations, with monotonically decreasing validation
-loss throughout. Both runs are data-limited rather than converged — they were
+loss throughout. The full-split measurements confirm it independently: validation
+and test agree to three significant figures for both models (H: 26.77 / 26.80;
+L: 30.64 / 30.65), which is what a model that has not memorised its validation
+set looks like. Both runs are data-limited rather than converged — they were
 still improving when the token budget was exhausted.
 
 **Corpus sizes are measured, not estimated.** Every byte of all six split files
@@ -615,7 +644,7 @@ models, so 3× is well precedented rather than an arbitrary trim.
 tokens per parameter (Hindi 18.5, Nepali 22.5), so the models are neither
 undertrained nor overtrained for their size. A second epoch was considered and
 rejected: extrapolating the late-run improvement rate gives roughly ppl
-20.19 → 17.2 for Hindi, the learning rate has already annealed to its floor
+26.77 → roughly 23 for Hindi, the learning rate has already annealed to its floor
 (so a second epoch means retraining from scratch at 2× cost, not continuing),
 and the brief attaches no marks to perplexity. The same GPU hours are worth more
 spent on the no-positional-embedding ablation.
