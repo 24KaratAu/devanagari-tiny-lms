@@ -352,6 +352,13 @@ def plot_head_summary(stats: dict, out_path: Path, language: str, stamp: str):
 
 
 def main():
+    """Compute per-head attention statistics and draw the heatmaps.
+
+    Accumulates entropy, mean distance, previous-token and first-position mass
+    over many held-out windows, classifies every head, draws heatmaps for an
+    early, a middle and a late layer on one real passage, and writes both the
+    figures and a JSON carrying all 64 heads.
+    """
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--checkpoint", required=True)

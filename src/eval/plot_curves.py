@@ -222,6 +222,13 @@ def plot_lr_and_throughput(logs: dict, out_path: Path, stamp: str = None):
 
 
 def main():
+    """Draw the training figures from the JSONL logs.
+
+    Produces loss curves, validation perplexity and optimisation diagnostics,
+    plus a ``training_summary.json``. When ``--intrinsic`` is supplied the true
+    full-split perplexity is marked on the curve, so the gap between the
+    training-time slice and the real value is visible rather than implied.
+    """
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--logs", nargs="+", required=True,

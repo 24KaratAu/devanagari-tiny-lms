@@ -146,6 +146,12 @@ def derive_metrics(cross_entropy: float, stats: dict) -> dict:
 
 
 def main():
+    """Score one model on its held-out splits and write the metrics JSON.
+
+    Loads the checkpoint, evaluates each requested split end to end, derives
+    perplexity, bits-per-byte and bits-per-character from the packing sidecar,
+    and writes the result with a provenance block naming every input.
+    """
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--checkpoint", required=True)

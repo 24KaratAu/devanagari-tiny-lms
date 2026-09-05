@@ -1,8 +1,8 @@
 {
   "provenance": {
     "module": "src.eval.attention_analysis",
-    "generated_at": "2026-09-03T20:07:57+00:00",
-    "command": "python -m src.eval.attention_analysis --checkpoint /content/drive/MyDrive/24KaratAu/nepali/checkpoints/checkpoint_best.pt --model-config nepali/configs/model.yaml --tokenizer tokenizers/nepali/nepali_bpe_8k.model --tokens-dir /content/drive/MyDrive/24KaratAu/nepali/tokens --language nepali --batch-size 4 --n-batches 8 --display-tokens 40 --heads 0,1,2,3 --figdir nepali/figures --out nepali/eval/attention_stats.json",
+    "generated_at": "2026-09-05T04:21:51+00:00",
+    "command": "python -m src.eval.attention_analysis --checkpoint /content/drive/MyDrive/24KaratAu/nepali/checkpoints/checkpoint_best.pt --model-config nepali/configs/model.yaml --tokenizer tokenizers/nepali/nepali_bpe_8k.model --tokens-dir /content/drive/MyDrive/24KaratAu/nepali/tokens --language nepali --batch-size 4 --n-batches 8 --display-tokens 40 --heads 0,1,4,7 --figdir nepali/figures --out nepali/eval/attention_stats.json",
     "git_commit": null,
     "git_branch": null,
     "git_dirty": false,
@@ -35,7 +35,7 @@
     },
     "torch": "2.11.0+cu128",
     "device": "cuda",
-    "devanagari_font": null,
+    "devanagari_font": "Lohit Devanagari",
     "matplotlib": "3.10.0"
   },
   "language": "nepali",

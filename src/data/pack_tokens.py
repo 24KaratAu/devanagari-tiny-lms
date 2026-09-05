@@ -278,6 +278,12 @@ def repair_bytes(input_path: Path, sidecar_path: Path) -> dict:
 
 
 def main():
+    """Encode the JSONL splits into flat ``uint16`` token streams.
+
+    Writes one ``.bin`` per split plus a JSON sidecar of packing statistics,
+    or, with ``--repair-bytes``, recomputes the byte counts of existing
+    sidecars written before the envelope-counting fix.
+    """
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--input-dir", required=True, help="directory holding {split}.jsonl")

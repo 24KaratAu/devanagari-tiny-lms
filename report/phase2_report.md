@@ -92,7 +92,53 @@ cannot pass silently.
 | Final LayerNorm | 1,024 |
 | **Total** | **25,379,840** |
 
-### 2.3 Causal masking
+### 2.3 Positional encoding, and the hard length limit it imposes
+
+Self-attention is permutation invariant: `softmax(QKᵀ/√d_k)V` computes the same
+thing whatever order the tokens arrive in, because every position is scored
+against every other with no term that depends on *where* they are. Position must
+therefore be injected explicitly, or the model cannot distinguish "राम ने सीता को
+देखा" from the same words shuffled.
+
+**Learned absolute positional embeddings** were chosen: an
+`nn.Embedding(ctx_len, d_model)` indexed by position, added to the token
+embedding before the first block. The alternatives were sinusoidal encodings and
+a relative scheme such as RoPE. Learned embeddings were picked for three
+reasons: they are the simplest thing that is unambiguously correct, they cost
+only `512 × 512 = 262,144` parameters (1.0% of the model), and — decisive here —
+switching them off is a one-line config change (`pos_encoding: none`), which
+makes the bonus ablation a configuration edit rather than a code change.
+
+**The constraint.** A learned table has exactly `ctx_len` rows, so position 512
+simply *has no embedding*. The model cannot process a sequence longer than 512
+tokens at all — not degrade on one, but fail outright. `TokenPositionEmbedding`
+raises rather than letting it pass silently:
+
+```python
+if T > self.ctx_len:
+    raise ValueError(
+        f"sequence length {T} exceeds ctx_len {self.ctx_len}; learned "
+        f"absolute positions have no row for position {T - 1}")
+```
+
+This is a real limitation and it is the price of the choice. Sinusoidal
+encodings are defined for every integer position, so they *extrapolate* — a
+sinusoidally-encoded model can be run on longer sequences than it was trained
+on, with quality degrading rather than crashing. RoPE goes further, encoding
+relative offsets directly in the attention computation, which is why
+long-context models use it. Learned absolute embeddings extrapolate not at all.
+
+Two places this shows up in practice: `generate()` must crop its context window
+to the last `ctx_len` tokens before every forward pass, or generation would
+crash the moment a prompt plus its continuation exceeded 512; and the attention
+analysis normalises entropy by `log(i+1)`, which is only meaningful because
+position `i` is bounded by a known `ctx_len`.
+
+For this project the limit costs nothing — documents are packed into fixed
+512-token windows and no evaluation needs a longer context. It would matter
+immediately for any downstream use requiring long-range reasoning.
+
+### 2.4 Causal masking
 
 Attention scores are scaled by `1/√d_k` and masked *additively before* softmax:
 future positions are set to `-inf`, so their exponentials are exactly zero and
@@ -457,9 +503,9 @@ Normalisation matters: a query at position *i* can attend to only *i + 1*
 positions, so raw entropy grows with position and conflates head behaviour with
 where in the sequence it is measured.
 
-![Attention head summary — Hindi](../hindi/figures/attention_head_summary.png)
+![Attention head summary — Hindi](figures/hindi_attention_head_summary.png)
 
-![Attention head summary — Nepali](../nepali/figures/attention_head_summary.png)
+![Attention head summary — Nepali](figures/nepali_attention_head_summary.png)
 
 ### 6.1 Required discussion — local/positional vs content-based heads
 
@@ -519,14 +565,90 @@ claim. "Content-based" is the residual category — concentrated but not on a
 fixed offset — and should be read as "not obviously positional" rather than as a
 positive identification.
 
-### 6.2 Heatmaps
+### 6.2 Required discussion — how Model H and Model L differ
 
-Heatmaps for layers 0, 4 and 7 across four heads are in `hindi/figures/` and
-`nepali/figures/`, drawn on a real 40-token held-out passage whose tokens are
-listed in `attention_passage.txt`. The layer-4 previous-token head shows as a
-clean single sub-diagonal stripe; layer 0 shows as a broad lower-triangular wash;
-layer 7 shows scattered vertical stripes at particular key positions — the
-visual signature of content-based selection.
+The brief asks how the two models' attention differs. The honest headline is
+**they barely do**, and the near-identity is more interesting than any gap.
+
+| Aggregated over all 64 heads | Model H | Model L |
+| :--- | ---: | ---: |
+| Mean attention distance | 65.6 | 63.3 |
+| Mean normalised entropy | 0.643 | 0.624 |
+| Mean previous-token mass | 0.095 | 0.109 |
+| Mean first-position (sink) mass | 0.061 | 0.057 |
+
+Two models sharing no data, no vocabulary and no weights land within 4% of each
+other on every aggregate. Whatever these statistics measure, it is dominated by
+the objective and architecture rather than by the corpus.
+
+The differences appear layer by layer, and they are of *phase*, not of kind:
+
+| Layer | H distance | L distance | H prev-token | L prev-token | H sink | L sink |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 | 85.4 | 88.6 | 0.02 | 0.02 | 0.013 | 0.012 |
+| 1 | 94.5 | 105.4 | 0.03 | 0.02 | 0.073 | 0.067 |
+| 2 | 67.4 | 68.8 | 0.10 | 0.08 | 0.078 | 0.069 |
+| 3 | **19.0** | 27.9 | **0.22** | 0.16 | 0.033 | 0.037 |
+| 4 | 24.7 | **13.4** | 0.29 | 0.31 | 0.024 | 0.026 |
+| 5 | 88.2 | **28.8** | 0.04 | **0.21** | **0.163** | 0.025 |
+| 6 | 63.2 | 98.3 | 0.04 | 0.03 | 0.056 | **0.156** |
+| 7 | 82.6 | 75.5 | 0.02 | 0.02 | 0.048 | 0.061 |
+
+Both models trace the same arc — diffuse early, local in the middle, broad
+again late — but Nepali's local phase sits one layer deeper and lasts longer.
+Hindi's trough is layers 3–4 and is over by layer 5, where its heads jump back
+to distance 88.2 and dump 16.3% of their mass on the first position: layer 5 is
+largely an idle layer in Model H. Nepali is still doing local work at layer 5
+(distance 28.8, previous-token mass 0.21) and only parks mass on the sink at
+layer 6.
+
+Counting heads rather than averaging says the same thing: **Model L devotes more
+machinery to local structure** — 10 heads with mean distance under 10 tokens
+against Model H's 6, and 8 previous-token heads against 6.
+
+**A plausible link to §4.2, offered as a hypothesis and not a result.** Nepali's
+tokenizer packs 4.127 characters per token against Hindi's 3.479, so a Nepali
+token is a larger linguistic unit and more of the morphology that Hindi spreads
+across several tokens is compressed inside one. More local heads would be a
+sensible response to that. But this is two models, one seed each, with no
+ablation isolating fertility from every other difference between the corpora,
+and the aggregate statistics are nearly identical. The layer-5/6 divergence could
+equally be initialisation noise. It is a direction for a controlled experiment —
+train Model H with a Nepali-fertility tokenizer — not a conclusion.
+
+### 6.3 Heatmaps
+
+Heatmaps for layers 0, 4 and 7 across heads 0, 1, 4 and 7, drawn on a real
+40-token held-out passage. The passage is listed token by token in
+[`figures/hindi_attention_passage.txt`](figures/hindi_attention_passage.txt) and
+[`figures/nepali_attention_passage.txt`](figures/nepali_attention_passage.txt).
+
+**Model H (Hindi)**
+
+![Hindi layer 0](figures/hindi_attention_layer0.png)
+![Hindi layer 4](figures/hindi_attention_layer4.png)
+![Hindi layer 7](figures/hindi_attention_layer7.png)
+
+**Model L (Nepali)**
+
+![Nepali layer 0](figures/nepali_attention_layer0.png)
+![Nepali layer 4](figures/nepali_attention_layer4.png)
+![Nepali layer 7](figures/nepali_attention_layer7.png)
+
+Head 4 is included deliberately: it is the 96% previous-token head of §6.1, and
+in `hindi/figures/attention_layer4.png` it appears as a single unbroken
+sub-diagonal stripe at near-1.0 probability — the cleanest structure anywhere in
+either model. Beside it, head 0 of the same layer is a broad lower-triangular
+wash and head 7 shows scattered vertical stripes at particular key positions,
+the visual signature of content-based selection. The three sit in one figure, so
+the difference between positional, diffuse and content-based attention can be
+read off directly rather than inferred from the statistics table.
+
+Axis labels are rendered in Lohit Devanagari. Colab's package index has no
+`fonts-noto-devanagari`; `fonts-indic` provides Lohit and Samyak, and
+`attention_analysis.py` locates them by scanning the filesystem rather than
+trusting matplotlib's font cache, which is written once per process and does not
+see a font installed after a subprocess starts.
 
 ---
 

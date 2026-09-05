@@ -15,9 +15,17 @@ implementation is common; every artifact below is this language's alone.
 | `configs/model.yaml` | Architecture — 25,379,840 params |
 | `configs/train.yaml` | Optimizer, schedule, data and checkpoint paths |
 | `logs/train.jsonl` | Per-step training log; the loss curve is plotted from this |
-| `figures/` | Loss curves, attention heatmaps, entropy / distance plots |
-| `eval/` | PPL / BPB, BLEU / chrF++ / ROUGE-L, diversity metrics |
-| `samples/` | Generated continuations (greedy, T=0.5, 1.0, 1.5) |
+| `figures/attention_layer{0,4,7}.png` | Attention heatmaps, heads 0/1/4/7, on a real held-out passage |
+| `figures/attention_head_summary.png` | Per-head mean distance and normalised entropy, all 8 layers |
+| `figures/attention_passage.txt` | The passage the heatmaps are drawn on, token by token |
+| `eval/intrinsic.json` | Cross-entropy, perplexity, BPB, bits-per-char — full val and test |
+| `eval/attention_stats.json` | Per-head entropy, distance, previous-token and sink mass (64 heads) |
+| `samples/generations.json` | 32 held-out prompts × 4 decoding settings, with the true continuations |
+| `samples/generations.md` | The same, formatted for reading |
+
+Loss curves and the generation-metric tables cover both models at once and live
+in [`report/figures/`](../report/figures); the analysis is in
+[`report/phase2_report.md`](../report/phase2_report.md).
 
 Tokenizer: `tokenizers/nepali/nepali_bpe_8k.model` (Phase 1 deliverable, kept at its
 Phase 1 path so the Phase 1 report's references stay valid).

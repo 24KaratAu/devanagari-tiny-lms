@@ -72,6 +72,13 @@ def build_scheduler(optimizer, warmup_steps, max_steps, peak_lr, min_lr):
     floor = min_lr / peak_lr
 
     def lr_lambda(step):
+        """Multiplier on the peak LR at a given step: warmup, then cosine decay.
+
+        Linear from 0 to 1 across ``warmup_steps``, then a cosine from 1 down to
+        ``floor`` (= ``min_lr / peak_lr``) over the remaining steps, clamped so
+        that running past ``max_steps`` holds at the floor rather than rising
+        again.
+        """
         if step < warmup_steps:
             return (step + 1) / max(1, warmup_steps)
         progress = (step - warmup_steps) / max(1, max_steps - warmup_steps)
@@ -279,6 +286,12 @@ def train(cfg: dict):
 
 
 def main():
+    """Parse the CLI, build the run, and train (or resume) to completion.
+
+    Reads the training YAML, resolves any command-line overrides, finds a
+    resume point if one exists, and runs the loop. Overrides exist so a smoke
+    run can be pointed at throwaway directories without editing the config.
+    """
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True, help="training YAML")

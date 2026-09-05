@@ -423,6 +423,12 @@ def markdown_table(results: dict) -> str:
 
 
 def main():
+    """Score generation dumps and write the metric tables.
+
+    Reads one ``generations.json`` per language, scores every decoding setting
+    plus the held-out human continuations as a control, and writes both a JSON
+    and, optionally, the Markdown table used in the report.
+    """
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--generations", nargs="+", required=True,

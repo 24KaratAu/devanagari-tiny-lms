@@ -208,6 +208,13 @@ def write_markdown(path, language: str, records: list, settings: list,
 
 
 def main():
+    """Sample held-out prompts and generate continuations under each setting.
+
+    Draws prompts by seeded reservoir sampling over the test split, generates
+    under greedy decoding and each requested temperature, and writes prompts,
+    true continuations and generations to one JSON so the metrics step needs
+    no second GPU pass. Optionally also writes a readable Markdown sheet.
+    """
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--checkpoint", required=True)

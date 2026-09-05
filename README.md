@@ -44,8 +44,13 @@ python scripts/benchmark_tokenizer.py --language hindi --model tokenizers/hindi/
 > **Checkpoints** → [**Google Drive**](https://drive.google.com/drive/folders/19EANSjwyIp-z36jwCvKhwlWdcwA1Ohhq)
 > (Anyone with the link → Viewer)
 
-Two independently pretrained decoder-only Transformers, identical in shape,
-sharing no data, tokenizer, vocabulary, or weights.
+Phase 2 builds a decoder-only Transformer from primitive PyTorch layers — no
+`nn.Transformer`, no HuggingFace, no pretrained weights — and trains two
+instances of it from scratch on the Phase 1 corpora: **Model H** on Hindi and
+**Model L** on Nepali. The two share no data, tokenizer, vocabulary, or weights.
+Only the implementation is common.
+
+### How they were trained
 
 | | Model H (Hindi) | Model L (Nepali) |
 | :--- | ---: | ---: |
@@ -56,9 +61,10 @@ sharing no data, tokenizer, vocabulary, or weights.
 | Throughput | 36,898 tok/s | 36,457 tok/s |
 | Final train loss | 3.4603 | 3.5265 |
 
-Held-out metrics, measured after training over the **complete** validation and
-test splits (`src/eval/intrinsic.py`, 58M tokens scored, every token predicted
-exactly once):
+### How well they model unseen text
+
+Measured after training, over the **complete** validation and test splits — 58M
+tokens, every one predicted exactly once ([`src/eval/intrinsic.py`](src/eval/intrinsic.py)).
 
 | | Model H (Hindi) | Model L (Nepali) |
 | :--- | ---: | ---: |
@@ -70,43 +76,63 @@ exactly once):
 | Bytes / token | 8.833 | 10.985 |
 | Characters / token | 3.479 | 4.127 |
 
-**These are not the numbers the training curve shows, and the difference is
-itself a finding.** During training the loop validated on `val_tokens:
-2000000` — a fixed 2M-token *prefix* of the validation split. The Phase 1 splits
-are written grouped by source, so that prefix contains Wikibooks, Wikiquote, the
-news crawl and part of the manual web crawl, and never reaches `sangraha`, which
-is **71.6%** of Hindi validation documents and **77.5%** of Nepali's. The prefix
-is both unrepresentative and easier, and it reports perplexity about 30% below
-the truth (H: 20.19 → 26.77; L: 23.77 → 30.64).
+Three metrics, because one is not enough to compare two models that use
+different tokenizers:
 
-Checkpoint selection is unaffected: validation loss was *strictly* monotonic
-across all 29 and 35 evaluations, so the best checkpoint is the last one under
-any consistent measure. But the curve must be read as "a consistent progress
-signal on one slice", not "the model's perplexity", and
-`report/figures/val_perplexity.png` plots both so the gap is visible rather than
-buried. Every number quoted in the report is the full-split one.
+* **Perplexity** = `exp(cross-entropy)`. Roughly, how many equally-likely tokens
+  the model is choosing between at each step. A perplexity of 26.8 out of a
+  vocabulary of 8,000 means the model has narrowed the field by ~300×. But it is
+  measured *per token*, and a token means something different in each model.
+* **Bits-per-byte** re-expresses the same loss per byte of the underlying UTF-8
+  text, which cancels the tokenizer out.
+* **Bits-per-character** does the same per character. Since both languages use
+  Devanagari but have different tokenizers, this is the fairest of the three
+  here.
 
-**The three metrics disagree, and that is the finding.** Hindi wins on perplexity
-by 14.4%; Nepali wins on bits-per-byte by 19.5% and bits-per-character by 14.0%.
-The cause is tokenizer fertility: Nepali's 8k BPE packs **4.127 chars/token
-against Hindi's 3.479** (+18.6%), so a Nepali token is a harder prediction that
-covers more text. Per-token perplexity penalises this; per-character and per-byte
-normalisation reward it. This is precisely why the brief requires BPB *"to make
-the two languages more comparable when tokenizers differ"* — and why the naive
-reading, *"Hindi is the better model because its perplexity is lower"*, is wrong.
+**The three metrics disagree, and that disagreement is the main result.** Hindi
+wins on perplexity by 14.4%; Nepali wins on bits-per-byte by 19.5% and on
+bits-per-character by 14.0%.
 
-BPB is not fully neutral either: Nepali averages **10.985 bytes/token** against
-Hindi's **8.833**, so BPB is deflated for Nepali by UTF-8 encoding density rather
-than by model quality. Bits-per-character is the fairest of the three and still
-favours Nepali, by a smaller margin. Report §2 works through all three.
+The cause is **tokenizer fertility**. Nepali's 8k BPE packs **4.127 characters
+per token against Hindi's 3.479** — 18.6% more text behind every token. So each
+Nepali prediction commits to more of the underlying string and is a genuinely
+harder problem. Per-token perplexity charges Nepali for that; per-character and
+per-byte normalisation credit it. This is exactly why the brief requires BPB
+*"to make the two languages more comparable when tokenizers differ"*, and why the
+obvious reading — *"Hindi is the better model, its perplexity is lower"* — is
+wrong.
 
-**Neither model overfitted.** Best validation loss landed on the *final* step in
-both runs, across 29 and 35 evaluations, with monotonically decreasing validation
-loss throughout. The full-split measurements confirm it independently: validation
-and test agree to three significant figures for both models (H: 26.77 / 26.80;
-L: 30.64 / 30.65), which is what a model that has not memorised its validation
-set looks like. Both runs are data-limited rather than converged — they were
-still improving when the token budget was exhausted.
+BPB is not perfectly neutral either: Nepali averages **10.985 bytes/token**
+against Hindi's **8.833**, so some of its BPB advantage is UTF-8 encoding
+density rather than model quality. Bits-per-character still favours Nepali, by
+the smaller 14.0% margin. [Report §4.2](report/phase2_report.md) works through
+all three, including what the comparison does *not* control for.
+
+**Neither model overfitted.** Validation loss decreased at every one of the 29
+and 35 evaluations, so the best checkpoint is the final one in both runs. The
+full-split measurements confirm it independently: validation and test agree to
+three significant figures for both models (H: 26.77 / 26.80; L: 30.64 / 30.65),
+which is what a model that has not memorised its validation set looks like. Both
+runs are **data-limited rather than converged** — they were still improving when
+the one-epoch token budget ran out.
+
+> [!IMPORTANT]
+> **The training curves show different numbers, and the gap is deliberate, not
+> an error.** During training the loop scored a fixed 2M-token *prefix* of the
+> validation split for speed. The Phase 1 splits are written grouped by source,
+> so that prefix covers Wikibooks, Wikiquote, the news crawl and part of the
+> manual web crawl — and never reaches `sangraha`, which is **71.6%** of Hindi
+> validation documents and **77.5%** of Nepali's. That prefix is both
+> unrepresentative and easier, and it reported perplexity ~30% below the truth
+> (H: 20.19 against a real 26.77; L: 23.77 against 30.64).
+>
+> Checkpoint selection was unaffected — validation loss was strictly monotonic,
+> so the last checkpoint is the best one under any consistent measure. But the
+> curve must be read as *a consistent progress signal on one slice*, not as *the
+> model's perplexity*. [`report/figures/val_perplexity.png`](report/figures/val_perplexity.png)
+> plots both, with the gap annotated, rather than quietly substituting one for
+> the other. **Every number quoted in this README and the report is the
+> full-split one.** Lesson 20 below has the post-mortem.
 
 **Corpus sizes are measured, not estimated.** Every byte of all six split files
 was tokenized with the committed Phase 1 models on 2026-09-02: Hindi
@@ -165,7 +191,7 @@ hindi/                               # Model H — self-contained artifacts
 nepali/                              # Model L — same structure
 src/
 ├── data/pack_tokens.py              # JSONL -> uint16 token stream
-├── model/                           # embeddings, attention, block, GPT
+├── model/                           # embeddings, attention, block, TransformerLM
 ├── train/                           # dataset, trainer, checkpointing
 └── eval/                            # PPL/BPB, generation, metrics, attention
 tests/                               # causal mask, param count, checkpoint resume
@@ -437,6 +463,66 @@ Building a ~500M token corpus per language on student-tier compute (free Google 
 * **The Solution**: a `--no-mirror` flag, used by both notebooks' smoke cells, and
   the contaminated remote purged before relaunching.
 
+### Phase 2 — Evaluation
+
+### 20. A Validation Prefix Is Not a Validation Set
+
+* **The Challenge**: training validated on `val_tokens: 2000000` — the *first*
+  2M tokens of the split. The Phase 1 splits are written grouped by source, so
+  that prefix is Wikibooks, Wikiquote, the news crawl and part of the manual web
+  crawl, and never reaches `sangraha` — **71.6%** of Hindi validation documents
+  and **77.5%** of Nepali's. Both models reported perplexity about **30% below
+  the truth** for the entire run (H: 20.19 against a real 26.77).
+* **How it surfaced**: only when the post-training full-split pass disagreed with
+  the training curve by the same ~30% for *both* models. A consistent gap across
+  two independent runs is a systematic error, not noise.
+* **Why it was survivable**: validation loss was *strictly* monotonic across all
+  29 and 35 evaluations, so the best checkpoint is the last one under any
+  consistent measure. Checkpoint selection was unaffected; only the reported
+  number was wrong.
+* **The Solution**: quote full-split figures everywhere, and plot the curve
+  *against* the true value rather than substituting one for the other —
+  `report/figures/val_perplexity.png` shows both with the gap annotated. The
+  underlying fix for a future run is to sample validation windows at random
+  offsets, or to shuffle documents before writing splits.
+* **The lesson**: a cheap evaluation slice must be *representative*, not merely
+  *consistent*. Taking a prefix of a file that has any ordering to it samples the
+  ordering, not the distribution.
+
+### 21. BLEU Ranked the Degenerate Decoder Highest
+
+* **The Challenge**: on open-ended continuation, BLEU-4 peaked at temperature
+  0.5 — a setting whose output visibly repeats itself — and scored the coherent
+  temperature-1.0 samples *lower*. Hedging towards frequent words raises n-gram
+  overlap with any reference, so the metric rewards exactly the failure mode a
+  reader would reject.
+* **The Solution**: report chrF++ alongside, which ranks the settings the way a
+  reader does, and add reference-free metrics with the **held-out human text
+  scored as a control row**. "Distinct-2 of 85.6%" means nothing alone; "85.6%
+  against the corpus's own 83.5%" is a finding.
+* **The lesson**: a metric borrowed from translation does not transfer to free
+  generation just because both produce text. Report §5.3 works through which of
+  the five is informative here and why.
+
+### 22. Two Silent Failures in the Same Notebook Cell
+
+* **The Challenge**: attention heatmaps rendered with numeric axis labels
+  instead of Devanagari. Two independent causes, both silent: `apt-get install
+  fonts-noto-devanagari` failed because the package does not exist in Colab's
+  index, and its error was hidden by a `> /dev/null 2>&1`; and matplotlib caches
+  its font list per process, so even once `fonts-indic` was installed, a freshly
+  spawned subprocess loaded the cache written *before* installation and could not
+  see it. The in-kernel font check passed while the subprocess doing the work
+  failed.
+* **The Solution**: install `fonts-indic`, stop suppressing apt's output, and
+  have `attention_analysis.py` scan the filesystem and `addfont()` directly
+  rather than trusting the cache. The module records the font it resolved in its
+  provenance block, so `"devanagari_font": null` is visible in the artefact
+  rather than only in the picture.
+* **The lesson**: suppressing output on an install step converts a loud failure
+  into a silent one that surfaces three cells later as a cosmetic defect. And a
+  capability check must run in the process that needs the capability.
+
 ---
 
 ## Dataset and Cleaning Specifications
@@ -585,9 +671,32 @@ no pre-built attention. Implementation in [`src/model/`](src/model); configs in
 | `dropout` | 0.1 | Embeddings, attention probabilities, sublayer outputs |
 | `vocab_size` | 8,000 | Phase 1 BPE, one per language, never shared |
 | Weight tying | yes | LM head shares the token embedding: saves 4,096,000 params |
-| Positional encoding | learned absolute | Simple at fixed length, and trivially ablatable |
+| Positional encoding | learned absolute | Simple, 1.0% of parameters, and ablatable by config alone |
 | Normalisation | pre-norm LayerNorm | Stable gradients through 8 residual blocks |
 | Activation | GELU | GPT-2 standard |
+
+#### Why learned absolute positions, and what they cost
+
+Self-attention is permutation invariant — it scores every position against every
+other with no term for *where* they are — so position has to be injected
+explicitly, or "राम ने सीता को देखा" and the same words shuffled would be identical
+to the model.
+
+We use a learned `nn.Embedding(512, 512)` added to the token embedding. It is the
+simplest correct option, costs 262,144 parameters (1.0% of the model), and can be
+switched off with a single config value (`pos_encoding: none`) for the bonus
+ablation.
+
+The cost is a **hard ceiling on sequence length**. The table has exactly 512
+rows, so position 512 has no embedding at all and the model cannot process a
+longer sequence — it fails rather than degrades, and
+[`src/model/embeddings.py`](src/model/embeddings.py) raises instead of letting it
+pass silently. Sinusoidal encodings are defined at every integer position and so
+extrapolate beyond the training length; RoPE encodes relative offsets inside the
+attention computation, which is why long-context models use it. Learned absolute
+embeddings extrapolate not at all. That costs nothing here — documents are packed
+into fixed 512-token windows — but it would matter for any long-context use.
+[Report §2.3](report/phase2_report.md).
 
 ### Exact parameter count — 25,379,840
 
@@ -852,6 +961,126 @@ Training logs are written to persistent storage during the run, then pulled into
 the repository, because *"if it is not in the branch, it is not graded"*:
 [`hindi/logs/train.jsonl`](hindi/logs/train.jsonl) ·
 [`nepali/logs/train.jsonl`](nepali/logs/train.jsonl)
+
+### 5. Evaluate (GPU, ~30–45 min for both models)
+
+[`notebooks/evaluate_colab.ipynb`](notebooks/evaluate_colab.ipynb) runs every
+evaluation deliverable for both models in a single session. It verifies that all
+checkpoints, splits and sidecars exist *before* touching the GPU, so a missing
+input fails in seconds rather than half an hour in.
+
+| Module | Produces |
+| :--- | :--- |
+| `src.eval.intrinsic` | CE, perplexity, BPB, bits-per-char on full val + test |
+| `src.eval.plot_curves` | Loss, perplexity and optimisation figures |
+| `src.eval.generate` | 32 held-out prompts × greedy / T=0.5 / 1.0 / 1.5 |
+| `src.eval.metrics` | BLEU-4, chrF++, ROUGE-L, repetition, Distinct-1/2 |
+| `src.eval.attention_analysis` | Heatmaps, per-head entropy and attention distance |
+
+Or individually, e.g.:
+
+```bash
+python -m src.eval.intrinsic \
+    --checkpoint <drive>/hindi/checkpoints/checkpoint_best.pt \
+    --model-config hindi/configs/model.yaml \
+    --tokens-dir <drive>/hindi/tokens --language hindi \
+    --out hindi/eval/intrinsic.json
+```
+
+Every artefact carries a provenance block — the exact command, git commit and
+branch, whether the tree was dirty, library versions, and a SHA-256 for each
+input — and each figure has a condensed version of it drawn into the image, so a
+figure pasted into a document still says which run produced it:
+
+```
+src.eval.plot_curves @ 57a5596b+dirty | hindi:ec4bb85c nepali:eb4ec10d | 2026-09-03T20:33:44+00:00
+```
+
+Attention heatmaps need a Devanagari font. Colab's package index has no
+`fonts-noto-devanagari`; install `fonts-indic` instead. The module scans the
+filesystem for the font rather than trusting matplotlib's cache, which is
+written once per process and cannot see a font installed after a subprocess
+starts.
+
+### 6. Evaluation results
+
+Intrinsic metrics — perplexity, bits-per-byte, bits-per-character — are in
+[Phase 2 at a Glance](#phase-2-at-a-glance) above. This section covers what the
+model *writes*, and what its attention heads do.
+
+**Generation.** 32 held-out prefixes per model, 128 new tokens each, under four
+decoding settings. Two of the numbers below need defining:
+
+* **rep-4** — the share of a sample's 4-grams that repeat something it already
+  said. High means the text is looping. Scoring the *real* human continuations
+  the same way gives a baseline to read it against.
+* **Distinct-2** — unique 2-grams as a share of all 2-grams across the whole
+  set. Low means every prompt is answered with the same generic text.
+
+| | greedy | T=0.5 | T=1.0 | T=1.5 | *held-out human* |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| **Hindi** rep-4 | 80.9 | 46.5 | **0.7** | 0.0 | *2.8* |
+| **Hindi** Distinct-2 | 13.7 | 37.0 | **85.6** | 97.8 | *83.5* |
+| **Hindi** chrF++ | 11.5 | 14.6 | **18.9** | 16.1 | — |
+| **Nepali** rep-4 | 71.4 | 26.2 | **0.0** | 0.0 | *0.5* |
+| **Nepali** Distinct-2 | 17.5 | 48.4 | **91.8** | 99.0 | *88.9* |
+| **Nepali** chrF++ | 14.7 | 16.2 | **19.3** | 18.3 | — |
+
+Three findings the tables alone do not show, each worked through in
+[the report](report/phase2_report.md):
+
+* **Temperature 1.0 lands almost exactly on the human baseline** — rep-4 of 0.7%
+  against a real 2.8%, Distinct-2 of 85.6% against 83.5%. That is what
+  maximum-likelihood training predicts: sampling at temperature 1.0 samples from
+  the distribution the model was trained to match. Greedy decoding, by contrast,
+  is catastrophically degenerate — it repeats 80.9% of its 4-grams, roughly 29×
+  the human rate, and loops one clause until it hits the token limit.
+* **BLEU-4 ranks the settings wrongly**, peaking at T=0.5 — the setting whose
+  text visibly repeats itself — because hedging towards frequent words raises
+  n-gram overlap with any reference. chrF++ ranks them as a reader would.
+  [Report §5.3](report/phase2_report.md) discusses which of the five metrics is
+  informative here and why.
+* **Both models independently learn a near-pure previous-token attention head at
+  layer 4** — 96% of attention mass on the immediately preceding token for
+  Hindi, 84% for Nepali — despite sharing no data, vocabulary or weights. It is
+  visible as a single unbroken sub-diagonal stripe in
+  [`hindi/figures/attention_layer4.png`](hindi/figures/attention_layer4.png).
+  Two models converging on the same structure at the same depth suggests it is a
+  property of the objective and architecture, not of either corpus.
+  [Report §6.1](report/phase2_report.md).
+
+**Text quality, honestly.** The generated Hindi and Nepali are fluent at the
+phrase level and coherent for a clause or two, with essentially correct
+morphology and agreement. What fails is discourse: the model does not carry the
+prompt's topic forward. That is the expected ceiling for 25M parameters trained
+on ~0.5B tokens for one epoch — enough capacity for syntax and local
+collocation, not for topic tracking. Samples are in
+[`hindi/samples/generations.md`](hindi/samples/generations.md) and
+[`nepali/samples/generations.md`](nepali/samples/generations.md).
+
+--- | ---: | ---: |
+| Test perplexity | **26.80** | 30.65 |
+| Test bits-per-byte | 0.5371 | **0.4495** |
+| Test bits-per-character | 1.3636 | **1.1964** |
+| chrF++ (best setting, T=1.0) | 18.94 | 19.26 |
+| rep-4, greedy vs human | 80.9 vs 2.8 | 71.4 vs 0.5 |
+| rep-4, T=1.0 vs human | 0.7 vs 2.8 | 0.0 vs 0.5 |
+| Distinct-2, T=1.0 vs human | 85.6 vs 83.5 | 91.8 vs 88.9 |
+
+Three findings the tables alone do not show, each worked through in
+[the report](report/phase2_report.md):
+
+* **Temperature 1.0 reproduces the corpus's own diversity statistics**
+  (rep-4 0.7% against a human 2.8%; Distinct-2 85.6% against 83.5%), which is
+  what maximum-likelihood training predicts. Greedy decoding is catastrophically
+  degenerate at rep-4 80.9%.
+* **BLEU-4 ranks the settings wrongly.** It peaks at T=0.5, the setting whose
+  text visibly repeats itself, because hedging towards frequent words raises
+  n-gram overlap with any reference. chrF++ ranks them as a reader would. Report
+  §5.3 discusses why each metric is or is not informative here.
+* **Both models independently learn a near-pure previous-token head at layer 4** —
+  96% of attention mass on position *i−1* for Hindi, 84% for Nepali — despite
+  sharing no data, vocabulary or weights. Report §6.1.
 
 ---
 
