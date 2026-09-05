@@ -1,0 +1,280 @@
+{
+  "provenance": {
+    "module": "src.eval.compare_ablation",
+    "generated_at": "2026-09-05T21:24:07+00:00",
+    "command": "python -m src.eval.compare_ablation --baseline-log hindi/logs/train.jsonl --ablation-log hindi/logs/train_nopos.jsonl --language hindi --outdir report/figures --out report/figures/ablation_nopos_hindi.json --markdown report/figures/ablation_nopos_hindi.md",
+    "git_commit": "0a36b686396bf3849b160c60e6eb9b6a391d3c02",
+    "git_branch": "phase-2",
+    "git_dirty": true,
+    "python": "3.14.4",
+    "inputs": {
+      "baseline_log": {
+        "path": "hindi/logs/train.jsonl",
+        "bytes": 135602,
+        "sha256": "ec4bb85cc91c2f408e7d2d841b268a84faaa0c82186d43cc63dac9d9b63f8b24",
+        "digested": true
+      },
+      "ablation_log": {
+        "path": "hindi/logs/train_nopos.jsonl",
+        "bytes": 135652,
+        "sha256": "27d76c90ee9d74a045a4c86dfb05e809ec34f763ac9100fb22b05b0868fe0808",
+        "digested": true
+      }
+    },
+    "matplotlib": "3.10.8"
+  },
+  "language": "hindi",
+  "lr_alignment": {
+    "aligned": true,
+    "max_relative_diff": 0.0,
+    "n_compared": 716,
+    "worst_step": null
+  },
+  "loss": {
+    "n_val_points": 29,
+    "n_train_points": 716,
+    "val_series": [
+      {
+        "step": 500,
+        "baseline": 5.24067,
+        "ablation": 5.20591,
+        "gap_nats": -0.03475999999999946,
+        "baseline_ppl": 188.79655373074127,
+        "ablation_ppl": 182.346732817877
+      },
+      {
+        "step": 1000,
+        "baseline": 4.47642,
+        "ablation": 4.53611,
+        "gap_nats": 0.0596899999999998,
+        "baseline_ppl": 87.91935729876454,
+        "ablation_ppl": 93.32705085801348
+      },
+      {
+        "step": 1500,
+        "baseline": 4.06564,
+        "ablation": 4.18278,
+        "gap_nats": 0.11714000000000002,
+        "baseline_ppl": 58.30220999920573,
+        "ablation_ppl": 65.54782310690133
+      },
+      {
+        "step": 2000,
+        "baseline": 3.76647,
+        "ablation": 3.90766,
+        "gap_nats": 0.14118999999999993,
+        "baseline_ppl": 43.22720316656016,
+        "ablation_ppl": 49.78232493264469
+      },
+      {
+        "step": 2500,
+        "baseline": 3.60945,
+        "ablation": 3.72121,
+        "gap_nats": 0.1117600000000003,
+        "baseline_ppl": 36.94572707586494,
+        "ablation_ppl": 41.31435424526934
+      },
+      {
+        "step": 3000,
+        "baseline": 3.5054,
+        "ablation": 3.5926,
+        "gap_nats": 0.08720000000000017,
+        "baseline_ppl": 33.294759092815255,
+        "ablation_ppl": 36.32840710127265
+      },
+      {
+        "step": 3500,
+        "baseline": 3.43351,
+        "ablation": 3.50642,
+        "gap_nats": 0.07290999999999981,
+        "baseline_ppl": 30.985210190122938,
+        "ablation_ppl": 33.32873707291389
+      },
+      {
+        "step": 4000,
+        "baseline": 3.37601,
+        "ablation": 3.45889,
+        "gap_nats": 0.08287999999999984,
+        "baseline_ppl": 29.2538152187195,
+        "ablation_ppl": 31.781679264334485
+      },
+      {
+        "step": 4500,
+        "baseline": 3.33608,
+        "ablation": 3.39579,
+        "gap_nats": 0.05970999999999993,
+        "baseline_ppl": 28.108724258892558,
+        "ablation_ppl": 29.838216357296336
+      },
+      {
+        "step": 5000,
+        "baseline": 3.29036,
+        "ablation": 3.34623,
+        "gap_nats": 0.05586999999999964,
+        "baseline_ppl": 26.852528826441006,
+        "ablation_ppl": 28.39548063687958
+      },
+      {
+        "step": 5500,
+        "baseline": 3.25815,
+        "ablation": 3.31254,
+        "gap_nats": 0.054389999999999716,
+        "baseline_ppl": 26.001390048598513,
+        "ablation_ppl": 27.454772104380744
+      },
+      {
+        "step": 6000,
+        "baseline": 3.22729,
+        "ablation": 3.28451,
+        "gap_nats": 0.05722000000000005,
+        "baseline_ppl": 25.21124184493797,
+        "ablation_ppl": 26.6959001184624
+      },
+      {
+        "step": 6500,
+        "baseline": 3.20477,
+        "ablation": 3.2557,
+        "gap_nats": 0.05093000000000014,
+        "baseline_ppl": 24.64982990354044,
+        "ablation_ppl": 25.937764615960393
+      },
+      {
+        "step": 7000,
+        "baseline": 3.17813,
+        "ablation": 3.22545,
+        "gap_nats": 0.04732000000000003,
+        "baseline_ppl": 24.00182814127286,
+        "ablation_ppl": 25.164895811369924
+      },
+      {
+        "step": 7500,
+        "baseline": 3.15698,
+        "ablation": 3.20074,
+        "gap_nats": 0.04376000000000024,
+        "baseline_ppl": 23.49952010787233,
+        "ablation_ppl": 24.55069098811915
+      },
+      {
+        "step": 8000,
+        "baseline": 3.13355,
+        "ablation": 3.17745,
+        "gap_nats": 0.04389999999999983,
+        "baseline_ppl": 22.9553264751909,
+        "ablation_ppl": 23.98551244610185
+      },
+      {
+        "step": 8500,
+        "baseline": 3.1163,
+        "ablation": 3.16145,
+        "gap_nats": 0.04515000000000002,
+        "baseline_ppl": 22.562742861956504,
+        "ablation_ppl": 23.604798083734902
+      },
+      {
+        "step": 9000,
+        "baseline": 3.10133,
+        "ablation": 3.14287,
+        "gap_nats": 0.04153999999999991,
+        "baseline_ppl": 22.22749419833081,
+        "ablation_ppl": 23.17027019982139
+      },
+      {
+        "step": 9500,
+        "baseline": 3.08596,
+        "ablation": 3.12691,
+        "gap_nats": 0.04095000000000004,
+        "baseline_ppl": 21.888469689997635,
+        "ablation_ppl": 22.803408034785974
+      },
+      {
+        "step": 10000,
+        "baseline": 3.07196,
+        "ablation": 3.11393,
+        "gap_nats": 0.04197000000000006,
+        "baseline_ppl": 21.58416620897875,
+        "ablation_ppl": 22.5093324776791
+      },
+      {
+        "step": 10500,
+        "baseline": 3.05736,
+        "ablation": 3.09787,
+        "gap_nats": 0.040509999999999824,
+        "baseline_ppl": 21.271326668029896,
+        "ablation_ppl": 22.150719964421764
+      },
+      {
+        "step": 11000,
+        "baseline": 3.0467,
+        "ablation": 3.08333,
+        "gap_nats": 0.03663000000000016,
+        "baseline_ppl": 21.045778632630523,
+        "ablation_ppl": 21.83097864857073
+      },
+      {
+        "step": 11500,
+        "baseline": 3.03939,
+        "ablation": 3.0815,
+        "gap_nats": 0.04211000000000009,
+        "baseline_ppl": 20.892494925349126,
+        "ablation_ppl": 21.791064490237765
+      },
+      {
+        "step": 12000,
+        "baseline": 3.03125,
+        "ablation": 3.0712,
+        "gap_nats": 0.03995000000000015,
+        "baseline_ppl": 20.723120306578686,
+        "ablation_ppl": 21.567768474588277
+      },
+      {
+        "step": 12500,
+        "baseline": 3.02256,
+        "ablation": 3.05788,
+        "gap_nats": 0.03532000000000002,
+        "baseline_ppl": 20.543816594103557,
+        "ablation_ppl": 21.282390634279185
+      },
+      {
+        "step": 13000,
+        "baseline": 3.01589,
+        "ablation": 3.05649,
+        "gap_nats": 0.04059999999999997,
+        "baseline_ppl": 20.407245308981917,
+        "ablation_ppl": 21.252828661628257
+      },
+      {
+        "step": 13500,
+        "baseline": 3.01223,
+        "ablation": 3.05036,
+        "gap_nats": 0.038129999999999775,
+        "baseline_ppl": 20.33269130819709,
+        "ablation_ppl": 21.122947314971253
+      },
+      {
+        "step": 14000,
+        "baseline": 3.00822,
+        "ablation": 3.04971,
+        "gap_nats": 0.04149000000000003,
+        "baseline_ppl": 20.251320473612132,
+        "ablation_ppl": 21.109221860472488
+      },
+      {
+        "step": 14329,
+        "baseline": 3.00526,
+        "ablation": 3.04691,
+        "gap_nats": 0.04165000000000019,
+        "baseline_ppl": 20.19146519452561,
+        "ablation_ppl": 21.05019871023528
+      }
+    ],
+    "final_step": 14329,
+    "final_baseline_loss": 3.00526,
+    "final_ablation_loss": 3.04691,
+    "final_gap_nats": 0.04165000000000019,
+    "final_baseline_ppl": 20.19146519452561,
+    "final_ablation_ppl": 21.05019871023528,
+    "final_ppl_ratio": 1.0425295295530357,
+    "uniform_loss": 8.987196820661973,
+    "gap_as_share_of_learned": 0.006962627865967851
+  }
+}

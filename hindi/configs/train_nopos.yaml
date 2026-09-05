@@ -1,0 +1,70 @@
+# Model H no-positional-embedding ablation — training configuration.
+#
+# Every optimisation hyperparameter matches configs/train.yaml exactly, because
+# the ablation is only interpretable if the single difference is the positional
+# embedding. Two things differ, both structural rather than substantive:
+#
+#   1. schedule.total_steps is pinned to the baseline's 14,329 while
+#      train.max_steps stops the run at 4,000. Cosine decay over 4,000 steps
+#      would sit at its 3.0e-5 floor by the end, where the baseline at step
+#      4,000 is still near peak — a large difference that would confound the
+#      comparison with a learning-rate effect.
+#   2. Checkpoints and logs go to their own paths, so the ablation cannot touch
+#      the graded run's artifacts (see README engineering lesson 19).
+#
+# The comparison baseline needs no new compute: hindi/logs/train.jsonl already
+# records the with-positions loss at every one of these steps.
+
+run_name: model_h_hindi_nopos
+model_config: hindi/configs/model_nopos.yaml
+seed: 42                  # same seed as the baseline
+
+data:
+  train_bin: /content/drive/MyDrive/24KaratAu/hindi/tokens/hindi_train.bin
+  val_bin:   /content/drive/MyDrive/24KaratAu/hindi/tokens/hindi_val.bin
+  test_bin:  /content/drive/MyDrive/24KaratAu/hindi/tokens/hindi_test.bin
+
+optim:
+  optimizer: adamw
+  lr: 3.0e-4
+  betas: [0.9, 0.95]
+  eps: 1.0e-8
+  weight_decay: 0.1
+  grad_clip: 1.0
+
+schedule:
+  type: cosine
+  warmup_steps: 500
+  min_lr: 3.0e-5
+  total_steps: 14329      # schedule horizon = baseline, so the LR curves align
+
+train:
+  batch_size: 16
+  grad_accum: 4           # 32,768 tokens/step, identical to the baseline
+  max_steps: 14329        # the full baseline run: one epoch over the same
+                          # 468,638,315 training tokens. The ablation is then
+                          # directly comparable to the graded Model H at its
+                          # final state, and every comparison -- loss,
+                          # perplexity, generation, attention -- is made between
+                          # two models trained identically except for the
+                          # positional embedding.
+  precision: fp16
+  compile: false
+
+eval:
+  every: 500              # identical cadence to the baseline run
+  val_tokens: 2000000     # same slice as the baseline, so the curves compare
+  batch_size: 16
+
+checkpoint:
+  dir: /content/drive/MyDrive/24KaratAu/hindi/checkpoints_nopos
+  save_latest_every: 500
+  save_milestone_every: 2000
+  keep_best: true
+  keep_milestones: 6      # mirrors the baseline's retention
+  mirror_to: ""
+
+log:
+  jsonl: /content/drive/MyDrive/24KaratAu/hindi/logs/train_nopos.jsonl
+  mirror_to: ""
+  every: 20

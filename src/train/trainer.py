@@ -161,8 +161,18 @@ def train(cfg: dict):
     optimizer = build_optimizer(model, o["lr"], o["betas"], o["eps"],
                                 o["weight_decay"])
     max_steps = cfg["train"]["max_steps"]
+    # The LR schedule's horizon is deliberately separable from the stopping
+    # point. An ablation that runs 2,000 of the baseline's 14,329 steps must
+    # follow the *same* schedule over that stretch, or the comparison measures
+    # the learning rate as much as the thing being ablated: cosine decay over
+    # 2,000 steps has annealed to its floor by the end, while the baseline at
+    # step 2,000 is still near peak. Set schedule.total_steps to the baseline's
+    # horizon and train.max_steps to where this run stops.
+    sched_steps = cfg["schedule"].get("total_steps") or max_steps
+    if sched_steps != max_steps:
+        print(f"  schedule horizon {sched_steps:,} steps, stopping at {max_steps:,}")
     scheduler = build_scheduler(optimizer, cfg["schedule"]["warmup_steps"],
-                                max_steps, o["lr"], cfg["schedule"]["min_lr"])
+                                sched_steps, o["lr"], cfg["schedule"]["min_lr"])
     scaler = torch.amp.GradScaler("cuda", enabled=use_fp16)
 
     # --- resume ------------------------------------------------------------

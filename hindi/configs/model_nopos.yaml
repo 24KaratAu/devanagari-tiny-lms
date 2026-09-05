@@ -1,0 +1,35 @@
+# Model H — no-positional-embedding ablation (Phase 2 bonus)
+#
+# Identical to configs/model.yaml in every respect except `pos_encoding: none`,
+# which removes the learned absolute position table. Exact trainable parameter
+# count: 25,117,696 = 25,379,840 - 262,144 (the 512 x 512 position embedding).
+#
+# Self-attention is permutation invariant, so with no position signal the model
+# cannot tell "राम ने सीता को देखा" from the same words shuffled. It is not fully
+# blind to order, however: the causal mask means the query at position i attends
+# over exactly i+1 keys, so the *number* of visible tokens leaks a weak,
+# monotonic position signal. The question this ablation asks is how much of the
+# baseline's performance that residual signal can recover.
+
+name: model_h_hindi_nopos
+language: hindi
+
+architecture:
+  vocab_size: 8000
+  d_model: 512
+  n_layers: 8
+  n_heads: 8
+  d_ff: 1536
+  ctx_len: 512
+  dropout: 0.1
+  tie_weights: true
+  pos_encoding: none      # <-- the only change from configs/model.yaml
+  norm: pre
+  activation: gelu
+
+tokenizer:
+  model: tokenizers/hindi/hindi_bpe_8k.model
+  eos_id: 3
+  bos_id: 2
+  pad_id: 0
+  unk_id: 1
