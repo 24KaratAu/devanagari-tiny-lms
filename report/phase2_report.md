@@ -46,6 +46,12 @@ for each. This is deliberate: it makes the H-vs-L comparison a test of the
 4. **Both models independently learn a near-pure previous-token head in layer
    4** — 96% of attention mass on position *i−1* for Hindi, 84% for Nepali —
    despite sharing no data or weights (§6).
+5. **Removing positional embeddings costs only 3.4% perplexity**, and the model
+   rebuilds a previous-token head at 88% mass anyway. The causal mask is itself
+   a position signal, so a decoder-only model is never order-blind. What it
+   loses is capacity: content-based heads fall from 39 to 26 as the model
+   spends attention working out *where* tokens are rather than *what* they are
+   (§7, bonus ablation).
 
 ---
 
@@ -652,7 +658,155 @@ see a font installed after a subprocess starts.
 
 ---
 
-## 7. Reproducibility
+## 7. Bonus Ablation — No Positional Embeddings
+
+Self-attention is permutation invariant, so the standard account is that
+positional embeddings are what let a Transformer know word order at all. This
+ablation removes them and measures what actually breaks.
+
+### 7.1 Setup
+
+`hindi/configs/model_nopos.yaml` differs from the graded model's config in
+exactly one field, `pos_encoding: learned -> none`, which removes the 512 x 512
+learned position table: 25,379,840 -> **25,117,696** parameters. The training
+config is otherwise byte-identical to `train.yaml` — same seed, same optimiser,
+same 32,768 tokens per step, same 14,329 steps over the same 468,638,315 tokens,
+same cosine schedule. Wall-clock 3.92 h against the baseline's 3.69 h.
+
+Three controls, because an ablation is only worth reading if the single
+intended variable is the only one that moved:
+
+* **The configs were asserted equal before training**, field by field, so a
+  stray edit could not silently become a second variable.
+* **The learning-rate schedules were verified to coincide**, not assumed:
+  `src/eval/compare_ablation.py` compares the logged LR at every shared step and
+  reports the maximum relative difference, which came out **0.0000** across 716
+  points. This mattered — `max_steps` originally drove both the schedule horizon
+  and the stopping point, so a shortened ablation would have trained at a tenth
+  of the baseline's learning rate by step 2,000 and the whole comparison would
+  have measured that instead. The two keys are now separable
+  (`schedule.total_steps`), and the check exists so the confound cannot return
+  unnoticed.
+* **The checkpoint is 3,146,872 bytes smaller** than the baseline's. If the
+  262,144-parameter table is genuinely absent, the saving should be its weight
+  plus Adam's two moment buffers: 262,144 x 4 x 3 = 3,145,728 bytes. The
+  1,144-byte remainder is metadata. The table is not merely zeroed or unused —
+  it is gone.
+
+### 7.2 What it costs
+
+Full held-out splits, same evaluation code as the graded model:
+
+| Test split | Learned positions | No positions | Change |
+| :--- | ---: | ---: | ---: |
+| Cross-entropy (nats) | 3.2885 | 3.3216 | +0.0331 |
+| **Perplexity** | **26.80** | **27.70** | **+3.4%** |
+| Bits-per-byte | 0.5371 | 0.5425 | +1.0% |
+| Bits-per-character | 1.3636 | 1.3773 | +1.0% |
+
+![Loss comparison](figures/hindi_ablation_nopos_loss.png)
+
+**Removing positional embeddings entirely costs about 3.4% perplexity.** The
+curves are nearly superimposed: the ablation is visibly worse for the first
+~3,000 steps and then closes most of the gap. For scale, the distance from the
+baseline to a model that has learned nothing (`ln 8000 = 8.99`) is 5.70 nats;
+the ablation gives up 0.033 of that, or **0.6% of everything the baseline
+learned**.
+
+Generation is likewise almost unchanged — chrF++ at temperature 1.0 of 18.03
+against 18.94, and repetition and diversity statistics within noise of the
+baseline at every decoding setting (`report/figures/generation_metrics_ablation.md`).
+The ablated model writes recognisably the same kind of Hindi.
+
+### 7.3 What breaks — and what does not
+
+The prediction going in was specific: a **previous-token head** should be unable
+to form, because "previous" is exactly what a model with no position signal
+cannot identify. The baseline's cleanest structure is one of these — layer 4,
+head 4, with 96% of its attention mass on position *i-1*.
+
+**That prediction was wrong, and the way it was wrong is the finding.**
+
+![Previous-token head by layer](figures/hindi_ablation_nopos_prevtoken.png)
+
+| | Learned positions | No positions |
+| :--- | ---: | ---: |
+| Strongest previous-token head | 0.96 (L4 H4) | **0.88 (L4 H7)** |
+| Second strongest | 0.43 (L3 H3) | **0.72 (L5 H3)** |
+| Heads with prev-token mass > 0.25 | 6 | 5 |
+
+The ablated model builds a previous-token head anyway, at 88% mass in the same
+layer, and a second one at 72% in the layer below. Nothing in its architecture
+tells it where token *i-1* is; it reconstructs that.
+
+The two heatmaps below are the same layer on the same held-out passage. In the
+baseline, head 4 is an unbroken sub-diagonal stripe; in the ablation, head 7 is
+the same structure at 88% mass, built with no position table at all.
+
+**Baseline — learned positions**
+
+![Hindi layer 4, baseline](figures/hindi_attention_layer4.png)
+
+**Ablation — no positional embedding**
+
+![Hindi layer 4, no positions](figures/hindi_nopos_attention_layer4.png)
+
+Per-head statistics across all eight layers, for both models:
+
+![Head summary, no positions](figures/hindi_nopos_attention_head_summary.png)
+
+**How.** The causal mask is itself a position signal. A query at position *i*
+attends over exactly *i + 1* keys, so the number of visible tokens — and hence
+the normalisation of the softmax — varies monotonically with position. A
+decoder-only model is never truly order-blind; removing the embedding replaces
+an explicit position signal with an implicit and weaker one, and 3.4% perplexity
+is the price of that substitution rather than the price of losing position
+altogether. This reproduces a known result in the literature on decoder-only
+models trained without positional encodings.
+
+**What does change is where the work happens.**
+
+| Aggregated over 64 heads | Learned positions | No positions |
+| :--- | ---: | ---: |
+| Mean attention distance | 65.6 | 71.3 |
+| Mean normalised entropy | 0.643 | 0.689 |
+| Heads with mean distance < 10 | 6 | **12** |
+| Diffuse / content-based / local / prev-token | 16 / 39 / 3 / 6 | **24 / 26 / 9 / 5** |
+
+Layer by layer, the ablated model is markedly **more diffuse early** (mean
+distance 121.1 against 85.4 at layer 0; 124.2 against 94.5 at layer 1) and
+markedly **more local in the middle** (14.8 against 24.7 at layer 4; 55.7
+against 88.2 at layer 5). The reading that fits: with no position embedding to
+read off, the early layers cannot select on position, so they aggregate broadly
+— and that broad aggregation is plausibly where the implicit position signal
+gets assembled. Only once it exists can the middle layers do the local,
+offset-sensitive work, which they then do harder than the baseline does.
+
+The cost shows in the head census: **content-based heads fall from 39 to 26**
+while diffuse and local heads rise. Capacity that the baseline could spend
+selecting on *what* tokens are, the ablated model must spend working out *where*
+they are.
+
+### 7.4 What breaks without position information — the short answer
+
+Less than the textbook framing suggests, in a decoder-only model. Order
+information is not lost, because the causal mask encodes it implicitly; it
+becomes more expensive to use. The model pays 3.4% perplexity, reallocates about
+a fifth of its heads from content-based selection to diffuse aggregation and
+local scanning, and still constructs a previous-token head at 88% mass. An
+encoder — bidirectional, with no causal mask — would have no such fallback, and
+would be genuinely permutation invariant.
+
+### 7.5 Limitations
+
+One seed, one language, one architecture. The 3.4% gap is a single measurement
+with no estimate of run-to-run variance, so it should be read as "small" rather
+than as precisely 3.4%. The attention reorganisation is a larger effect and more
+robust to that concern, but the causal story — early layers assembling an
+implicit position signal — is an interpretation of correlational evidence, not
+something this experiment isolates.
+
+## 8. Reproducibility
 
 Every evaluation artefact carries a provenance block (`src/eval/provenance.py`)
 recording the exact command, the git commit and branch, whether the tree was
@@ -687,7 +841,7 @@ session.
 
 ---
 
-## 8. Limitations
+## 9. Limitations
 
 1. **One epoch, one seed, two runs.** No error bars anywhere. Every difference
    quoted between Model H and Model L is a single-sample comparison, and the
@@ -708,14 +862,14 @@ session.
    support a fine-grained claim.
 6. **Attention statistics come from 32 windows of one split**, and the head
    classification thresholds are heuristic (§6.1).
-7. **The no-positional-embedding ablation was not run.** It is a bonus item and
-   the core deliverables took the available GPU budget. The architecture supports
-   it directly (`pos_encoding: none`), so it is a configuration change, not a
-   code change.
+7. **The ablation is a single run of a single language** (§7.5). The 3.4%
+   perplexity gap has no error bars, and the account of *why* the attention
+   reorganises is an interpretation of correlational evidence rather than
+   something the experiment isolates.
 
 ---
 
-## 9. Conclusion
+## 10. Conclusion
 
 Two 25.4M-parameter decoder-only Transformers were implemented from primitive
 PyTorch layers and pretrained from scratch on independent Hindi and Nepali
@@ -731,5 +885,14 @@ degenerate decoder above a coherent one while a reference-free repetition rate
 separates them by 29×; and that two models sharing nothing converge on the same
 previous-token head at the same depth.
 
-Three of those four are cases where the obvious measurement disagreed with the
-careful one. That is the part of Phase 2 worth carrying forward.
+The bonus ablation added a fifth, and it was the one that contradicted its own
+hypothesis. Removing positional embeddings was supposed to make a previous-token
+head impossible; the model built one at 88% mass regardless, paying 3.4%
+perplexity and reallocating a fifth of its heads from content-based selection to
+diffuse aggregation. A decoder-only Transformer is never permutation invariant,
+because the causal mask leaks position — which is obvious in hindsight and was
+not obvious in advance.
+
+Four of those five are cases where the obvious measurement, or the obvious
+prediction, disagreed with the careful one. That is the part of Phase 2 worth
+carrying forward.

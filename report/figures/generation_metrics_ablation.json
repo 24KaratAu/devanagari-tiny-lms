@@ -1,0 +1,395 @@
+{
+  "provenance": {
+    "module": "src.eval.metrics",
+    "generated_at": "2026-09-06T11:39:17+00:00",
+    "command": "python -m src.eval.metrics --generations hindi=hindi/samples/generations.json hindi_nopos=hindi/samples/generations_nopos.json --out report/figures/generation_metrics_ablation.json --markdown report/figures/generation_metrics_ablation.md",
+    "git_commit": null,
+    "git_branch": null,
+    "git_dirty": false,
+    "python": "3.13.15",
+    "inputs": {
+      "hindi": {
+        "path": "hindi/samples/generations.json",
+        "bytes": 552247,
+        "sha256": "a0b7a2ad1a8361a3ff19650720196143d167d5bc2006029831fd053a62a47226",
+        "digested": true
+      },
+      "hindi_nopos": {
+        "path": "hindi/samples/generations_nopos.json",
+        "bytes": 537930,
+        "sha256": "3453b173f8e15d4005360cb5f126578ad455c67d9853addf3bab53584b2b8c5b",
+        "digested": true
+      }
+    }
+  },
+  "languages": {
+    "hindi": {
+      "language": "hindi",
+      "checkpoint_step": 14329,
+      "n_prompts": 32,
+      "prompt_tokens": 32,
+      "max_new_tokens": 128,
+      "settings": {
+        "greedy": {
+          "bleu": 1.4673203238445822,
+          "bleu_unsmoothed": 1.4673203238445822,
+          "precisions": [
+            13.612565445026178,
+            2.513227513227513,
+            0.6684491978609626,
+            0.20270270270270271
+          ],
+          "brevity_penalty": 1.0,
+          "length_ratio": 1.0293027955540586,
+          "hyp_len": 3056,
+          "ref_len": 2969,
+          "chrf_plus": 11.525366974889657,
+          "chrf": 12.616781050303402,
+          "word_f": 8.251124748648428,
+          "char_orders": 6,
+          "word_orders": 2,
+          "rouge_l_f": 11.744090164230595,
+          "rouge_l_precision": 12.832369134821912,
+          "rouge_l_recall": 12.001833502884935,
+          "rep_1": 84.02204451214801,
+          "rep_2": 82.15038950692792,
+          "rep_3": 81.4641097339893,
+          "rep_4": 80.93209733437206,
+          "distinct_1": 7.820680628272251,
+          "distinct_2": 13.723544973544973,
+          "mean_words": 95.5,
+          "n_samples": 32,
+          "mean_tokens": 124.40625,
+          "eos_rate": 3.125
+        },
+        "temp_0.5": {
+          "bleu": 2.20666616059735,
+          "bleu_unsmoothed": 2.20666616059735,
+          "precisions": [
+            19.98612074947953,
+            3.6491228070175437,
+            0.8516678495386799,
+            0.4307250538406317
+          ],
+          "brevity_penalty": 0.9702637183172553,
+          "length_ratio": 0.9706972044459414,
+          "hyp_len": 2882,
+          "ref_len": 2969,
+          "chrf_plus": 14.57107021178328,
+          "chrf": 15.581931747709275,
+          "word_f": 11.538485604005293,
+          "char_orders": 6,
+          "word_orders": 2,
+          "rouge_l_f": 13.282736242652643,
+          "rouge_l_precision": 15.340942196445454,
+          "rouge_l_recall": 13.35786619991803,
+          "rep_1": 66.66497388711554,
+          "rep_2": 56.456434305232726,
+          "rep_3": 50.698158500167004,
+          "rep_4": 46.53448564488375,
+          "distinct_1": 17.10617626648161,
+          "distinct_2": 36.98245614035088,
+          "mean_words": 90.0625,
+          "n_samples": 32,
+          "mean_tokens": 114.59375,
+          "eos_rate": 25.0
+        },
+        "temp_1": {
+          "bleu": 1.4241896120143192,
+          "bleu_unsmoothed": 1.4241896120143192,
+          "precisions": [
+            23.89894161829976,
+            3.2792544011045908,
+            0.5235602094240838,
+            0.10589481115425345
+          ],
+          "brevity_penalty": 0.9864362894006492,
+          "length_ratio": 0.986527450319973,
+          "hyp_len": 2929,
+          "ref_len": 2969,
+          "chrf_plus": 18.943568429597264,
+          "chrf": 20.77740961786481,
+          "word_f": 13.442044864794623,
+          "char_orders": 6,
+          "word_orders": 2,
+          "rouge_l_f": 13.644955578484641,
+          "rouge_l_precision": 14.353167291447969,
+          "rouge_l_recall": 13.800614775391844,
+          "rep_1": 27.630721597070966,
+          "rep_2": 5.213674098089564,
+          "rep_3": 1.7653812685014387,
+          "rep_4": 0.6894896939197294,
+          "distinct_1": 42.71082280641857,
+          "distinct_2": 85.64031756989989,
+          "mean_words": 91.53125,
+          "n_samples": 32,
+          "mean_tokens": 118.5625,
+          "eos_rate": 15.625
+        },
+        "temp_1.5": {
+          "bleu": 0.5128975808955601,
+          "bleu_unsmoothed": 0.5128975808955601,
+          "precisions": [
+            13.363533408833522,
+            1.108139090561712,
+            0.19342359767891684,
+            0.03916960438699569
+          ],
+          "brevity_penalty": 0.8862109164702484,
+          "length_ratio": 0.8922196025597844,
+          "hyp_len": 2649,
+          "ref_len": 2969,
+          "chrf_plus": 16.082802670090583,
+          "chrf": 19.24452285266563,
+          "word_f": 6.597642122365449,
+          "char_orders": 6,
+          "word_orders": 2,
+          "rouge_l_f": 7.908805459590525,
+          "rouge_l_precision": 9.022440071598277,
+          "rouge_l_recall": 7.66693203672283,
+          "rep_1": 8.005262074707934,
+          "rep_2": 0.6321011525074391,
+          "rep_3": 0.19436958251042372,
+          "rep_4": 0.03221649484536071,
+          "distinct_1": 68.5919214798037,
+          "distinct_2": 97.78372181887657,
+          "mean_words": 82.78125,
+          "n_samples": 32,
+          "mean_tokens": 118.1875,
+          "eos_rate": 12.5
+        }
+      },
+      "reference": {
+        "rep_1": 31.729134962576357,
+        "rep_2": 8.681124951267247,
+        "rep_3": 4.113671998309119,
+        "rep_4": 2.8447373999444583,
+        "distinct_1": 40.48501178848097,
+        "distinct_2": 83.45250255362615,
+        "mean_words": 92.78125,
+        "n_samples": 32
+      },
+      "generation_provenance": {
+        "module": "src.eval.generate",
+        "generated_at": "2026-09-03T20:06:57+00:00",
+        "command": "python -m src.eval.generate --checkpoint /content/drive/MyDrive/24KaratAu/hindi/checkpoints/checkpoint_best.pt --model-config hindi/configs/model.yaml --tokenizer tokenizers/hindi/hindi_bpe_8k.model --test-jsonl /content/drive/MyDrive/24KaratAu/hindi/splits/test.jsonl --language hindi --n-prompts 32 --prompt-tokens 32 --max-new-tokens 128 --out hindi/samples/generations.json --markdown hindi/samples/generations.md",
+        "git_commit": null,
+        "git_branch": null,
+        "git_dirty": false,
+        "python": "3.13.15",
+        "inputs": {
+          "checkpoint": {
+            "path": "/content/drive/MyDrive/24KaratAu/hindi/checkpoints/checkpoint_best.pt",
+            "bytes": 304694939,
+            "mtime": "2026-09-02T13:38:36+00:00",
+            "digested": false
+          },
+          "model_config": {
+            "path": "hindi/configs/model.yaml",
+            "bytes": 1455,
+            "sha256": "2526fd676fc0bdf8f81d516d8b6c5aae88ec9163076639023d690ee986ecb32b",
+            "digested": true
+          },
+          "tokenizer": {
+            "path": "tokenizers/hindi/hindi_bpe_8k.model",
+            "bytes": 422881,
+            "sha256": "f96162b6db4db4d58ac8f4758ad77ba050adac5616e53fb7af832144aaaea9a3",
+            "digested": true
+          },
+          "test_jsonl": {
+            "path": "/content/drive/MyDrive/24KaratAu/hindi/splits/test.jsonl",
+            "bytes": 246902557,
+            "sha256": "343f2a1101e97e92a69b7a0197663a84f72ca7191c6a3023d2a5c9791617812d",
+            "digested": true
+          }
+        },
+        "torch": "2.11.0+cu128",
+        "device": "cuda"
+      }
+    },
+    "hindi_nopos": {
+      "language": "hindi",
+      "checkpoint_step": 14329,
+      "n_prompts": 32,
+      "prompt_tokens": 32,
+      "max_new_tokens": 128,
+      "settings": {
+        "greedy": {
+          "bleu": 1.6227462008919473,
+          "bleu_unsmoothed": 1.6227462008919473,
+          "precisions": [
+            15.869106263194933,
+            2.491103202846975,
+            0.7199424046076314,
+            0.29133284777858703
+          ],
+          "brevity_penalty": 0.9562969086440809,
+          "length_ratio": 0.9572246547659145,
+          "hyp_len": 2842,
+          "ref_len": 2969,
+          "chrf_plus": 11.907748566884525,
+          "chrf": 12.922739491728883,
+          "word_f": 8.862775792351444,
+          "char_orders": 6,
+          "word_orders": 2,
+          "rouge_l_f": 12.810570263253195,
+          "rouge_l_precision": 20.315422262421077,
+          "rouge_l_recall": 12.989518446762945,
+          "rep_1": 74.41559043455474,
+          "rep_2": 72.71210769791271,
+          "rep_3": 71.385746697018,
+          "rep_4": 72.33908580867127,
+          "distinct_1": 7.353976073187896,
+          "distinct_2": 13.274021352313166,
+          "mean_words": 88.8125,
+          "n_samples": 32,
+          "mean_tokens": 116.8125,
+          "eos_rate": 9.375
+        },
+        "temp_0.5": {
+          "bleu": 1.5285940236736817,
+          "bleu_unsmoothed": 1.5285940236736817,
+          "precisions": [
+            20.48,
+            3.4440842787682335,
+            0.6568144499178982,
+            0.24958402662229617
+          ],
+          "brevity_penalty": 0.8289462194135897,
+          "length_ratio": 0.8420343550016841,
+          "hyp_len": 2500,
+          "ref_len": 2969,
+          "chrf_plus": 13.784331168773253,
+          "chrf": 14.912933880391284,
+          "word_f": 10.398523033919158,
+          "char_orders": 6,
+          "word_orders": 2,
+          "rouge_l_f": 13.545485457326487,
+          "rouge_l_precision": 20.529702943170925,
+          "rouge_l_recall": 12.963162150778777,
+          "rep_1": 60.86007263978852,
+          "rep_2": 51.26792443534456,
+          "rep_3": 44.994043251829076,
+          "rep_4": 40.24420725307423,
+          "distinct_1": 16.36,
+          "distinct_2": 35.37277147487844,
+          "mean_words": 78.125,
+          "n_samples": 32,
+          "mean_tokens": 105.9375,
+          "eos_rate": 25.0
+        },
+        "temp_1": {
+          "bleu": 1.754069954477714,
+          "bleu_unsmoothed": 1.754069954477714,
+          "precisions": [
+            24.855044453034402,
+            3.600782778864971,
+            0.7927070947284978,
+            0.24086712163789645
+          ],
+          "brevity_penalty": 0.8627231975016242,
+          "length_ratio": 0.8713371505557427,
+          "hyp_len": 2587,
+          "ref_len": 2969,
+          "chrf_plus": 18.031732471871546,
+          "chrf": 19.801435808200612,
+          "word_f": 12.72262246288435,
+          "char_orders": 6,
+          "word_orders": 2,
+          "rouge_l_f": 13.30207785511634,
+          "rouge_l_precision": 16.587289919062588,
+          "rouge_l_recall": 12.935957117726824,
+          "rep_1": 26.359007973373622,
+          "rep_2": 6.131975698583559,
+          "rep_3": 2.6404317803183908,
+          "rep_4": 1.4232612006628662,
+          "distinct_1": 42.86818708929262,
+          "distinct_2": 84.89236790606654,
+          "mean_words": 80.84375,
+          "n_samples": 32,
+          "mean_tokens": 111.34375,
+          "eos_rate": 21.875
+        },
+        "temp_1.5": {
+          "bleu": 0.7469311705440671,
+          "bleu_unsmoothed": 0.7469311705440671,
+          "precisions": [
+            12.26927252985885,
+            1.171731966312706,
+            0.2593553167839941,
+            0.11248593925759282
+          ],
+          "brevity_penalty": 0.9281549006403147,
+          "length_ratio": 0.9306163691478613,
+          "hyp_len": 2763,
+          "ref_len": 2969,
+          "chrf_plus": 16.49677327376277,
+          "chrf": 19.881746292396027,
+          "word_f": 6.3418542178630135,
+          "char_orders": 6,
+          "word_orders": 2,
+          "rouge_l_f": 7.221777195662453,
+          "rouge_l_precision": 7.684037699506701,
+          "rouge_l_recall": 7.144381438474431,
+          "rep_1": 7.133125359364651,
+          "rep_2": 0.7204832120640079,
+          "rep_3": 0.24330488884517049,
+          "rep_4": 0.06528125340006519,
+          "distinct_1": 69.70684039087948,
+          "distinct_2": 98.16916880263639,
+          "mean_words": 86.34375,
+          "n_samples": 32,
+          "mean_tokens": 122.6875,
+          "eos_rate": 9.375
+        }
+      },
+      "reference": {
+        "rep_1": 31.729134962576357,
+        "rep_2": 8.681124951267247,
+        "rep_3": 4.113671998309119,
+        "rep_4": 2.8447373999444583,
+        "distinct_1": 40.48501178848097,
+        "distinct_2": 83.45250255362615,
+        "mean_words": 92.78125,
+        "n_samples": 32
+      },
+      "generation_provenance": {
+        "module": "src.eval.generate",
+        "generated_at": "2026-09-06T11:11:58+00:00",
+        "command": "python -m src.eval.generate --checkpoint /content/drive/MyDrive/24KaratAu/hindi/checkpoints_nopos/checkpoint_best.pt --model-config hindi/configs/model_nopos.yaml --tokenizer tokenizers/hindi/hindi_bpe_8k.model --test-jsonl /content/drive/MyDrive/24KaratAu/hindi/splits/test.jsonl --language hindi --n-prompts 32 --prompt-tokens 32 --max-new-tokens 128 --seed 1234 --out hindi/samples/generations_nopos.json --markdown hindi/samples/generations_nopos.md",
+        "git_commit": null,
+        "git_branch": null,
+        "git_dirty": false,
+        "python": "3.13.15",
+        "inputs": {
+          "checkpoint": {
+            "path": "/content/drive/MyDrive/24KaratAu/hindi/checkpoints_nopos/checkpoint_best.pt",
+            "bytes": 301548067,
+            "mtime": "2026-09-05T18:34:55+00:00",
+            "digested": false
+          },
+          "model_config": {
+            "path": "hindi/configs/model_nopos.yaml",
+            "bytes": 1180,
+            "sha256": "1a322052fec9508f6b6c473a75bed154d800d761a88963ce86d1efced1d6055e",
+            "digested": true
+          },
+          "tokenizer": {
+            "path": "tokenizers/hindi/hindi_bpe_8k.model",
+            "bytes": 422881,
+            "sha256": "f96162b6db4db4d58ac8f4758ad77ba050adac5616e53fb7af832144aaaea9a3",
+            "digested": true
+          },
+          "test_jsonl": {
+            "path": "/content/drive/MyDrive/24KaratAu/hindi/splits/test.jsonl",
+            "bytes": 246902557,
+            "sha256": "343f2a1101e97e92a69b7a0197663a84f72ca7191c6a3023d2a5c9791617812d",
+            "digested": true
+          }
+        },
+        "torch": "2.11.0+cu128",
+        "device": "cuda"
+      }
+    }
+  }
+}

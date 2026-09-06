@@ -1,12 +1,12 @@
 {
   "provenance": {
     "module": "src.eval.compare_ablation",
-    "generated_at": "2026-09-05T21:24:07+00:00",
-    "command": "python -m src.eval.compare_ablation --baseline-log hindi/logs/train.jsonl --ablation-log hindi/logs/train_nopos.jsonl --language hindi --outdir report/figures --out report/figures/ablation_nopos_hindi.json --markdown report/figures/ablation_nopos_hindi.md",
-    "git_commit": "0a36b686396bf3849b160c60e6eb9b6a391d3c02",
-    "git_branch": "phase-2",
-    "git_dirty": true,
-    "python": "3.14.4",
+    "generated_at": "2026-09-06T11:39:42+00:00",
+    "command": "python -m src.eval.compare_ablation --baseline-log hindi/logs/train.jsonl --ablation-log hindi/logs/train_nopos.jsonl --baseline-attn hindi/eval/attention_stats.json --ablation-attn hindi/eval/attention_stats_nopos.json --language hindi --outdir report/figures --out report/figures/ablation_nopos_hindi.json --markdown report/figures/ablation_nopos_hindi.md",
+    "git_commit": null,
+    "git_branch": null,
+    "git_dirty": false,
+    "python": "3.13.15",
     "inputs": {
       "baseline_log": {
         "path": "hindi/logs/train.jsonl",
@@ -19,9 +19,21 @@
         "bytes": 135652,
         "sha256": "27d76c90ee9d74a045a4c86dfb05e809ec34f763ac9100fb22b05b0868fe0808",
         "digested": true
+      },
+      "baseline_attn": {
+        "path": "hindi/eval/attention_stats.json",
+        "bytes": 23766,
+        "sha256": "8547b800737840bdb41b035a709ca4be0c763f3ae940e101389fe3fb2066d27d",
+        "digested": true
+      },
+      "ablation_attn": {
+        "path": "hindi/eval/attention_stats_nopos.json",
+        "bytes": 23780,
+        "sha256": "eeaa12d1c79af7f110e90325d8c172f6b76a854e13e576b7e1a977f1f2614ef4",
+        "digested": true
       }
     },
-    "matplotlib": "3.10.8"
+    "matplotlib": "3.10.0"
   },
   "language": "hindi",
   "lr_alignment": {
@@ -276,5 +288,125 @@
     "final_ppl_ratio": 1.0425295295530357,
     "uniform_loss": 8.987196820661973,
     "gap_as_share_of_learned": 0.006962627865967851
+  },
+  "attention": {
+    "per_layer": [
+      {
+        "layer": 0,
+        "baseline_max_prev_mass": 0.031324059469625354,
+        "baseline_max_prev_head": 2,
+        "ablation_max_prev_mass": 0.012242254219017923,
+        "ablation_max_prev_head": 1,
+        "baseline_mean_distance": 85.42312723398209,
+        "ablation_mean_distance": 121.12985348701477,
+        "baseline_mean_entropy": 0.8867627084255219,
+        "ablation_mean_entropy": 0.8844964876770973
+      },
+      {
+        "layer": 1,
+        "baseline_max_prev_mass": 0.07292946614325047,
+        "baseline_max_prev_head": 2,
+        "ablation_max_prev_mass": 0.015143094817176461,
+        "ablation_max_prev_head": 7,
+        "baseline_mean_distance": 94.54375559091568,
+        "ablation_mean_distance": 124.1698123216629,
+        "baseline_mean_entropy": 0.8191849570721388,
+        "ablation_mean_entropy": 0.9231637204065919
+      },
+      {
+        "layer": 2,
+        "baseline_max_prev_mass": 0.20628354512155056,
+        "baseline_max_prev_head": 0,
+        "ablation_max_prev_mass": 0.06310101225972176,
+        "ablation_max_prev_head": 7,
+        "baseline_mean_distance": 67.38497987389565,
+        "ablation_mean_distance": 98.80738171935081,
+        "baseline_mean_entropy": 0.6317802867852151,
+        "ablation_mean_entropy": 0.8721387209370732
+      },
+      {
+        "layer": 3,
+        "baseline_max_prev_mass": 0.43080132082104683,
+        "baseline_max_prev_head": 3,
+        "ablation_max_prev_mass": 0.23495978489518166,
+        "ablation_max_prev_head": 0,
+        "baseline_mean_distance": 18.996734976768494,
+        "ablation_mean_distance": 29.378754876554012,
+        "baseline_mean_entropy": 0.4508798117749393,
+        "ablation_mean_entropy": 0.5425993129611015
+      },
+      {
+        "layer": 4,
+        "baseline_max_prev_mass": 0.9552856311202049,
+        "baseline_max_prev_head": 4,
+        "ablation_max_prev_mass": 0.8815633431077003,
+        "ablation_max_prev_head": 7,
+        "baseline_mean_distance": 24.74955323152244,
+        "ablation_mean_distance": 14.774631453678012,
+        "baseline_mean_entropy": 0.3981625360320322,
+        "ablation_mean_entropy": 0.4771341552841477
+      },
+      {
+        "layer": 5,
+        "baseline_max_prev_mass": 0.18288159929215908,
+        "baseline_max_prev_head": 4,
+        "ablation_max_prev_mass": 0.7206731736660004,
+        "ablation_max_prev_head": 3,
+        "baseline_mean_distance": 88.17911368608475,
+        "ablation_mean_distance": 55.67911609262228,
+        "baseline_mean_entropy": 0.5583938155323267,
+        "ablation_mean_entropy": 0.5027106879279017
+      },
+      {
+        "layer": 6,
+        "baseline_max_prev_mass": 0.10502160713076591,
+        "baseline_max_prev_head": 0,
+        "ablation_max_prev_mass": 0.25539518520236015,
+        "ablation_max_prev_head": 4,
+        "baseline_mean_distance": 63.249529004096985,
+        "ablation_mean_distance": 41.18818065524101,
+        "baseline_mean_entropy": 0.6517478288151324,
+        "ablation_mean_entropy": 0.5943395863287151
+      },
+      {
+        "layer": 7,
+        "baseline_max_prev_mass": 0.03578221006318927,
+        "baseline_max_prev_head": 6,
+        "ablation_max_prev_mass": 0.049898719880729914,
+        "ablation_max_prev_head": 0,
+        "baseline_mean_distance": 82.59409606456757,
+        "ablation_mean_distance": 85.03253972530365,
+        "baseline_mean_entropy": 0.7454065969213843,
+        "ablation_mean_entropy": 0.7146477485075593
+      }
+    ],
+    "aggregate": {
+      "baseline": {
+        "max_prev_token_mass": 0.9552856311202049,
+        "mean_distance": 65.6401112077292,
+        "mean_entropy": 0.6427898176698363,
+        "n_prev_token_heads": 6,
+        "n_local_heads": 6,
+        "classification_counts": {
+          "diffuse": 16,
+          "content-based": 39,
+          "local": 3,
+          "previous-token": 6
+        }
+      },
+      "ablation": {
+        "max_prev_token_mass": 0.8815633431077003,
+        "mean_distance": 71.27003379142843,
+        "mean_entropy": 0.6889038025037735,
+        "n_prev_token_heads": 5,
+        "n_local_heads": 12,
+        "classification_counts": {
+          "diffuse": 24,
+          "content-based": 26,
+          "local": 9,
+          "previous-token": 5
+        }
+      }
+    }
   }
 }

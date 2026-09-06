@@ -1084,6 +1084,54 @@ Three findings the tables alone do not show, each worked through in
 
 ---
 
+## Bonus — What Breaks Without Positional Embeddings
+
+The brief offers optional marks for retraining one model with positional
+embeddings removed and running the full evaluation suite on it. Model H was
+retrained for the full 14,329 steps with `pos_encoding: none` — 25,117,696
+parameters instead of 25,379,840 — and everything else held identical: same
+seed, same optimiser, same tokens, same schedule.
+
+| Test split | Learned positions | No positions | Change |
+| :--- | ---: | ---: | ---: |
+| **Perplexity** | **26.80** | **27.70** | **+3.4%** |
+| Bits-per-byte | 0.5371 | 0.5425 | +1.0% |
+| Bits-per-character | 1.3636 | 1.3773 | +1.0% |
+| Strongest previous-token head | 0.96 | **0.88** | still forms |
+| Content-based heads (of 64) | 39 | **26** | −33% |
+
+**Removing positional embeddings costs about 3.4% perplexity — far less than
+"self-attention is permutation invariant" suggests.** The reason is that a
+decoder-only model is never actually order-blind: the causal mask means a query
+at position *i* attends over exactly *i + 1* keys, so token count is itself a
+monotonic position signal. Removing the embedding swaps an explicit position
+signal for an implicit one; it does not remove position.
+
+**The prediction going in was that a previous-token head could not form**, since
+"previous" is precisely what an order-blind model cannot identify. That was
+wrong: the ablated model builds one at 88% mass in the same layer, plus a second
+at 72% in the layer below. Nothing tells it where token *i−1* is — it
+reconstructs that.
+
+What it does lose is **capacity**. Content-based heads fall from 39 to 26 while
+diffuse heads rise from 16 to 24 and local heads from 3 to 9. Early layers become
+far more diffuse (mean attention distance 121 against 85 at layer 0) and middle
+layers far more local (14.8 against 24.7 at layer 4). Attention the baseline
+spends on *what* tokens are, the ablation must spend on *where* they are.
+
+Three controls make this readable as an ablation rather than two runs:
+the configs were asserted equal field by field before training; the learning-rate
+schedules were **verified** to coincide (max relative difference 0.0000 across
+716 shared steps) rather than assumed; and the checkpoint came out 3,146,872
+bytes smaller, against 3,145,728 predicted if the position table and its two Adam
+moment buffers are genuinely gone.
+
+Reproduce with [`notebooks/ablation_nopos_colab.ipynb`](notebooks/ablation_nopos_colab.ipynb).
+Full write-up in [report §7](report/phase2_report.md); figures in
+[`report/figures/`](report/figures).
+
+---
+
 ## Google Drive Artifacts and Checkpoints
 
 All large artifacts live in a single shared Google Drive folder:

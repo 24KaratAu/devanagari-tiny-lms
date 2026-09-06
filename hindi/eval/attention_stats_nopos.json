@@ -1,0 +1,721 @@
+{
+  "provenance": {
+    "module": "src.eval.attention_analysis",
+    "generated_at": "2026-09-06T11:39:36+00:00",
+    "command": "python -m src.eval.attention_analysis --checkpoint /content/drive/MyDrive/24KaratAu/hindi/checkpoints_nopos/checkpoint_best.pt --model-config hindi/configs/model_nopos.yaml --tokenizer tokenizers/hindi/hindi_bpe_8k.model --tokens-dir /content/drive/MyDrive/24KaratAu/hindi/tokens --language hindi --batch-size 4 --n-batches 8 --display-tokens 40 --heads 0,1,4,7 --figdir hindi/figures_nopos --out hindi/eval/attention_stats_nopos.json",
+    "git_commit": null,
+    "git_branch": null,
+    "git_dirty": false,
+    "python": "3.13.15",
+    "inputs": {
+      "checkpoint": {
+        "path": "/content/drive/MyDrive/24KaratAu/hindi/checkpoints_nopos/checkpoint_best.pt",
+        "bytes": 301548067,
+        "mtime": "2026-09-05T18:34:55+00:00",
+        "digested": false
+      },
+      "model_config": {
+        "path": "hindi/configs/model_nopos.yaml",
+        "bytes": 1180,
+        "sha256": "1a322052fec9508f6b6c473a75bed154d800d761a88963ce86d1efced1d6055e",
+        "digested": true
+      },
+      "tokenizer": {
+        "path": "tokenizers/hindi/hindi_bpe_8k.model",
+        "bytes": 422881,
+        "sha256": "f96162b6db4db4d58ac8f4758ad77ba050adac5616e53fb7af832144aaaea9a3",
+        "digested": true
+      },
+      "test_bin": {
+        "path": "/content/drive/MyDrive/24KaratAu/hindi/tokens/hindi_test.bin",
+        "bytes": 52866654,
+        "sha256": "51cec30067c740214c72608cb87f2cc745c2294f3da3a013eee43bdf8279004b",
+        "digested": true
+      }
+    },
+    "torch": "2.11.0+cu128",
+    "device": "cuda",
+    "devanagari_font": "Lohit Devanagari",
+    "matplotlib": "3.10.0"
+  },
+  "language": "hindi",
+  "checkpoint_step": 14329,
+  "split": "test",
+  "n_layers": 8,
+  "n_heads": 8,
+  "ctx_len": 512,
+  "display_offset": 100000,
+  "figures": [
+    "hindi/figures_nopos/attention_layer0.png",
+    "hindi/figures_nopos/attention_layer4.png",
+    "hindi/figures_nopos/attention_layer7.png",
+    "hindi/figures_nopos/attention_head_summary.png"
+  ],
+  "passage_file": "hindi/figures_nopos/attention_passage.txt",
+  "classification_counts": {
+    "diffuse": 24,
+    "content-based": 26,
+    "local": 9,
+    "previous-token": 5
+  },
+  "layers": [
+    [
+      {
+        "layer": 0,
+        "head": 0,
+        "entropy_nats": 4.534853577613831,
+        "entropy_normalised": 0.8514602854847908,
+        "mean_distance": 119.08371067047119,
+        "prev_token_mass": 0.010065553826279938,
+        "first_position_mass": 0.00663092004833743,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 0,
+        "head": 1,
+        "entropy_nats": 4.851822793483734,
+        "entropy_normalised": 0.9216075018048286,
+        "mean_distance": 126.87467765808105,
+        "prev_token_mass": 0.012242254219017923,
+        "first_position_mass": 0.010883159819059074,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 0,
+        "head": 2,
+        "entropy_nats": 4.742053508758545,
+        "entropy_normalised": 0.8893635720014572,
+        "mean_distance": 119.29503345489502,
+        "prev_token_mass": 0.008158546115737408,
+        "first_position_mass": 0.0063113715732470155,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 0,
+        "head": 3,
+        "entropy_nats": 4.503872275352478,
+        "entropy_normalised": 0.8406680673360825,
+        "mean_distance": 115.1246976852417,
+        "prev_token_mass": 0.007252168550621718,
+        "first_position_mass": 0.005835031974129379,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 0,
+        "head": 4,
+        "entropy_nats": 4.883973002433777,
+        "entropy_normalised": 0.9233122766017914,
+        "mean_distance": 124.1734848022461,
+        "prev_token_mass": 0.009953530272468925,
+        "first_position_mass": 0.008434083021711558,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 0,
+        "head": 5,
+        "entropy_nats": 4.923441469669342,
+        "entropy_normalised": 0.9345904439687729,
+        "mean_distance": 126.3178539276123,
+        "prev_token_mass": 0.011026121559552848,
+        "first_position_mass": 0.010053194244392216,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 0,
+        "head": 6,
+        "entropy_nats": 4.438749313354492,
+        "entropy_normalised": 0.8349289894104004,
+        "mean_distance": 120.64846515655518,
+        "prev_token_mass": 0.008608812233433127,
+        "first_position_mass": 0.007337352144531906,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 0,
+        "head": 7,
+        "entropy_nats": 4.700318396091461,
+        "entropy_normalised": 0.8800407648086548,
+        "mean_distance": 117.52090454101562,
+        "prev_token_mass": 0.0076488780323415995,
+        "first_position_mass": 0.00655004009604454,
+        "classification": "diffuse"
+      }
+    ],
+    [
+      {
+        "layer": 1,
+        "head": 0,
+        "entropy_nats": 5.051171004772186,
+        "entropy_normalised": 0.9597207605838776,
+        "mean_distance": 145.84299659729004,
+        "prev_token_mass": 0.010257101152092218,
+        "first_position_mass": 0.021245771553367376,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 1,
+        "head": 1,
+        "entropy_nats": 4.567382454872131,
+        "entropy_normalised": 0.8690139502286911,
+        "mean_distance": 109.21341514587402,
+        "prev_token_mass": 0.013066995656117797,
+        "first_position_mass": 0.01222957659047097,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 1,
+        "head": 2,
+        "entropy_nats": 5.119761526584625,
+        "entropy_normalised": 0.9713034257292747,
+        "mean_distance": 139.47899436950684,
+        "prev_token_mass": 0.010115384473465383,
+        "first_position_mass": 0.020505808177404106,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 1,
+        "head": 3,
+        "entropy_nats": 5.0788023471832275,
+        "entropy_normalised": 0.9590004459023476,
+        "mean_distance": 144.8965835571289,
+        "prev_token_mass": 0.010199724230915308,
+        "first_position_mass": 0.018900421215221286,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 1,
+        "head": 4,
+        "entropy_nats": 4.93745881319046,
+        "entropy_normalised": 0.9334265068173409,
+        "mean_distance": 115.58181571960449,
+        "prev_token_mass": 0.01332130585797131,
+        "first_position_mass": 0.010211337183136493,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 1,
+        "head": 5,
+        "entropy_nats": 4.56438934803009,
+        "entropy_normalised": 0.8677550852298737,
+        "mean_distance": 97.36610507965088,
+        "prev_token_mass": 0.014745984459295869,
+        "first_position_mass": 0.008139907731674612,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 1,
+        "head": 6,
+        "entropy_nats": 5.1127267479896545,
+        "entropy_normalised": 0.9724556431174278,
+        "mean_distance": 140.52128791809082,
+        "prev_token_mass": 0.011117541347630322,
+        "first_position_mass": 0.016125408001244068,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 1,
+        "head": 7,
+        "entropy_nats": 4.491644442081451,
+        "entropy_normalised": 0.8526339456439018,
+        "mean_distance": 100.45730018615723,
+        "prev_token_mass": 0.015143094817176461,
+        "first_position_mass": 0.008858544402755797,
+        "classification": "diffuse"
+      }
+    ],
+    [
+      {
+        "layer": 2,
+        "head": 0,
+        "entropy_nats": 4.645260453224182,
+        "entropy_normalised": 0.8899271115660667,
+        "mean_distance": 70.81456851959229,
+        "prev_token_mass": 0.021557302912697196,
+        "first_position_mass": 0.018129133502952754,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 2,
+        "head": 1,
+        "entropy_nats": 4.737507998943329,
+        "entropy_normalised": 0.8863020911812782,
+        "mean_distance": 134.41308784484863,
+        "prev_token_mass": 0.015459387097507715,
+        "first_position_mass": 0.014281790237873793,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 2,
+        "head": 2,
+        "entropy_nats": 4.763668239116669,
+        "entropy_normalised": 0.9080030992627144,
+        "mean_distance": 81.32805252075195,
+        "prev_token_mass": 0.023411677684634924,
+        "first_position_mass": 0.013301666593179107,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 2,
+        "head": 3,
+        "entropy_nats": 4.791417062282562,
+        "entropy_normalised": 0.9139567986130714,
+        "mean_distance": 166.51945877075195,
+        "prev_token_mass": 0.013346959720365703,
+        "first_position_mass": 0.036465439246967435,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 2,
+        "head": 4,
+        "entropy_nats": 4.885688066482544,
+        "entropy_normalised": 0.9323146492242813,
+        "mean_distance": 173.08404922485352,
+        "prev_token_mass": 0.014297074172645807,
+        "first_position_mass": 0.01865089836064726,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 2,
+        "head": 5,
+        "entropy_nats": 4.686863124370575,
+        "entropy_normalised": 0.896090641617775,
+        "mean_distance": 88.23001384735107,
+        "prev_token_mass": 0.02015540236607194,
+        "first_position_mass": 0.017580019659362733,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 2,
+        "head": 6,
+        "entropy_nats": 4.408337771892548,
+        "entropy_normalised": 0.8435621708631516,
+        "mean_distance": 59.298590660095215,
+        "prev_token_mass": 0.032584408298134804,
+        "first_position_mass": 0.010292842518538237,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 2,
+        "head": 7,
+        "entropy_nats": 3.649879574775696,
+        "entropy_normalised": 0.7069532051682472,
+        "mean_distance": 16.77123236656189,
+        "prev_token_mass": 0.06310101225972176,
+        "first_position_mass": 0.007896315190009773,
+        "classification": "content-based"
+      }
+    ],
+    [
+      {
+        "layer": 3,
+        "head": 0,
+        "entropy_nats": 2.3019077479839325,
+        "entropy_normalised": 0.4545469805598259,
+        "mean_distance": 6.2424633502960205,
+        "prev_token_mass": 0.23495978489518166,
+        "first_position_mass": 0.005768700386397541,
+        "classification": "local"
+      },
+      {
+        "layer": 3,
+        "head": 1,
+        "entropy_nats": 2.6182891130447388,
+        "entropy_normalised": 0.5164370089769363,
+        "mean_distance": 5.685601770877838,
+        "prev_token_mass": 0.14664646796882153,
+        "first_position_mass": 0.006260565249249339,
+        "classification": "local"
+      },
+      {
+        "layer": 3,
+        "head": 2,
+        "entropy_nats": 2.5031312108039856,
+        "entropy_normalised": 0.49446801096200943,
+        "mean_distance": 5.117655158042908,
+        "prev_token_mass": 0.1721679624170065,
+        "first_position_mass": 0.006111401016823947,
+        "classification": "local"
+      },
+      {
+        "layer": 3,
+        "head": 3,
+        "entropy_nats": 2.3208147585392,
+        "entropy_normalised": 0.45879559591412544,
+        "mean_distance": 4.131170272827148,
+        "prev_token_mass": 0.2128919791430235,
+        "first_position_mass": 0.005149362608790398,
+        "classification": "local"
+      },
+      {
+        "layer": 3,
+        "head": 4,
+        "entropy_nats": 3.7539966106414795,
+        "entropy_normalised": 0.7334043234586716,
+        "mean_distance": 185.52484130859375,
+        "prev_token_mass": 0.02415437251329422,
+        "first_position_mass": 0.09099702909588814,
+        "classification": "content-based"
+      },
+      {
+        "layer": 3,
+        "head": 5,
+        "entropy_nats": 3.3361060321331024,
+        "entropy_normalised": 0.6545202881097794,
+        "mean_distance": 11.861004710197449,
+        "prev_token_mass": 0.07428270857781172,
+        "first_position_mass": 0.010320487199351192,
+        "classification": "content-based"
+      },
+      {
+        "layer": 3,
+        "head": 6,
+        "entropy_nats": 2.6401591897010803,
+        "entropy_normalised": 0.5208688080310822,
+        "mean_distance": 8.716075897216797,
+        "prev_token_mass": 0.09404611866921186,
+        "first_position_mass": 0.010483582213055342,
+        "classification": "local"
+      },
+      {
+        "layer": 3,
+        "head": 7,
+        "entropy_nats": 2.5696407854557037,
+        "entropy_normalised": 0.5077534876763821,
+        "mean_distance": 7.751226544380188,
+        "prev_token_mass": 0.11245014797896147,
+        "first_position_mass": 0.008302383648697287,
+        "classification": "local"
+      }
+    ],
+    [
+      {
+        "layer": 4,
+        "head": 0,
+        "entropy_nats": 1.997297778725624,
+        "entropy_normalised": 0.3950573429465294,
+        "mean_distance": 4.972347319126129,
+        "prev_token_mass": 0.17239741049706936,
+        "first_position_mass": 0.004534604406217113,
+        "classification": "local"
+      },
+      {
+        "layer": 4,
+        "head": 1,
+        "entropy_nats": 3.404564678668976,
+        "entropy_normalised": 0.6648843064904213,
+        "mean_distance": 13.01098382472992,
+        "prev_token_mass": 0.07685264386236668,
+        "first_position_mass": 0.00972522742813453,
+        "classification": "content-based"
+      },
+      {
+        "layer": 4,
+        "head": 2,
+        "entropy_nats": 2.6537798047065735,
+        "entropy_normalised": 0.5220636650919914,
+        "mean_distance": 11.631436824798584,
+        "prev_token_mass": 0.0781028987839818,
+        "first_position_mass": 0.01109541446203366,
+        "classification": "content-based"
+      },
+      {
+        "layer": 4,
+        "head": 3,
+        "entropy_nats": 2.194010704755783,
+        "entropy_normalised": 0.43359270319342613,
+        "mean_distance": 4.975568473339081,
+        "prev_token_mass": 0.2360513936728239,
+        "first_position_mass": 0.00430766650242731,
+        "classification": "local"
+      },
+      {
+        "layer": 4,
+        "head": 4,
+        "entropy_nats": 4.102850437164307,
+        "entropy_normalised": 0.7863522469997406,
+        "mean_distance": 63.634252071380615,
+        "prev_token_mass": 0.02378782886080444,
+        "first_position_mass": 0.01770229102112353,
+        "classification": "content-based"
+      },
+      {
+        "layer": 4,
+        "head": 5,
+        "entropy_nats": 3.009805142879486,
+        "entropy_normalised": 0.589720830321312,
+        "mean_distance": 13.532943487167358,
+        "prev_token_mass": 0.07472304254770279,
+        "first_position_mass": 0.008243477321229875,
+        "classification": "content-based"
+      },
+      {
+        "layer": 4,
+        "head": 6,
+        "entropy_nats": 1.8241365253925323,
+        "entropy_normalised": 0.3586153984069824,
+        "mean_distance": 5.142033755779266,
+        "prev_token_mass": 0.3247004300355911,
+        "first_position_mass": 0.0033615092979744077,
+        "classification": "previous-token"
+      },
+      {
+        "layer": 4,
+        "head": 7,
+        "entropy_nats": 0.337816946208477,
+        "entropy_normalised": 0.06678674882277846,
+        "mean_distance": 1.2974858731031418,
+        "prev_token_mass": 0.8815633431077003,
+        "first_position_mass": 0.0019871294061886147,
+        "classification": "previous-token"
+      }
+    ],
+    [
+      {
+        "layer": 5,
+        "head": 0,
+        "entropy_nats": 2.4321861267089844,
+        "entropy_normalised": 0.454411543905735,
+        "mean_distance": 139.41129779815674,
+        "prev_token_mass": 0.009547964902594686,
+        "first_position_mass": 0.13899250980466604,
+        "classification": "content-based"
+      },
+      {
+        "layer": 5,
+        "head": 1,
+        "entropy_nats": 2.466367483139038,
+        "entropy_normalised": 0.48341985046863556,
+        "mean_distance": 8.889154195785522,
+        "prev_token_mass": 0.1623644456267357,
+        "first_position_mass": 0.0048643340123817325,
+        "classification": "local"
+      },
+      {
+        "layer": 5,
+        "head": 2,
+        "entropy_nats": 4.284642338752747,
+        "entropy_normalised": 0.8179456666111946,
+        "mean_distance": 78.33459568023682,
+        "prev_token_mass": 0.022500150837004185,
+        "first_position_mass": 0.01543192332610488,
+        "classification": "diffuse"
+      },
+      {
+        "layer": 5,
+        "head": 3,
+        "entropy_nats": 0.9276348277926445,
+        "entropy_normalised": 0.17809953540563583,
+        "mean_distance": 24.392428874969482,
+        "prev_token_mass": 0.7206731736660004,
+        "first_position_mass": 0.011655284732114524,
+        "classification": "previous-token"
+      },
+      {
+        "layer": 5,
+        "head": 4,
+        "entropy_nats": 1.5930034965276718,
+        "entropy_normalised": 0.3139754980802536,
+        "mean_distance": 5.78845340013504,
+        "prev_token_mass": 0.2803916744887829,
+        "first_position_mass": 0.004008221905678511,
+        "classification": "previous-token"
+      },
+      {
+        "layer": 5,
+        "head": 5,
+        "entropy_nats": 2.824791580438614,
+        "entropy_normalised": 0.5512237697839737,
+        "mean_distance": 15.851702809333801,
+        "prev_token_mass": 0.14846893772482872,
+        "first_position_mass": 0.006728553969878703,
+        "classification": "content-based"
+      },
+      {
+        "layer": 5,
+        "head": 6,
+        "entropy_nats": 2.6858361065387726,
+        "entropy_normalised": 0.5032957643270493,
+        "mean_distance": 116.67621231079102,
+        "prev_token_mass": 0.012976879137568176,
+        "first_position_mass": 0.10128242895007133,
+        "classification": "content-based"
+      },
+      {
+        "layer": 5,
+        "head": 7,
+        "entropy_nats": 3.7419840693473816,
+        "entropy_normalised": 0.7193138748407364,
+        "mean_distance": 56.089083671569824,
+        "prev_token_mass": 0.03652178030461073,
+        "first_position_mass": 0.02033246122300625,
+        "classification": "content-based"
+      }
+    ],
+    [
+      {
+        "layer": 6,
+        "head": 0,
+        "entropy_nats": 3.5497798025608063,
+        "entropy_normalised": 0.6826547458767891,
+        "mean_distance": 54.649940967559814,
+        "prev_token_mass": 0.03196787019260228,
+        "first_position_mass": 0.017643675790168345,
+        "classification": "content-based"
+      },
+      {
+        "layer": 6,
+        "head": 1,
+        "entropy_nats": 3.5216965675354004,
+        "entropy_normalised": 0.6772198155522346,
+        "mean_distance": 67.36848974227905,
+        "prev_token_mass": 0.043520255014300346,
+        "first_position_mass": 0.022562480997294188,
+        "classification": "content-based"
+      },
+      {
+        "layer": 6,
+        "head": 2,
+        "entropy_nats": 3.3447860181331635,
+        "entropy_normalised": 0.6421563699841499,
+        "mean_distance": 62.6677131652832,
+        "prev_token_mass": 0.029402585234493017,
+        "first_position_mass": 0.02325348276644945,
+        "classification": "content-based"
+      },
+      {
+        "layer": 6,
+        "head": 3,
+        "entropy_nats": 2.690224528312683,
+        "entropy_normalised": 0.5220060721039772,
+        "mean_distance": 20.190718412399292,
+        "prev_token_mass": 0.0864352835342288,
+        "first_position_mass": 0.012050158227793872,
+        "classification": "content-based"
+      },
+      {
+        "layer": 6,
+        "head": 4,
+        "entropy_nats": 2.5822032690048218,
+        "entropy_normalised": 0.49986764043569565,
+        "mean_distance": 19.223900318145752,
+        "prev_token_mass": 0.25539518520236015,
+        "first_position_mass": 0.009108970349188894,
+        "classification": "previous-token"
+      },
+      {
+        "layer": 6,
+        "head": 5,
+        "entropy_nats": 2.0855146646499634,
+        "entropy_normalised": 0.40710798278450966,
+        "mean_distance": 13.681665658950806,
+        "prev_token_mass": 0.1071753604337573,
+        "first_position_mass": 0.008775076770689338,
+        "classification": "content-based"
+      },
+      {
+        "layer": 6,
+        "head": 6,
+        "entropy_nats": 3.215730518102646,
+        "entropy_normalised": 0.6256943643093109,
+        "mean_distance": 24.173367261886597,
+        "prev_token_mass": 0.06478827446699142,
+        "first_position_mass": 0.010136506403796375,
+        "classification": "content-based"
+      },
+      {
+        "layer": 6,
+        "head": 7,
+        "entropy_nats": 3.658870756626129,
+        "entropy_normalised": 0.6980096995830536,
+        "mean_distance": 67.54964971542358,
+        "prev_token_mass": 0.02436798671260476,
+        "first_position_mass": 0.018159411498345435,
+        "classification": "content-based"
+      }
+    ],
+    [
+      {
+        "layer": 7,
+        "head": 0,
+        "entropy_nats": 3.587754249572754,
+        "entropy_normalised": 0.6871867850422859,
+        "mean_distance": 55.74423360824585,
+        "prev_token_mass": 0.049898719880729914,
+        "first_position_mass": 0.021075559314340353,
+        "classification": "content-based"
+      },
+      {
+        "layer": 7,
+        "head": 1,
+        "entropy_nats": 3.560861736536026,
+        "entropy_normalised": 0.6791263893246651,
+        "mean_distance": 56.87255573272705,
+        "prev_token_mass": 0.0294126495718956,
+        "first_position_mass": 0.016543882084079087,
+        "classification": "content-based"
+      },
+      {
+        "layer": 7,
+        "head": 2,
+        "entropy_nats": 4.0614303052425385,
+        "entropy_normalised": 0.7758581936359406,
+        "mean_distance": 90.32232475280762,
+        "prev_token_mass": 0.018167249159887433,
+        "first_position_mass": 0.030533557990565896,
+        "classification": "content-based"
+      },
+      {
+        "layer": 7,
+        "head": 3,
+        "entropy_nats": 3.8427902460098267,
+        "entropy_normalised": 0.7340196222066879,
+        "mean_distance": 88.3364486694336,
+        "prev_token_mass": 0.014406995614990592,
+        "first_position_mass": 0.031067126896232367,
+        "classification": "content-based"
+      },
+      {
+        "layer": 7,
+        "head": 4,
+        "entropy_nats": 3.368561953306198,
+        "entropy_normalised": 0.6332484483718872,
+        "mean_distance": 121.93447589874268,
+        "prev_token_mass": 0.010534355882555246,
+        "first_position_mass": 0.07880965527147055,
+        "classification": "content-based"
+      },
+      {
+        "layer": 7,
+        "head": 5,
+        "entropy_nats": 3.545683443546295,
+        "entropy_normalised": 0.6700108125805855,
+        "mean_distance": 112.7662706375122,
+        "prev_token_mass": 0.010725666186772287,
+        "first_position_mass": 0.06431147688999772,
+        "classification": "content-based"
+      },
+      {
+        "layer": 7,
+        "head": 6,
+        "entropy_nats": 4.120905965566635,
+        "entropy_normalised": 0.7884722203016281,
+        "mean_distance": 74.46706819534302,
+        "prev_token_mass": 0.024015876464545727,
+        "first_position_mass": 0.01159442204516381,
+        "classification": "content-based"
+      },
+      {
+        "layer": 7,
+        "head": 7,
+        "entropy_nats": 3.925130397081375,
+        "entropy_normalised": 0.7492595165967941,
+        "mean_distance": 79.81694030761719,
+        "prev_token_mass": 0.021216067019850016,
+        "first_position_mass": 0.02308396529406309,
+        "classification": "content-based"
+      }
+    ]
+  ],
+  "n_windows": 32,
+  "n_queries": 16352
+}
