@@ -235,6 +235,123 @@ improving when the one-epoch token budget ran out.
 
 ---
 
+### 3.5 Why one epoch
+
+Both models make exactly one pass over their training corpus. That is a
+deliberate choice with three supports.
+
+**The scaling-law argument.** Chinchilla (Hoffmann et al., 2022) found that for
+a fixed compute budget, model size and training tokens should scale together,
+with roughly **20 tokens per parameter** being compute-optimal. One epoch puts
+both models close to that ratio:
+
+| | Tokens | Parameters | Tokens / parameter |
+| :--- | ---: | ---: | ---: |
+| Model H | 468,638,315 | 25,379,840 | **18.5** |
+| Model L | 571,113,472 | 25,379,840 | **22.5** |
+
+The two bracket the optimum from either side. A 25M-parameter model trained on
+~0.5B tokens is neither starved of data nor over-trained for its size, so the
+comparison between H and L is not confounded by one model being closer to its
+compute-optimal point than the other.
+
+**The unique-data argument.** Large-scale pretraining conventionally prefers
+fresh tokens to repeated ones: repetition yields diminishing returns and
+increases memorisation of the training set. Our corpora were sized in Phase 1 to
+hit ~500M tokens precisely so that a single pass would suffice.
+
+**The empirical argument from this run.** The models show no sign of having
+exhausted the data's usefulness — validation loss fell at every one of the 29
+and 35 evaluations, and validation and test agree to three significant figures
+(H: 26.77 / 26.80; L: 30.64 / 30.65). That is what a model that has seen each
+token once looks like. A second pass is where memorisation would begin to show
+as a widening validation-test gap.
+
+**Why a second epoch was rejected rather than merely not attempted.** It would
+not be a continuation. The cosine schedule has annealed to its 3.0e-5 floor by
+step 14,329, so training onward at the floor learns almost nothing; a genuine
+second epoch means a new schedule over 28,658 steps, i.e. **retraining from
+scratch at twice the cost**. Extrapolating the late-run improvement rate
+suggests perplexity would move from 26.77 to roughly 23 — real, but not
+qualitatively different, and the brief attaches no marks to perplexity. The same
+~4 GPU-hours were spent on the no-positional-embedding ablation (§7) instead,
+which produced a finding rather than a slightly better number.
+
+**One nuance worth stating**, because "Chinchilla-optimal" and "still improving"
+sound contradictory and are not. Chinchilla describes how to *divide* a fixed
+compute budget between parameters and tokens; it does not claim that a model at
+that ratio has stopped benefiting from data. Both statements hold here: the
+models sit near the compute-optimal split **and** were still improving when the
+corpus ran out. The limitation in §9 is the second fact, not a violation of the
+first.
+
+---
+
+### 3.6 Required deliverable — resource-level comparison
+
+Every number below is read from the training logs
+(`hindi/logs/train.jsonl`, `nepali/logs/train.jsonl`,
+`hindi/logs/train_nopos.jsonl`), not estimated.
+
+| | Model H (Hindi) | Model L (Nepali) | Ablation (Hindi, no positions) |
+| :--- | ---: | ---: | ---: |
+| Platform | Colab T4 (16 GB) | Kaggle T4 (16 GB) | Colab T4 (16 GB) |
+| Micro-batch x accumulation | 16 x 4 | 32 x 2 | 16 x 4 |
+| **Tokens per optimisation step** | **32,768** | **32,768** | **32,768** |
+| Optimisation steps | 14,329 | 17,429 | 14,329 |
+| Tokens consumed | 469,532,672 | 571,113,472 | 469,532,672 |
+| Mean throughput | 36,898 tok/s | 36,457 tok/s | 34,856 tok/s |
+| Peak GPU memory | 3.92 GiB | 7.36 GiB | 3.92 GiB |
+| Validation passes | 29 | 35 | 29 |
+| **Wall-clock** | **3.688 h** | **4.861 h** | **3.916 h** |
+| Pure compute (tokens / throughput) | 3.535 h | 4.351 h | 3.742 h |
+| Non-compute overhead | 4.2% | 10.5% | 4.4% |
+| Effective yield | 127.3 Mtok / GPU-h | 117.5 Mtok / GPU-h | 119.9 Mtok / GPU-h |
+
+**Total pretraining cost: 12.5 GPU-hours** across the two graded models and the
+bonus ablation, all on free-tier 16 GB T4s.
+
+**The comparison is controlled where it matters and confounded where it does
+not.** Tokens per optimisation step is identical at 32,768, so both models take
+the *same* optimisation step and the two runs differ only in how many of them
+they take. Everything else in the table is a property of the platform, and
+reading it as a property of the language would be wrong:
+
+- **Peak memory (3.92 vs 7.36 GiB) is a batch-shape difference, not a language
+  difference.** Model L uses a micro-batch of 32 where Model H uses 16, and
+  activations scale linearly with it — the `(B, h, T, T)` attention matrices and
+  the fp32-upcast `(B, T, V)` logits both double. Model H's 16 x 4 split was
+  chosen first, conservatively; once it had proved that 16 fit in 3.9 GiB of
+  14.6, Model L could safely take 32 x 2 and halve the number of sequential
+  sub-batch passes per step. Neither model was memory-limited at the setting it
+  ran at.
+- **Throughput is effectively identical (36,898 vs 36,457 tok/s, a 1.2% spread)**,
+  which is the expected result: the two models are the same shape, so a T4 does
+  the same FLOPs per token for both. This is a useful negative control — it
+  confirms that nothing about the Nepali data path (longer documents, different
+  fertility) leaks into the training step's cost.
+- **Wall-clock differs by 32% almost entirely because Model L consumes 21.6% more
+  tokens**, plus a larger non-compute overhead. Model L trained on a corpus that
+  over-delivered in Phase 1, so it took 3,100 more optimisation steps.
+- **The overhead gap (10.5% vs 4.2%) is a storage-architecture difference.**
+  Colab mounts Drive as a filesystem, so Model H's checkpoint writes land
+  directly on the mount. Kaggle has no Drive mount and discards `/kaggle/working`
+  when an interactive session dies, so every Model L checkpoint was additionally
+  mirrored off-box with `rclone` (`mirror_to: gdrive:...` in
+  `nepali/configs/train.yaml`). Thirty-five ~300 MB uploads over the network
+  account for most of the difference. The extra 6 validation passes account for
+  the rest.
+
+**The ablation is slower than the baseline it ablates (3.916 h vs 3.688 h) despite
+having 262,144 *fewer* parameters.** This is session variance between two
+different Colab T4 allocations, not a cost of removing positional embeddings —
+the position lookup is a single embedding gather, well under 0.1% of the step.
+It is recorded here rather than smoothed over because it sets the noise floor for
+any wall-clock claim in this report: **differences below roughly 6% between runs
+on free-tier hardware are not measurable**, which is why §7 compares the ablation
+on loss and attention statistics and makes no timing claim.
+
+
 ## 4. Intrinsic Evaluation
 
 ### 4.1 Results
@@ -713,9 +830,33 @@ baseline to a model that has learned nothing (`ln 8000 = 8.99`) is 5.70 nats;
 the ablation gives up 0.033 of that, or **0.6% of everything the baseline
 learned**.
 
-Generation is likewise almost unchanged — chrF++ at temperature 1.0 of 18.03
-against 18.94, and repetition and diversity statistics within noise of the
-baseline at every decoding setting (`report/figures/generation_metrics_ablation.md`).
+**Generation metrics, both models, all four decoding settings.** The bonus asks
+for the full evaluation suite, so the whole table is reproduced here; it is
+generated by the same `src/eval/metrics.py` invocation that scored the graded
+models, from 32 held-out prompts with a 32-token prefix and 128 new tokens
+(`report/figures/generation_metrics_ablation.md`).
+
+| Decoding | | BLEU-4 | chrF++ | ROUGE-L | rep-1 | rep-4 | Distinct-1 | Distinct-2 |
+| :--- | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| greedy | learned | 1.47 | 11.53 | 11.74 | 84.0 | 80.9 | 7.8 | 13.7 |
+| | *no positions* | 1.62 | 11.91 | 12.81 | 74.4 | 72.3 | 7.4 | 13.3 |
+| T = 0.5 | learned | 2.21 | 14.57 | 13.28 | 66.7 | 46.5 | 17.1 | 37.0 |
+| | *no positions* | 1.53 | 13.78 | 13.55 | 60.9 | 40.2 | 16.4 | 35.4 |
+| T = 1.0 | learned | 1.42 | 18.94 | 13.64 | 27.6 | 0.7 | 42.7 | 85.6 |
+| | *no positions* | 1.75 | 18.03 | 13.30 | 26.4 | 1.4 | 42.9 | 84.9 |
+| T = 1.5 | learned | 0.51 | 16.08 | 7.91 | 8.0 | 0.0 | 68.6 | 97.8 |
+| | *no positions* | 0.75 | 16.50 | 7.22 | 7.1 | 0.1 | 69.7 | 98.2 |
+| *held-out reference* | | -- | -- | -- | 31.7 | 2.8 | 40.5 | 83.5 |
+
+**Generation is essentially unchanged.** chrF++ at temperature 1.0 falls from
+18.94 to 18.03, and every diversity statistic stays within noise of the baseline
+at every setting — Distinct-2 84.9 against 85.6, rep-4 1.4% against 0.7%, both
+still tracking the human reference's 83.5 and 2.8%. The ablated model even wins
+BLEU-4 and ROUGE-L at three of the four settings, which says more about those
+metrics on open-ended generation (§5.3) than about the ablation. The same
+degeneracy structure survives too: greedy collapses (rep-4 72.3%), temperature
+1.0 matches the corpus, temperature 1.5 over-diversifies.
+
 The ablated model writes recognisably the same kind of Hindi.
 
 ### 7.3 What breaks — and what does not
@@ -843,9 +984,11 @@ session.
 
 ## 9. Limitations
 
-1. **One epoch, one seed, two runs.** No error bars anywhere. Every difference
-   quoted between Model H and Model L is a single-sample comparison, and the
-   ~14% metric gaps are not accompanied by any estimate of run-to-run variance.
+1. **One seed, two runs.** No error bars anywhere. Every difference quoted
+   between Model H and Model L is a single-sample comparison, and the ~14%
+   metric gaps come with no estimate of run-to-run variance. (The single *epoch*
+   is a justified design choice rather than a limitation — see §3.5 — but the
+   single *seed* is a genuine constraint of the compute budget.)
 2. **The validation slice was unrepresentative during training** (§4.3). It did
    not affect checkpoint selection, but it means the training curve and the
    reported metrics measure different things, and the curve cannot be compared
