@@ -32,6 +32,11 @@ from src.model.embeddings import TokenPositionEmbedding
 from src.model.transformer_block import TransformerBlock
 
 
+# Target value excluded from the cross-entropy. Matches torch's default so
+# pretraining behaviour is untouched; finetuning writes it over prompt spans.
+IGNORE_INDEX = -100
+
+
 @dataclass
 class TransformerLMConfig:
     """Architecture hyperparameters. Mirrors the ``architecture:`` block of the YAML."""
@@ -143,9 +148,17 @@ class TransformerLM(nn.Module):
 
         loss = None
         if targets is not None:
-            # (B, T, V) -> (B*T, V) and (B, T) -> (B*T,)
+            # (B, T, V) -> (B*T, V) and (B, T) -> (B*T,).
+            #
+            # ignore_index is passed explicitly even though -100 is already
+            # cross_entropy's default. Phase 3 finetuning masks every prompt
+            # position to IGNORE_INDEX so the loss is taken on the answer span
+            # alone; a contract that load-bearing should be visible in the code
+            # rather than inherited silently from a library default. Pretraining
+            # passes no -100 targets, so its loss is unchanged.
             loss = F.cross_entropy(
-                logits.view(-1, logits.size(-1)), targets.reshape(-1))
+                logits.view(-1, logits.size(-1)), targets.reshape(-1),
+                ignore_index=IGNORE_INDEX)
         return logits, loss, attentions
 
     def num_params(self, trainable_only: bool = True) -> int:

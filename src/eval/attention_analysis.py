@@ -127,7 +127,7 @@ def find_devanagari_font(explicit: str = None) -> str:
 
 @torch.no_grad()
 def head_statistics(model, bin_path, ctx_len: int, batch_size: int,
-                    n_batches: int, device: str) -> dict:
+                    n_batches: int, device: str, batches=None) -> dict:
     """Accumulate per-head attention statistics over held-out windows.
 
     All four statistics are computed on the same forward passes and averaged
@@ -145,6 +145,14 @@ def head_statistics(model, bin_path, ctx_len: int, batch_size: int,
             stays small: 8 layers x 4 x 8 x 512 x 512 fp32 is already ~268 MB.
         n_batches: How many batches to accumulate over.
         device: Device string.
+        batches: Optional iterable of ``(x, y)`` batches to use instead of
+            reading ``bin_path``. Phase 3 passes reasoning prompts this way so
+            the identical statistics run on comparative-reasoning input rather
+            than on corpus windows. The per-batch maths already derives ``T``
+            from ``x.shape``, so batches of differing widths are handled; but
+            mean attention distance scales with ``T``, so a mixed-width run is
+            only comparable against another run over the *same* batches --
+            never against Phase 2's fixed 512-token windows.
 
     Returns:
         ``{"layers": [[per-head dicts], ...], "n_windows", "n_queries"}``.
@@ -157,9 +165,11 @@ def head_statistics(model, bin_path, ctx_len: int, batch_size: int,
            ("entropy", "entropy_norm", "distance", "prev_mass", "sink_mass")}
     n_windows = 0
 
-    it = iter_eval_batches(bin_path, ctx_len, batch_size, None, device)
+    it = batches if batches is not None else \
+        iter_eval_batches(bin_path, ctx_len, batch_size, None, device)
+    n_queries = 0
     for bi, (x, _) in enumerate(it):
-        if bi >= n_batches:
+        if n_batches is not None and bi >= n_batches:
             break
         _, _, attns = model(x, need_weights=True)
         B, T = x.shape
@@ -187,6 +197,7 @@ def head_statistics(model, bin_path, ctx_len: int, batch_size: int,
             acc["sink_mass"][li] += sink[:, :, 1:].mean(dim=(0, 2)).cpu().numpy() * B
 
         n_windows += B
+        n_queries += B * (T - 1)
         del attns
 
     layers = []
@@ -201,7 +212,7 @@ def head_statistics(model, bin_path, ctx_len: int, batch_size: int,
         } for h in range(n_heads)])
 
     return {"layers": layers, "n_windows": n_windows,
-            "n_queries": n_windows * (ctx_len - 1)}
+            "n_queries": n_queries}
 
 
 def classify_head(stat: dict, ctx_len: int) -> str:

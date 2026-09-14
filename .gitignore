@@ -76,3 +76,12 @@ phase2_plan.md
 
 
 .claude/
+
+# Synthetic reasoning corpora (Phase 3). ~46 MB per language, regenerable
+# byte-for-byte from src/reasoning/generate.py with the recorded seed, and
+# archived on Google Drive (links in the README). The committed artefacts are
+# the generator, data/*/reasoning/stats.json (sizes, coverage, leakage checks)
+# and data/*/reasoning/sample.md (a readable excerpt from the test split).
+data/*/reasoning/train.jsonl
+data/*/reasoning/val.jsonl
+data/*/reasoning/test.jsonl

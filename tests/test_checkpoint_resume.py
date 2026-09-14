@@ -11,7 +11,11 @@ assertion here is end-to-end: training N more steps after a resume must produce
 
 import copy
 
-import torch
+import pytest
+
+# Guarded so the suite still collects on a machine without torch: the
+# Phase 3 data tests are pure Python and should stay runnable there.
+torch = pytest.importorskip("torch")
 
 from src.model.transformer_lm import TransformerLM, TransformerLMConfig
 from src.train.checkpoint import (BEST, LATEST, find_resume_point,

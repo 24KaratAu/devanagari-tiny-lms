@@ -4,9 +4,12 @@ import json
 
 import numpy as np
 import pytest
-import torch
 
-from src.train.dataset import PackedTokenDataset, iter_eval_batches
+# Guarded so the suite still collects on a machine without torch: the
+# Phase 3 data tests are pure Python and should stay runnable there.
+torch = pytest.importorskip("torch")
+
+from src.train.dataset import PackedTokenDataset, iter_eval_batches  # noqa: E402
 
 CTX = 16
 N = 5000

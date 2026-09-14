@@ -10,7 +10,11 @@ is partly copying the answer from the future rather than predicting it. Nothing
 downstream would reveal it.
 """
 
-import torch
+import pytest
+
+# Guarded so the suite still collects on a machine without torch: the
+# Phase 3 data tests are pure Python and should stay runnable there.
+torch = pytest.importorskip("torch")
 
 from src.model.transformer_lm import TransformerLM, TransformerLMConfig
 

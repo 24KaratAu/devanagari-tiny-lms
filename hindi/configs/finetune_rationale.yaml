@@ -1,0 +1,68 @@
+# Phase 3 reasoning finetuning -- Model H (hindi), rationale answers.
+#
+# Initialised from the Phase 2 pretrained checkpoint's WEIGHTS ONLY; the
+# optimizer moments are deliberately discarded (see src/train/finetune.py).
+# The tokenizer and vocabulary are the Phase 1 ones, unchanged: finetuning
+# adds no tokens and retrains no vocabulary.
+
+run_name: model_H_hindi_ft_rationale
+model_config: hindi/configs/model.yaml
+language: hindi
+seed: 42
+
+# "direct"    -> target is "उत्तर: <answer>"        (~4 scored tokens)
+# "rationale" -> target restates the chain first    (~19 scored tokens)
+# Exact match is scored on the final answer line in both cases, so the two are
+# directly comparable; only the supervision differs.
+answer_style: rationale
+
+init_from: /content/drive/MyDrive/24KaratAu/hindi/checkpoints/checkpoint_best.pt
+
+data:
+  tokenizer: tokenizers/hindi/hindi_bpe_8k.model
+  train: data/hindi/reasoning/train.jsonl
+  val:   data/hindi/reasoning/val.jsonl
+  test:  data/hindi/reasoning/test.jsonl
+
+optim:
+  optimizer: adamw
+  # A third of the pretraining peak. The model is already converged on the
+  # language; 3e-4 here overwrites general competence with template-matching
+  # inside the first epoch.
+  lr: 1.0e-4
+  betas: [0.9, 0.95]
+  eps: 1.0e-8
+  weight_decay: 0.1
+  grad_clip: 1.0
+
+schedule:
+  type: cosine
+  warmup_steps: 100        # ~1/6 of one epoch; the LR jump off a cold optimizer
+  min_lr: 1.0e-5           # cosine floor = peak / 10, as in pretraining
+
+train:
+  # Examples average ~57 tokens against a 512 context, so batches are padded to
+  # the longest member, not to ctx_len. 64 x ~60 = ~3,800 tokens per step.
+  batch_size: 64
+  grad_accum: 1
+  epochs: 3
+  max_steps: null          # null -> steps_per_epoch x epochs
+  precision: fp16
+  compile: false
+
+eval:
+  every: 125               # ~5 evaluations per epoch
+  em_examples: 500         # fixed val prefix, greedily decoded for exact match
+  batch_size: 64
+
+checkpoint:
+  dir: /content/drive/MyDrive/24KaratAu/hindi/checkpoints_ft_rationale
+  save_latest_every: 200
+  keep_best: true          # selection is on validation EXACT MATCH, not loss
+  keep_milestones: 4
+  mirror_to: ""
+
+log:
+  jsonl: /content/drive/MyDrive/24KaratAu/hindi/logs/finetune_rationale.jsonl
+  mirror_to: ""
+  every: 25

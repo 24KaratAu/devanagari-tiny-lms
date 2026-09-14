@@ -1,8 +1,13 @@
 """Parameter count and tensor-shape contract for Model H / Model L."""
 
-import torch
+import pytest
 
-from src.model.transformer_lm import TransformerLM, TransformerLMConfig
+# Guarded so the suite still collects on a machine without torch: the
+# Phase 3 data tests are pure Python and should stay runnable there.
+torch = pytest.importorskip("torch")
+
+from src.model.transformer_lm import (TransformerLM,  # noqa: E402
+                                        TransformerLMConfig)
 
 EXPECTED_PARAMS = 25_379_840
 

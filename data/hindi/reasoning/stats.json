@@ -1,0 +1,141 @@
+{
+  "splits": {
+    "test": {
+      "n": 5000,
+      "families": {
+        "eq3_relation": 500,
+        "rel2_which": 500,
+        "rel3_extreme": 500,
+        "rel3_pairwise": 500,
+        "rel4_extreme": 500,
+        "rel4_pairwise": 500,
+        "val2_relation": 500,
+        "val2_which": 500,
+        "val3_extreme": 500,
+        "val4_rank": 500
+      },
+      "attributes": {
+        "age": 824,
+        "height": 866,
+        "length": 843,
+        "marks": 827,
+        "price": 814,
+        "weight": 826
+      },
+      "hops": {
+        "0": 2500,
+        "1": 1500,
+        "2": 1000
+      },
+      "answers_distinct": 31,
+      "held_out_phrasing": 1214,
+      "mean_prompt_chars": 116.9
+    },
+    "val": {
+      "n": 5000,
+      "families": {
+        "eq3_relation": 500,
+        "rel2_which": 500,
+        "rel3_extreme": 500,
+        "rel3_pairwise": 500,
+        "rel4_extreme": 500,
+        "rel4_pairwise": 500,
+        "val2_relation": 500,
+        "val2_which": 500,
+        "val3_extreme": 500,
+        "val4_rank": 500
+      },
+      "attributes": {
+        "age": 899,
+        "height": 821,
+        "length": 793,
+        "marks": 813,
+        "price": 824,
+        "weight": 850
+      },
+      "hops": {
+        "0": 2500,
+        "1": 1500,
+        "2": 1000
+      },
+      "answers_distinct": 59,
+      "held_out_phrasing": 0,
+      "mean_prompt_chars": 114.3
+    },
+    "train": {
+      "n": 40000,
+      "families": {
+        "eq3_relation": 4000,
+        "rel2_which": 4000,
+        "rel3_extreme": 4000,
+        "rel3_pairwise": 4000,
+        "rel4_extreme": 4000,
+        "rel4_pairwise": 4000,
+        "val2_relation": 4000,
+        "val2_which": 4000,
+        "val3_extreme": 4000,
+        "val4_rank": 4000
+      },
+      "attributes": {
+        "age": 6759,
+        "height": 6697,
+        "length": 6606,
+        "marks": 6731,
+        "price": 6580,
+        "weight": 6627
+      },
+      "hops": {
+        "0": 20000,
+        "1": 12000,
+        "2": 8000
+      },
+      "answers_distinct": 59,
+      "held_out_phrasing": 0,
+      "mean_prompt_chars": 114.4
+    }
+  },
+  "leakage": {
+    "train_test_shared_entities": [],
+    "train_test_shared_prompts": 0,
+    "val_test_shared_prompts": 0,
+    "train_val_shared_prompts": 0
+  },
+  "tokenizer": {
+    "available": true,
+    "model": "tokenizers/hindi/hindi_bpe_8k.model",
+    "test": {
+      "mean_prompt_tokens": 37.91,
+      "max_prompt_tokens": 66,
+      "mean_direct_answer_tokens": 3.54,
+      "mean_rationale_answer_tokens": 19.87,
+      "mean_numeral_tokens": 2.043
+    },
+    "val": {
+      "mean_prompt_tokens": 36.67,
+      "max_prompt_tokens": 66,
+      "mean_direct_answer_tokens": 3.37,
+      "mean_rationale_answer_tokens": 18.59,
+      "mean_numeral_tokens": 2.048
+    },
+    "train": {
+      "mean_prompt_tokens": 36.77,
+      "max_prompt_tokens": 67,
+      "mean_direct_answer_tokens": 3.37,
+      "mean_rationale_answer_tokens": 18.65,
+      "mean_numeral_tokens": 2.044
+    }
+  },
+  "provenance": {
+    "module": "src.reasoning.generate",
+    "generated_at": "2026-09-09T07:35:40+00:00",
+    "command": "python -m src.reasoning.generate --language hindi --out-dir data/hindi/reasoning --train 40000 --val 5000 --test 5000 --seed 42",
+    "git_commit": "d1deaa82b644aee611a728bc0354062eb45ac5de",
+    "git_branch": "phase-3",
+    "git_dirty": true,
+    "python": "3.14.4",
+    "inputs": {},
+    "language": "hindi",
+    "seed": 42,
+    "held_out_phrasing_frac": 0.25
+  }
+}
