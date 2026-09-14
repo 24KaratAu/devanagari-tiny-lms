@@ -85,3 +85,6 @@ phase2_plan.md
 data/*/reasoning/train.jsonl
 data/*/reasoning/val.jsonl
 data/*/reasoning/test.jsonl
+data/*/reasoning/test_seen.jsonl
+
+finetuning_docs/

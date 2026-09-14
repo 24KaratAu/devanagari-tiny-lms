@@ -1,0 +1,460 @@
+{
+  "n": 5000,
+  "exact_match": 0.6226,
+  "format_rate": 1.0,
+  "by_family": {
+    "eq3_relation": 0.652,
+    "rel2_which": 1.0,
+    "rel3_extreme": 1.0,
+    "rel3_pairwise": 0.504,
+    "rel4_extreme": 0.832,
+    "rel4_pairwise": 0.542,
+    "val2_relation": 0.51,
+    "val2_which": 0.554,
+    "val3_extreme": 0.362,
+    "val4_rank": 0.27
+  },
+  "by_hops": {
+    "0": 0.5392,
+    "1": 0.7187,
+    "2": 0.687
+  },
+  "by_attribute": {
+    "age": 0.5953,
+    "height": 0.6053,
+    "length": 0.6228,
+    "marks": 0.6178,
+    "price": 0.631,
+    "weight": 0.6628
+  },
+  "by_phrasing": {
+    "seen": 0.6226
+  },
+  "confusions": [
+    [
+      "कम -> अधिक",
+      530
+    ],
+    [
+      "अधिक -> कम",
+      297
+    ],
+    [
+      "अधिक -> बराबर",
+      30
+    ],
+    [
+      "कम -> बराबर",
+      29
+    ],
+    [
+      "बराबर -> अधिक",
+      8
+    ],
+    [
+      "टोकरी -> छाता",
+      7
+    ],
+    [
+      "पुस्तक -> छाता",
+      6
+    ],
+    [
+      "टोकरी -> कुर्सी",
+      5
+    ],
+    [
+      "बैग -> कम्बल",
+      5
+    ],
+    [
+      "जूता -> छाता",
+      5
+    ],
+    [
+      "थैला -> चटाई",
+      5
+    ],
+    [
+      "छाता -> चश्मा",
+      5
+    ],
+    [
+      "चश्मा -> चटाई",
+      5
+    ],
+    [
+      "विकास -> महेश",
+      4
+    ],
+    [
+      "घड़ी -> चश्मा",
+      4
+    ]
+  ],
+  "examples": {
+    "correct": [
+      {
+        "family": "eq3_relation",
+        "gold": "बराबर",
+        "pred": "बराबर",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: बराबर"
+      },
+      {
+        "family": "rel3_extreme",
+        "gold": "अमित",
+        "pred": "अमित",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: अमित"
+      },
+      {
+        "family": "rel3_extreme",
+        "gold": "विजय",
+        "pred": "विजय",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: विजय"
+      },
+      {
+        "family": "rel3_extreme",
+        "gold": "बैग",
+        "pred": "बैग",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: बैग"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "अधिक",
+        "pred": "अधिक",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: अधिक"
+      },
+      {
+        "family": "rel3_extreme",
+        "gold": "नेहा",
+        "pred": "नेहा",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: नेहा"
+      },
+      {
+        "family": "rel2_which",
+        "gold": "गीता",
+        "pred": "गीता",
+        "correct": true,
+        "hops": 0,
+        "continuation": "उत्तर: गीता"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "अधिक",
+        "pred": "अधिक",
+        "correct": true,
+        "hops": 2,
+        "continuation": "उत्तर: अधिक"
+      },
+      {
+        "family": "val2_relation",
+        "gold": "अधिक",
+        "pred": "अधिक",
+        "correct": true,
+        "hops": 0,
+        "continuation": "उत्तर: अधिक"
+      },
+      {
+        "family": "val2_relation",
+        "gold": "अधिक",
+        "pred": "अधिक",
+        "correct": true,
+        "hops": 0,
+        "continuation": "उत्तर: अधिक"
+      },
+      {
+        "family": "rel4_extreme",
+        "gold": "रवि",
+        "pred": "रवि",
+        "correct": true,
+        "hops": 2,
+        "continuation": "उत्तर: रवि"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "बराबर",
+        "pred": "बराबर",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: बराबर"
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "अधिक",
+        "pred": "अधिक",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: अधिक"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "अधिक",
+        "pred": "अधिक",
+        "correct": true,
+        "hops": 2,
+        "continuation": "उत्तर: अधिक"
+      },
+      {
+        "family": "val2_which",
+        "gold": "संजय",
+        "pred": "संजय",
+        "correct": true,
+        "hops": 0,
+        "continuation": "उत्तर: संजय"
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "अधिक",
+        "pred": "अधिक",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: अधिक"
+      },
+      {
+        "family": "val3_extreme",
+        "gold": "श्याम",
+        "pred": "श्याम",
+        "correct": true,
+        "hops": 0,
+        "continuation": "उत्तर: श्याम"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "बराबर",
+        "pred": "बराबर",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: बराबर"
+      },
+      {
+        "family": "rel3_extreme",
+        "gold": "विकास",
+        "pred": "विकास",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: विकास"
+      },
+      {
+        "family": "rel2_which",
+        "gold": "राधा",
+        "pred": "राधा",
+        "correct": true,
+        "hops": 0,
+        "continuation": "उत्तर: राधा"
+      }
+    ],
+    "incorrect": [
+      {
+        "family": "val4_rank",
+        "gold": "टोकरी",
+        "pred": "कुर्सी",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कुर्सी"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "कम",
+        "pred": "अधिक",
+        "correct": false,
+        "hops": 2,
+        "continuation": "उत्तर: अधिक"
+      },
+      {
+        "family": "val4_rank",
+        "gold": "सीता",
+        "pred": "सोहन",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: सोहन"
+      },
+      {
+        "family": "val2_which",
+        "gold": "पुस्तक",
+        "pred": "तकिया",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: तकिया"
+      },
+      {
+        "family": "val3_extreme",
+        "gold": "तकिया",
+        "pred": "बैग",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: बैग"
+      },
+      {
+        "family": "val4_rank",
+        "gold": "राम",
+        "pred": "आशा",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: आशा"
+      },
+      {
+        "family": "val2_relation",
+        "gold": "कम",
+        "pred": "अधिक",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: अधिक"
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "कम",
+        "pred": "अधिक",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: अधिक"
+      },
+      {
+        "family": "rel4_extreme",
+        "gold": "बैग",
+        "pred": "कम्बल",
+        "correct": false,
+        "hops": 2,
+        "continuation": "उत्तर: कम्बल"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "कम",
+        "pred": "अधिक",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: अधिक"
+      },
+      {
+        "family": "val3_extreme",
+        "gold": "मेज़",
+        "pred": "कुर्सी",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कुर्सी"
+      },
+      {
+        "family": "val2_which",
+        "gold": "प्रमोद",
+        "pred": "महेश",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: महेश"
+      },
+      {
+        "family": "val2_which",
+        "gold": "रमेश",
+        "pred": "अनिल",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: अनिल"
+      },
+      {
+        "family": "val2_relation",
+        "gold": "कम",
+        "pred": "बराबर",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: बराबर"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "कम",
+        "pred": "अधिक",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: अधिक"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "अधिक",
+        "pred": "कम",
+        "correct": false,
+        "hops": 2,
+        "continuation": "उत्तर: कम"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "अधिक",
+        "pred": "कम",
+        "correct": false,
+        "hops": 2,
+        "continuation": "उत्तर: कम"
+      },
+      {
+        "family": "val2_relation",
+        "gold": "कम",
+        "pred": "अधिक",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: अधिक"
+      },
+      {
+        "family": "val2_relation",
+        "gold": "अधिक",
+        "pred": "कम",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कम"
+      },
+      {
+        "family": "rel4_extreme",
+        "gold": "दीपक",
+        "pred": "सुरेश",
+        "correct": false,
+        "hops": 2,
+        "continuation": "उत्तर: सुरेश"
+      }
+    ]
+  },
+  "setup": {
+    "mode": "finetuned",
+    "answer_style": "direct",
+    "shots": 0,
+    "language": "hindi",
+    "checkpoint_step": 1750,
+    "max_new_tokens": 12,
+    "test_split": "test_seen",
+    "seed": 42
+  },
+  "provenance": {
+    "module": "src.eval.reasoning_eval",
+    "generated_at": "2026-09-14T15:04:54+00:00",
+    "command": "python -m src.eval.reasoning_eval --checkpoint /content/drive/MyDrive/24KaratAu/hindi/checkpoints_ft_direct/finetune_best.pt --model-config hindi/configs/model.yaml --tokenizer tokenizers/hindi/hindi_bpe_8k.model --test data/hindi/reasoning/test_seen.jsonl --language hindi --mode finetuned --answer-style direct --out hindi/eval/reasoning_finetuned_direct_seen.json",
+    "git_commit": null,
+    "git_branch": null,
+    "git_dirty": false,
+    "python": "3.13.15",
+    "inputs": {
+      "checkpoint": {
+        "path": "/content/drive/MyDrive/24KaratAu/hindi/checkpoints_ft_direct/finetune_best.pt",
+        "bytes": 304696475,
+        "mtime": "2026-09-14T14:20:10+00:00",
+        "digested": false
+      },
+      "test": {
+        "path": "data/hindi/reasoning/test_seen.jsonl",
+        "bytes": 4858854,
+        "sha256": "57575f0d8244d9f1910795964bdfeea3969f4c1445f94f7401693c14cb31c620",
+        "digested": true
+      },
+      "tokenizer": {
+        "path": "tokenizers/hindi/hindi_bpe_8k.model",
+        "bytes": 422881,
+        "sha256": "f96162b6db4db4d58ac8f4758ad77ba050adac5616e53fb7af832144aaaea9a3",
+        "digested": true
+      }
+    }
+  }
+}

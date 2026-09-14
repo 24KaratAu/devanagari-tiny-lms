@@ -266,10 +266,13 @@ def main():
 
     outdir = Path(args.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
+    # find_devanagari_font returns a *family name*, already registered with the
+    # font manager -- not a path. Passing it back through FontProperties(fname=)
+    # makes matplotlib try to open a file called "Lohit Devanagari". Phase 2's
+    # attention_analysis.py assigns it directly; do the same.
     font = find_devanagari_font(args.font)
     if font:
-        matplotlib.rcParams["font.family"] = matplotlib.font_manager \
-            .FontProperties(fname=font).get_name()
+        matplotlib.rcParams["font.family"] = font
     stamp = provenance.stamp_text(provenance.build(
         "src.eval.attention_reasoning",
         inputs={"pretrained": args.pretrained, "finetuned": args.finetuned}))

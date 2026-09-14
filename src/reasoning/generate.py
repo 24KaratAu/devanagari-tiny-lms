@@ -23,9 +23,28 @@ Leakage control, in the order it is applied:
      split are discarded too. The set is seeded by generating test first, so a
      collision is always resolved in favour of keeping the test item.
 
+Three test sets, not one. A single pooled accuracy cannot distinguish three
+different failures, so the corpus ships the three splits needed to separate
+them, and they degrade independently:
+
+    split            entities   wording    a high score tells you
+    test_seen        seen       seen       training fitted the distribution at all
+    test (seen wd.)  unseen     seen       it handles cases absent from training
+    test (held out)  unseen     unseen     the behaviour survives rewording
+
+``test_seen`` draws from the *train* entity pool with only the shared
+realisations, so it is distributionally identical to training and is the
+"did anything happen" control. It is still deduplicated against train, val and
+test, and -- unlike ``val`` -- it is never used to select a checkpoint, so its
+accuracy is not optimistic. A model that scores well on ``test_seen`` and at
+chance on ``test`` has memorised entity names rather than learned the relation;
+one that scores well on the seen-wording part of ``test`` and poorly on the
+held-out part has learned the template rather than the task.
+
 Determinism. Everything derives from ``--seed`` through a single
 ``random.Random``; re-running with the same seed reproduces the corpus
-byte-for-byte. The generated data goes to Drive (per the TA's answer in
+byte-for-byte. ``test_seen`` is generated *last*, after train, so adding it left
+the token streams of the original three splits unchanged. The generated data goes to Drive (per the TA's answer in
 ``doubts-answers.md``); this script is what makes that upload reproducible.
 
 Usage:
@@ -124,8 +143,10 @@ def build_split(language: str, split: str, n: int, rng, seen: set,
 
     Args:
         language: Language to generate.
-        split: Split name; ``"test"`` is the only one that reaches the held-out
-            entity pool and the held-out phrasings.
+        split: Split name. ``"test"`` is the only one that reaches the held-out
+            entity pool and the held-out phrasings -- ``"test_seen"`` therefore
+            lands on the train pool with shared realisations, which is exactly
+            what that split is for.
         n: Target example count.
         rng: A ``random.Random``.
         seen: Prompt hashes already emitted, mutated in place. Shared across
@@ -193,6 +214,20 @@ def summarise(splits: dict) -> dict:
         "val_test_shared_prompts": len(prompts["val"] & prompts["test"]),
         "train_val_shared_prompts": len(prompts["train"] & prompts["val"]),
     }
+    if "test_seen" in splits:
+        # test_seen is meant to share the train *distribution* -- its entities
+        # come from the train pool by design, so entity overlap is expected and
+        # is not a leak. What must not overlap is the prompts themselves.
+        stats["leakage"].update({
+            "test_seen_shared_prompts_with_train":
+                len(prompts["test_seen"] & prompts["train"]),
+            "test_seen_shared_prompts_with_val":
+                len(prompts["test_seen"] & prompts["val"]),
+            "test_seen_shared_prompts_with_test":
+                len(prompts["test_seen"] & prompts["test"]),
+            "test_seen_entities_outside_train_pool":
+                sorted(ents["test_seen"] - ents["train"]),
+        })
     return stats
 
 
@@ -296,6 +331,8 @@ def main():
     ap.add_argument("--train", type=int, default=40000)
     ap.add_argument("--val", type=int, default=5000)
     ap.add_argument("--test", type=int, default=5000)
+    ap.add_argument("--test-seen", type=int, default=5000,
+                    help="'seen entities, seen wording' control split; 0 to skip")
     ap.add_argument("--held-out-phrasing-frac", type=float, default=0.25,
                     help="fraction of TEST examples using reserved phrasings")
     ap.add_argument("--seed", type=int, default=42)
@@ -312,8 +349,13 @@ def main():
     # train or val draw is resolved by discarding the train/val item.
     seen = set()
     splits = {}
-    for name, n in (("test", args.test), ("val", args.val),
-                    ("train", args.train)):
+    # test_seen comes last deliberately: the original three splits then draw
+    # the identical RNG stream they did before this split existed, so adding it
+    # did not perturb a single token of them.
+    order = [("test", args.test), ("val", args.val), ("train", args.train)]
+    if args.test_seen:
+        order.append(("test_seen", args.test_seen))
+    for name, n in order:
         splits[name] = build_split(args.language, name, n, rng, seen,
                                    args.held_out_phrasing_frac)
         write_jsonl(out / f"{name}.jsonl", splits[name])
@@ -333,12 +375,17 @@ def main():
         json.dump(stats, fh, ensure_ascii=False, indent=2)
 
     leak = stats["leakage"]
-    bad = (leak["train_test_shared_entities"] or leak["train_test_shared_prompts"]
-           or leak["val_test_shared_prompts"] or leak["train_val_shared_prompts"])
+    bad = any(v for v in leak.values())
     print(f"\n  leakage: entities {len(leak['train_test_shared_entities'])}, "
           f"prompts train/test {leak['train_test_shared_prompts']}, "
           f"val/test {leak['val_test_shared_prompts']}, "
           f"train/val {leak['train_val_shared_prompts']}")
+    if "test_seen_shared_prompts_with_train" in leak:
+        print(f"  test_seen: prompts shared with train "
+              f"{leak['test_seen_shared_prompts_with_train']}, val "
+              f"{leak['test_seen_shared_prompts_with_val']}, test "
+              f"{leak['test_seen_shared_prompts_with_test']}; entities outside "
+              f"the train pool {len(leak['test_seen_entities_outside_train_pool'])}")
     if bad:
         print("  LEAKAGE DETECTED", file=sys.stderr)
         return 1

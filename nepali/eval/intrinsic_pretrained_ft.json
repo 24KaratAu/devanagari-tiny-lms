@@ -1,0 +1,66 @@
+{
+  "provenance": {
+    "module": "src.eval.intrinsic",
+    "generated_at": "2026-09-14T15:06:15+00:00",
+    "command": "python -m src.eval.intrinsic --checkpoint /content/drive/MyDrive/24KaratAu/nepali/checkpoints/checkpoint_best.pt --model-config nepali/configs/model.yaml --tokens-dir /content/drive/MyDrive/24KaratAu/nepali/tokens --language nepali --splits val --max-tokens 2000000 --out nepali/eval/intrinsic_pretrained_ft.json",
+    "git_commit": null,
+    "git_branch": null,
+    "git_dirty": false,
+    "python": "3.13.15",
+    "inputs": {
+      "checkpoint": {
+        "path": "/content/drive/MyDrive/24KaratAu/nepali/checkpoints/checkpoint_best.pt",
+        "bytes": 304695065,
+        "mtime": "2026-09-02T16:10:31+00:00",
+        "digested": false
+      },
+      "model_config": {
+        "path": "nepali/configs/model.yaml",
+        "bytes": 1463,
+        "sha256": "47374ce1e1ba37184be6bc776ba57496efd7c5261365af543c579e0791e699d0",
+        "digested": true
+      },
+      "val_bin": {
+        "path": "/content/drive/MyDrive/24KaratAu/nepali/tokens/nepali_val.bin",
+        "bytes": 63490100,
+        "sha256": "0b434d5aa191e8aedc9d94f2df8983bea140cb0b04622ab210697db12be85b12",
+        "digested": true
+      },
+      "val_sidecar": {
+        "path": "/content/drive/MyDrive/24KaratAu/nepali/tokens/nepali_val.json",
+        "bytes": 1367,
+        "sha256": "d72bcdc8859a3ef011fd1634a09c6cf189bce03028fc44ca5efcd65baf5d5eb7",
+        "digested": true
+      }
+    },
+    "torch": "2.11.0+cu128",
+    "device": "cuda",
+    "amp_dtype": "torch.float16",
+    "batch_size": 16
+  },
+  "language": "nepali",
+  "checkpoint": "/content/drive/MyDrive/24KaratAu/nepali/checkpoints/checkpoint_best.pt",
+  "checkpoint_step": 17429,
+  "n_params": 25379840,
+  "ctx_len": 512,
+  "vocab_size": 8000,
+  "max_tokens": 2000000,
+  "splits": {
+    "val": {
+      "cross_entropy_nats": 3.168221281024046,
+      "cross_entropy_bits": 4.570777130572271,
+      "perplexity": 23.765175171464204,
+      "bits_per_byte": 0.41608810135156754,
+      "bits_per_char": 1.1077232858683879,
+      "bytes_per_token": 10.985118573987434,
+      "chars_per_token": 4.126280623404119,
+      "n_bytes_utf8": 347969746,
+      "n_chars": 130705992,
+      "n_docs": 68583,
+      "n_tokens_scored": 1999872,
+      "n_windows": 3906,
+      "token_budget": 2000000,
+      "full_split": false
+    }
+  }
+}

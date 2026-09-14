@@ -1,0 +1,460 @@
+{
+  "n": 5000,
+  "exact_match": 0.4542,
+  "format_rate": 1.0,
+  "by_family": {
+    "eq3_relation": 0.632,
+    "rel2_which": 0.47,
+    "rel3_extreme": 0.412,
+    "rel3_pairwise": 0.49,
+    "rel4_extreme": 0.412,
+    "rel4_pairwise": 0.526,
+    "val2_relation": 0.558,
+    "val2_which": 0.474,
+    "val3_extreme": 0.308,
+    "val4_rank": 0.26
+  },
+  "by_hops": {
+    "0": 0.414,
+    "1": 0.5113,
+    "2": 0.469
+  },
+  "by_attribute": {
+    "age": 0.469,
+    "height": 0.4346,
+    "length": 0.443,
+    "marks": 0.4408,
+    "price": 0.4551,
+    "weight": 0.4809
+  },
+  "by_phrasing": {
+    "seen": 0.4542
+  },
+  "confusions": [
+    [
+      "बढी -> कम",
+      468
+    ],
+    [
+      "कम -> बढी",
+      404
+    ],
+    [
+      "बढी -> बराबर",
+      12
+    ],
+    [
+      "कम -> बराबर",
+      10
+    ],
+    [
+      "पुस्तक -> टेबुल",
+      8
+    ],
+    [
+      "डोको -> टेबुल",
+      7
+    ],
+    [
+      "कृष्ण -> बिमला",
+      7
+    ],
+    [
+      "चस्मा -> छाता",
+      7
+    ],
+    [
+      "सिरानी -> गुन्द्री",
+      7
+    ],
+    [
+      "पुस्तक -> कम्बल",
+      6
+    ],
+    [
+      "जुत्ता -> कम्बल",
+      6
+    ],
+    [
+      "छाता -> गुन्द्री",
+      6
+    ],
+    [
+      "गुन्द्री -> कलम",
+      6
+    ],
+    [
+      "सिरानी -> टेबुल",
+      6
+    ],
+    [
+      "गुन्द्री -> पुस्तक",
+      6
+    ]
+  ],
+  "examples": {
+    "correct": [
+      {
+        "family": "eq3_relation",
+        "gold": "बराबर",
+        "pred": "बराबर",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: बराबर"
+      },
+      {
+        "family": "rel3_extreme",
+        "gold": "राजु",
+        "pred": "राजु",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: राजु"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "बढी",
+        "pred": "बढी",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: बढी"
+      },
+      {
+        "family": "rel3_extreme",
+        "gold": "अनिता",
+        "pred": "अनिता",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: अनिता"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "बढी",
+        "pred": "बढी",
+        "correct": true,
+        "hops": 2,
+        "continuation": "उत्तर: बढी"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "कम",
+        "pred": "कम",
+        "correct": true,
+        "hops": 2,
+        "continuation": "उत्तर: कम"
+      },
+      {
+        "family": "rel4_extreme",
+        "gold": "दीपक",
+        "pred": "दीपक",
+        "correct": true,
+        "hops": 2,
+        "continuation": "उत्तर: दीपक"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "बराबर",
+        "pred": "बराबर",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: बराबर"
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "बढी",
+        "pred": "बढी",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: बढी"
+      },
+      {
+        "family": "val2_relation",
+        "gold": "कम",
+        "pred": "कम",
+        "correct": true,
+        "hops": 0,
+        "continuation": "उत्तर: कम"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "बराबर",
+        "pred": "बराबर",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: बराबर"
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "कम",
+        "pred": "कम",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: कम"
+      },
+      {
+        "family": "val2_which",
+        "gold": "गोपाल",
+        "pred": "गोपाल",
+        "correct": true,
+        "hops": 0,
+        "continuation": "उत्तर: गोपाल"
+      },
+      {
+        "family": "rel2_which",
+        "gold": "बिमला",
+        "pred": "बिमला",
+        "correct": true,
+        "hops": 0,
+        "continuation": "उत्तर: बिमला"
+      },
+      {
+        "family": "rel2_which",
+        "gold": "यशोदा",
+        "pred": "यशोदा",
+        "correct": true,
+        "hops": 0,
+        "continuation": "उत्तर: यशोदा"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "कम",
+        "pred": "कम",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: कम"
+      },
+      {
+        "family": "val3_extreme",
+        "gold": "टेबुल",
+        "pred": "टेबुल",
+        "correct": true,
+        "hops": 0,
+        "continuation": "उत्तर: टेबुल"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "बढी",
+        "pred": "बढी",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: बढी"
+      },
+      {
+        "family": "rel3_extreme",
+        "gold": "भाँडा",
+        "pred": "भाँडा",
+        "correct": true,
+        "hops": 1,
+        "continuation": "उत्तर: भाँडा"
+      },
+      {
+        "family": "val2_which",
+        "gold": "कृष्ण",
+        "pred": "कृष्ण",
+        "correct": true,
+        "hops": 0,
+        "continuation": "उत्तर: कृष्ण"
+      }
+    ],
+    "incorrect": [
+      {
+        "family": "rel3_extreme",
+        "gold": "प्रकाश",
+        "pred": "राधिका",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: राधिका"
+      },
+      {
+        "family": "val4_rank",
+        "gold": "डोको",
+        "pred": "कुर्सी",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कुर्सी"
+      },
+      {
+        "family": "rel3_extreme",
+        "gold": "झोला",
+        "pred": "सिरानी",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: सिरानी"
+      },
+      {
+        "family": "rel2_which",
+        "gold": "सीता",
+        "pred": "हरि",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: हरि"
+      },
+      {
+        "family": "val2_relation",
+        "gold": "बढी",
+        "pred": "कम",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कम"
+      },
+      {
+        "family": "val2_relation",
+        "gold": "बढी",
+        "pred": "कम",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कम"
+      },
+      {
+        "family": "val4_rank",
+        "gold": "गीता",
+        "pred": "सुरेश",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: सुरेश"
+      },
+      {
+        "family": "val2_which",
+        "gold": "पुस्तक",
+        "pred": "कम्बल",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कम्बल"
+      },
+      {
+        "family": "val3_extreme",
+        "gold": "कम्बल",
+        "pred": "झोला",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: झोला"
+      },
+      {
+        "family": "val4_rank",
+        "gold": "राम",
+        "pred": "बिमला",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: बिमला"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "बढी",
+        "pred": "कम",
+        "correct": false,
+        "hops": 2,
+        "continuation": "उत्तर: कम"
+      },
+      {
+        "family": "val2_which",
+        "gold": "गोपाल",
+        "pred": "अनिल",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: अनिल"
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "बढी",
+        "pred": "कम",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: कम"
+      },
+      {
+        "family": "val3_extreme",
+        "gold": "श्याम",
+        "pred": "शान्ति",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: शान्ति"
+      },
+      {
+        "family": "rel3_extreme",
+        "gold": "रमेश",
+        "pred": "सुनिता",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: सुनिता"
+      },
+      {
+        "family": "rel2_which",
+        "gold": "तारा",
+        "pred": "हरि",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: हरि"
+      },
+      {
+        "family": "rel3_extreme",
+        "gold": "पुस्तक",
+        "pred": "कुर्सी",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: कुर्सी"
+      },
+      {
+        "family": "rel3_extreme",
+        "gold": "मीना",
+        "pred": "मनोज",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: मनोज"
+      },
+      {
+        "family": "rel3_extreme",
+        "gold": "भाँडा",
+        "pred": "झोला",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: झोला"
+      },
+      {
+        "family": "rel4_extreme",
+        "gold": "झोला",
+        "pred": "कलम",
+        "correct": false,
+        "hops": 2,
+        "continuation": "उत्तर: कलम"
+      }
+    ]
+  },
+  "setup": {
+    "mode": "finetuned",
+    "answer_style": "direct",
+    "shots": 0,
+    "language": "nepali",
+    "checkpoint_step": 1625,
+    "max_new_tokens": 12,
+    "test_split": "test_seen",
+    "seed": 42
+  },
+  "provenance": {
+    "module": "src.eval.reasoning_eval",
+    "generated_at": "2026-09-14T15:05:24+00:00",
+    "command": "python -m src.eval.reasoning_eval --checkpoint /content/drive/MyDrive/24KaratAu/nepali/checkpoints_ft_direct/finetune_best.pt --model-config nepali/configs/model.yaml --tokenizer tokenizers/nepali/nepali_bpe_8k.model --test data/nepali/reasoning/test_seen.jsonl --language nepali --mode finetuned --answer-style direct --out nepali/eval/reasoning_finetuned_direct_seen.json",
+    "git_commit": null,
+    "git_branch": null,
+    "git_dirty": false,
+    "python": "3.13.15",
+    "inputs": {
+      "checkpoint": {
+        "path": "/content/drive/MyDrive/24KaratAu/nepali/checkpoints_ft_direct/finetune_best.pt",
+        "bytes": 304696603,
+        "mtime": "2026-09-14T14:34:50+00:00",
+        "digested": false
+      },
+      "test": {
+        "path": "data/nepali/reasoning/test_seen.jsonl",
+        "bytes": 5048506,
+        "sha256": "aa5f8562a0f56f0dfab031c63d31f179851078ade59056f86aad6cf8ecf2a8df",
+        "digested": true
+      },
+      "tokenizer": {
+        "path": "tokenizers/nepali/nepali_bpe_8k.model",
+        "bytes": 436007,
+        "sha256": "5ae234a4cbfa3d9e559a8468cc6ba32790453ce293460487a8d2c04011f60de1",
+        "digested": true
+      }
+    }
+  }
+}

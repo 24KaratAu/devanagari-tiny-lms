@@ -1,0 +1,649 @@
+{
+  "runs": [
+    {
+      "setup": {
+        "mode": "zeroshot",
+        "answer_style": "direct",
+        "shots": 0,
+        "language": "hindi",
+        "checkpoint_step": 14329,
+        "max_new_tokens": 12,
+        "test_split": "test",
+        "seed": 42
+      },
+      "exact_match": 0.0,
+      "format_rate": 0.004,
+      "by_hops": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0
+      },
+      "by_family": {
+        "eq3_relation": 0.0,
+        "rel2_which": 0.0,
+        "rel3_extreme": 0.0,
+        "rel3_pairwise": 0.0,
+        "rel4_extreme": 0.0,
+        "rel4_pairwise": 0.0,
+        "val2_relation": 0.0,
+        "val2_which": 0.0,
+        "val3_extreme": 0.0,
+        "val4_rank": 0.0
+      },
+      "by_phrasing": {
+        "held_out": 0.0,
+        "seen": 0.0
+      },
+      "by_attribute": {
+        "age": 0.0,
+        "height": 0.0,
+        "length": 0.0,
+        "marks": 0.0,
+        "price": 0.0,
+        "weight": 0.0
+      },
+      "premise_split": {
+        "value_premises": 0.0,
+        "relation_premises": 0.0
+      },
+      "source": "hindi/eval/reasoning_zeroshot_direct.json",
+      "test_split": "test",
+      "seed": 42
+    },
+    {
+      "setup": {
+        "mode": "fewshot",
+        "answer_style": "direct",
+        "shots": 4,
+        "language": "hindi",
+        "checkpoint_step": 14329,
+        "max_new_tokens": 12,
+        "test_split": "test",
+        "seed": 42
+      },
+      "exact_match": 0.0,
+      "format_rate": 0.9998,
+      "by_hops": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0
+      },
+      "by_family": {
+        "eq3_relation": 0.0,
+        "rel2_which": 0.0,
+        "rel3_extreme": 0.0,
+        "rel3_pairwise": 0.0,
+        "rel4_extreme": 0.0,
+        "rel4_pairwise": 0.0,
+        "val2_relation": 0.0,
+        "val2_which": 0.0,
+        "val3_extreme": 0.0,
+        "val4_rank": 0.0
+      },
+      "by_phrasing": {
+        "held_out": 0.0,
+        "seen": 0.0
+      },
+      "by_attribute": {
+        "age": 0.0,
+        "height": 0.0,
+        "length": 0.0,
+        "marks": 0.0,
+        "price": 0.0,
+        "weight": 0.0
+      },
+      "premise_split": {
+        "value_premises": 0.0,
+        "relation_premises": 0.0
+      },
+      "source": "hindi/eval/reasoning_fewshot_direct.json",
+      "test_split": "test",
+      "seed": 42
+    },
+    {
+      "setup": {
+        "mode": "finetuned",
+        "answer_style": "direct",
+        "shots": 0,
+        "language": "hindi",
+        "checkpoint_step": 1750,
+        "max_new_tokens": 12,
+        "test_split": "test",
+        "seed": 42
+      },
+      "exact_match": 0.2458,
+      "format_rate": 0.9614,
+      "by_hops": {
+        "0": 0.148,
+        "1": 0.3933,
+        "2": 0.269
+      },
+      "by_family": {
+        "eq3_relation": 0.666,
+        "rel2_which": 0.264,
+        "rel3_extreme": 0.05,
+        "rel3_pairwise": 0.464,
+        "rel4_extreme": 0.01,
+        "rel4_pairwise": 0.528,
+        "val2_relation": 0.476,
+        "val2_which": 0.0,
+        "val3_extreme": 0.0,
+        "val4_rank": 0.0
+      },
+      "by_phrasing": {
+        "held_out": 0.2463,
+        "seen": 0.2456
+      },
+      "by_attribute": {
+        "age": 0.2536,
+        "height": 0.2575,
+        "length": 0.2586,
+        "marks": 0.2455,
+        "price": 0.2334,
+        "weight": 0.2252
+      },
+      "premise_split": {
+        "value_premises": 0.119,
+        "relation_premises": 0.3303
+      },
+      "source": "hindi/eval/reasoning_finetuned_direct.json",
+      "test_split": "test",
+      "seed": 42
+    },
+    {
+      "setup": {
+        "mode": "finetuned",
+        "answer_style": "direct",
+        "shots": 0,
+        "language": "hindi",
+        "checkpoint_step": 1875,
+        "max_new_tokens": 12,
+        "test_split": "test",
+        "seed": 7
+      },
+      "exact_match": 0.2584,
+      "format_rate": 0.976,
+      "by_hops": {
+        "0": 0.1644,
+        "1": 0.4093,
+        "2": 0.267
+      },
+      "by_family": {
+        "eq3_relation": 0.674,
+        "rel2_which": 0.242,
+        "rel3_extreme": 0.096,
+        "rel3_pairwise": 0.458,
+        "rel4_extreme": 0.014,
+        "rel4_pairwise": 0.52,
+        "val2_relation": 0.58,
+        "val2_which": 0.0,
+        "val3_extreme": 0.0,
+        "val4_rank": 0.0
+      },
+      "by_phrasing": {
+        "held_out": 0.2331,
+        "seen": 0.2665
+      },
+      "by_attribute": {
+        "age": 0.2549,
+        "height": 0.2691,
+        "length": 0.2622,
+        "marks": 0.2539,
+        "price": 0.2604,
+        "weight": 0.2494
+      },
+      "premise_split": {
+        "value_premises": 0.145,
+        "relation_premises": 0.334
+      },
+      "source": "hindi/eval/reasoning_finetuned_direct_s7.json",
+      "test_split": "test",
+      "seed": 7
+    },
+    {
+      "setup": {
+        "mode": "finetuned",
+        "answer_style": "direct",
+        "shots": 0,
+        "language": "hindi",
+        "checkpoint_step": 1750,
+        "max_new_tokens": 12,
+        "test_split": "test_seen",
+        "seed": 42
+      },
+      "exact_match": 0.6226,
+      "format_rate": 1.0,
+      "by_hops": {
+        "0": 0.5392,
+        "1": 0.7187,
+        "2": 0.687
+      },
+      "by_family": {
+        "eq3_relation": 0.652,
+        "rel2_which": 1.0,
+        "rel3_extreme": 1.0,
+        "rel3_pairwise": 0.504,
+        "rel4_extreme": 0.832,
+        "rel4_pairwise": 0.542,
+        "val2_relation": 0.51,
+        "val2_which": 0.554,
+        "val3_extreme": 0.362,
+        "val4_rank": 0.27
+      },
+      "by_phrasing": {
+        "seen": 0.6226
+      },
+      "by_attribute": {
+        "age": 0.5953,
+        "height": 0.6053,
+        "length": 0.6228,
+        "marks": 0.6178,
+        "price": 0.631,
+        "weight": 0.6628
+      },
+      "premise_split": {
+        "value_premises": 0.424,
+        "relation_premises": 0.755
+      },
+      "source": "hindi/eval/reasoning_finetuned_direct_seen.json",
+      "test_split": "test_seen",
+      "seed": 42
+    },
+    {
+      "setup": {
+        "mode": "finetuned",
+        "answer_style": "rationale",
+        "shots": 0,
+        "language": "hindi",
+        "checkpoint_step": 1875,
+        "max_new_tokens": 48,
+        "test_split": "test",
+        "seed": 42
+      },
+      "exact_match": 0.1794,
+      "format_rate": 0.8686,
+      "by_hops": {
+        "0": 0.066,
+        "1": 0.3547,
+        "2": 0.2
+      },
+      "by_family": {
+        "eq3_relation": 0.558,
+        "rel2_which": 0.012,
+        "rel3_extreme": 0.002,
+        "rel3_pairwise": 0.504,
+        "rel4_extreme": 0.0,
+        "rel4_pairwise": 0.4,
+        "val2_relation": 0.314,
+        "val2_which": 0.002,
+        "val3_extreme": 0.002,
+        "val4_rank": 0.0
+      },
+      "by_phrasing": {
+        "held_out": 0.1664,
+        "seen": 0.1836
+      },
+      "by_attribute": {
+        "age": 0.1723,
+        "height": 0.1663,
+        "length": 0.1708,
+        "marks": 0.1971,
+        "price": 0.183,
+        "weight": 0.1877
+      },
+      "premise_split": {
+        "value_premises": 0.0795,
+        "relation_premises": 0.246
+      },
+      "source": "hindi/eval/reasoning_finetuned_rationale.json",
+      "test_split": "test",
+      "seed": 42
+    },
+    {
+      "setup": {
+        "mode": "zeroshot",
+        "answer_style": "direct",
+        "shots": 0,
+        "language": "nepali",
+        "checkpoint_step": 17429,
+        "max_new_tokens": 12,
+        "test_split": "test",
+        "seed": 42
+      },
+      "exact_match": 0.0,
+      "format_rate": 0.0,
+      "by_hops": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0
+      },
+      "by_family": {
+        "eq3_relation": 0.0,
+        "rel2_which": 0.0,
+        "rel3_extreme": 0.0,
+        "rel3_pairwise": 0.0,
+        "rel4_extreme": 0.0,
+        "rel4_pairwise": 0.0,
+        "val2_relation": 0.0,
+        "val2_which": 0.0,
+        "val3_extreme": 0.0,
+        "val4_rank": 0.0
+      },
+      "by_phrasing": {
+        "held_out": 0.0,
+        "seen": 0.0
+      },
+      "by_attribute": {
+        "age": 0.0,
+        "height": 0.0,
+        "length": 0.0,
+        "marks": 0.0,
+        "price": 0.0,
+        "weight": 0.0
+      },
+      "premise_split": {
+        "value_premises": 0.0,
+        "relation_premises": 0.0
+      },
+      "source": "nepali/eval/reasoning_zeroshot_direct.json",
+      "test_split": "test",
+      "seed": 42
+    },
+    {
+      "setup": {
+        "mode": "fewshot",
+        "answer_style": "direct",
+        "shots": 4,
+        "language": "nepali",
+        "checkpoint_step": 17429,
+        "max_new_tokens": 12,
+        "test_split": "test",
+        "seed": 42
+      },
+      "exact_match": 0.0,
+      "format_rate": 0.5374,
+      "by_hops": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0
+      },
+      "by_family": {
+        "eq3_relation": 0.0,
+        "rel2_which": 0.0,
+        "rel3_extreme": 0.0,
+        "rel3_pairwise": 0.0,
+        "rel4_extreme": 0.0,
+        "rel4_pairwise": 0.0,
+        "val2_relation": 0.0,
+        "val2_which": 0.0,
+        "val3_extreme": 0.0,
+        "val4_rank": 0.0
+      },
+      "by_phrasing": {
+        "held_out": 0.0,
+        "seen": 0.0
+      },
+      "by_attribute": {
+        "age": 0.0,
+        "height": 0.0,
+        "length": 0.0,
+        "marks": 0.0,
+        "price": 0.0,
+        "weight": 0.0
+      },
+      "premise_split": {
+        "value_premises": 0.0,
+        "relation_premises": 0.0
+      },
+      "source": "nepali/eval/reasoning_fewshot_direct.json",
+      "test_split": "test",
+      "seed": 42
+    },
+    {
+      "setup": {
+        "mode": "finetuned",
+        "answer_style": "direct",
+        "shots": 0,
+        "language": "nepali",
+        "checkpoint_step": 1625,
+        "max_new_tokens": 12,
+        "test_split": "test",
+        "seed": 42
+      },
+      "exact_match": 0.2144,
+      "format_rate": 1.0,
+      "by_hops": {
+        "0": 0.1072,
+        "1": 0.3713,
+        "2": 0.247
+      },
+      "by_family": {
+        "eq3_relation": 0.66,
+        "rel2_which": 0.0,
+        "rel3_extreme": 0.0,
+        "rel3_pairwise": 0.454,
+        "rel4_extreme": 0.0,
+        "rel4_pairwise": 0.494,
+        "val2_relation": 0.536,
+        "val2_which": 0.0,
+        "val3_extreme": 0.0,
+        "val4_rank": 0.0
+      },
+      "by_phrasing": {
+        "held_out": 0.2232,
+        "seen": 0.2116
+      },
+      "by_attribute": {
+        "age": 0.2136,
+        "height": 0.2021,
+        "length": 0.2088,
+        "marks": 0.2273,
+        "price": 0.2236,
+        "weight": 0.2119
+      },
+      "premise_split": {
+        "value_premises": 0.134,
+        "relation_premises": 0.268
+      },
+      "source": "nepali/eval/reasoning_finetuned_direct.json",
+      "test_split": "test",
+      "seed": 42
+    },
+    {
+      "setup": {
+        "mode": "finetuned",
+        "answer_style": "direct",
+        "shots": 0,
+        "language": "nepali",
+        "checkpoint_step": 1875,
+        "max_new_tokens": 12,
+        "test_split": "test",
+        "seed": 7
+      },
+      "exact_match": 0.217,
+      "format_rate": 1.0,
+      "by_hops": {
+        "0": 0.1044,
+        "1": 0.3787,
+        "2": 0.256
+      },
+      "by_family": {
+        "eq3_relation": 0.676,
+        "rel2_which": 0.0,
+        "rel3_extreme": 0.0,
+        "rel3_pairwise": 0.46,
+        "rel4_extreme": 0.0,
+        "rel4_pairwise": 0.512,
+        "val2_relation": 0.522,
+        "val2_which": 0.0,
+        "val3_extreme": 0.0,
+        "val4_rank": 0.0
+      },
+      "by_phrasing": {
+        "held_out": 0.2043,
+        "seen": 0.2211
+      },
+      "by_attribute": {
+        "age": 0.1905,
+        "height": 0.2379,
+        "length": 0.2278,
+        "marks": 0.2213,
+        "price": 0.2273,
+        "weight": 0.1961
+      },
+      "premise_split": {
+        "value_premises": 0.1305,
+        "relation_premises": 0.2747
+      },
+      "source": "nepali/eval/reasoning_finetuned_direct_s7.json",
+      "test_split": "test",
+      "seed": 7
+    },
+    {
+      "setup": {
+        "mode": "finetuned",
+        "answer_style": "direct",
+        "shots": 0,
+        "language": "nepali",
+        "checkpoint_step": 1625,
+        "max_new_tokens": 12,
+        "test_split": "test_seen",
+        "seed": 42
+      },
+      "exact_match": 0.4542,
+      "format_rate": 1.0,
+      "by_hops": {
+        "0": 0.414,
+        "1": 0.5113,
+        "2": 0.469
+      },
+      "by_family": {
+        "eq3_relation": 0.632,
+        "rel2_which": 0.47,
+        "rel3_extreme": 0.412,
+        "rel3_pairwise": 0.49,
+        "rel4_extreme": 0.412,
+        "rel4_pairwise": 0.526,
+        "val2_relation": 0.558,
+        "val2_which": 0.474,
+        "val3_extreme": 0.308,
+        "val4_rank": 0.26
+      },
+      "by_phrasing": {
+        "seen": 0.4542
+      },
+      "by_attribute": {
+        "age": 0.469,
+        "height": 0.4346,
+        "length": 0.443,
+        "marks": 0.4408,
+        "price": 0.4551,
+        "weight": 0.4809
+      },
+      "premise_split": {
+        "value_premises": 0.4,
+        "relation_premises": 0.4903
+      },
+      "source": "nepali/eval/reasoning_finetuned_direct_seen.json",
+      "test_split": "test_seen",
+      "seed": 42
+    },
+    {
+      "setup": {
+        "mode": "finetuned",
+        "answer_style": "rationale",
+        "shots": 0,
+        "language": "nepali",
+        "checkpoint_step": 1625,
+        "max_new_tokens": 48,
+        "test_split": "test",
+        "seed": 42
+      },
+      "exact_match": 0.1992,
+      "format_rate": 0.9716,
+      "by_hops": {
+        "0": 0.0876,
+        "1": 0.3473,
+        "2": 0.256
+      },
+      "by_family": {
+        "eq3_relation": 0.604,
+        "rel2_which": 0.0,
+        "rel3_extreme": 0.0,
+        "rel3_pairwise": 0.438,
+        "rel4_extreme": 0.0,
+        "rel4_pairwise": 0.512,
+        "val2_relation": 0.438,
+        "val2_which": 0.0,
+        "val3_extreme": 0.0,
+        "val4_rank": 0.0
+      },
+      "by_phrasing": {
+        "held_out": 0.1911,
+        "seen": 0.2018
+      },
+      "by_attribute": {
+        "age": 0.1699,
+        "height": 0.1975,
+        "length": 0.2017,
+        "marks": 0.2358,
+        "price": 0.199,
+        "weight": 0.1913
+      },
+      "premise_split": {
+        "value_premises": 0.1095,
+        "relation_premises": 0.259
+      },
+      "source": "nepali/eval/reasoning_finetuned_rationale.json",
+      "test_split": "test",
+      "seed": 42
+    }
+  ],
+  "provenance": {
+    "module": "src.eval.compare_reasoning",
+    "generated_at": "2026-09-14T16:28:46+00:00",
+    "command": "python -m src.eval.compare_reasoning --inputs hindi/eval/reasoning_fewshot_direct.json hindi/eval/reasoning_finetuned_direct.json hindi/eval/reasoning_finetuned_direct_s7.json hindi/eval/reasoning_finetuned_direct_seen.json hindi/eval/reasoning_finetuned_rationale.json hindi/eval/reasoning_zeroshot_direct.json nepali/eval/reasoning_fewshot_direct.json nepali/eval/reasoning_finetuned_direct.json nepali/eval/reasoning_finetuned_direct_s7.json nepali/eval/reasoning_finetuned_direct_seen.json nepali/eval/reasoning_finetuned_rationale.json nepali/eval/reasoning_zeroshot_direct.json --out report/figures/reasoning_comparison.json --md report/figures/reasoning_comparison.md --figure report/figures/reasoning_accuracy.png",
+    "git_commit": "a8b78df2abe5391ac6936971451defc5ffca2f1c",
+    "git_branch": "phase-3",
+    "git_dirty": true,
+    "python": "3.14.4",
+    "inputs": {
+      "reasoning_fewshot_direct.json": {
+        "path": "nepali/eval/reasoning_fewshot_direct.json",
+        "bytes": 8347,
+        "sha256": "ff218fc42c82f3e58d5600a0af80d82c8c8287bb9929c150e6a62484c1d7446f",
+        "digested": true
+      },
+      "reasoning_finetuned_direct.json": {
+        "path": "nepali/eval/reasoning_finetuned_direct.json",
+        "bytes": 11662,
+        "sha256": "eba65d56e63f22adcea29a558308c37d65ce6817c43645e079945a64876a7c5d",
+        "digested": true
+      },
+      "reasoning_finetuned_direct_s7.json": {
+        "path": "nepali/eval/reasoning_finetuned_direct_s7.json",
+        "bytes": 11543,
+        "sha256": "36ed5148d82565ed3053feba7786f18934b2b073977a796c4f4adfdda9f443b7",
+        "digested": true
+      },
+      "reasoning_finetuned_direct_seen.json": {
+        "path": "nepali/eval/reasoning_finetuned_direct_seen.json",
+        "bytes": 11806,
+        "sha256": "e3ec4e81e3ff3157b9a7c51d54636553e3ca157039a4eeb7399f7343f854b4da",
+        "digested": true
+      },
+      "reasoning_finetuned_rationale.json": {
+        "path": "nepali/eval/reasoning_finetuned_rationale.json",
+        "bytes": 14161,
+        "sha256": "ab42fda6b2107fd8fe3d5c906f03a64fca5977174f06b0ede21c815166848b6c",
+        "digested": true
+      },
+      "reasoning_zeroshot_direct.json": {
+        "path": "nepali/eval/reasoning_zeroshot_direct.json",
+        "bytes": 8267,
+        "sha256": "5257ecaca0d753bcf4b9a70024afc83a3ae81ce97dfb3d1b274a16b68ad6a06a",
+        "digested": true
+      }
+    }
+  }
+}

@@ -281,16 +281,42 @@ def test_distinct_values_are_separated_by_the_minimum_gap(language):
 
 @pytest.mark.parametrize("language", LANGS)
 def test_prompts_are_deduplicated_across_splits(language):
-    """One hash set spans all three splits, so no prompt may straddle them."""
+    """One hash set spans every split, so no prompt may straddle two of them."""
     seen, rng = set(), random.Random(5)
     splits = {s: build_split(language, s, 150, rng, seen, 0.25)
-              for s in ("test", "val", "train")}
+              for s in ("test", "val", "train", "test_seen")}
     texts = {k: {e.prompt for e in v} for k, v in splits.items()}
     assert not (texts["train"] & texts["test"])
     assert not (texts["val"] & texts["test"])
     assert not (texts["train"] & texts["val"])
+    # test_seen shares the train *distribution* by design, which makes prompt
+    # collision likely rather than impossible -- so this is the split where the
+    # shared hash set is actually load-bearing.
+    assert not (texts["test_seen"] & texts["train"])
+    assert not (texts["test_seen"] & texts["val"])
+    assert not (texts["test_seen"] & texts["test"])
     for k, v in splits.items():
         assert len(texts[k]) == len(v), f"{k} contains duplicate prompts"
+
+
+@pytest.mark.parametrize("language", LANGS)
+def test_test_seen_matches_the_training_distribution(language):
+    """The "did anything happen" control must be seen entities AND seen wording.
+
+    If either half drifted, a low score on it would no longer distinguish
+    "training did not fit at all" from "training did not generalise".
+    """
+    train_names = {n for n, _ in PEOPLE[language]["train"]} | \
+                  {n for n, _ in OBJECTS[language]["train"]}
+    held_names = {n for n, _ in PEOPLE[language]["test"]} | \
+                 {n for n, _ in OBJECTS[language]["test"]}
+    rows = corpus(language, "test_seen", 200)
+    for ex in rows:
+        assert set(ex.meta["entities"]) <= train_names, ex.prompt
+        assert not (set(ex.meta["entities"]) & held_names), ex.prompt
+        assert not ex.meta["held_out_phrasing"], ex.prompt
+    # And it must still cover the task, not just a corner of it.
+    assert {r.family for r in rows} == set(FAMILIES)
 
 
 @pytest.mark.parametrize("language", LANGS)

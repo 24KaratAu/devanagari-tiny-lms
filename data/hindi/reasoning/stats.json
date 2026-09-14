@@ -92,13 +92,48 @@
       "answers_distinct": 59,
       "held_out_phrasing": 0,
       "mean_prompt_chars": 114.4
+    },
+    "test_seen": {
+      "n": 5000,
+      "families": {
+        "eq3_relation": 500,
+        "rel2_which": 500,
+        "rel3_extreme": 500,
+        "rel3_pairwise": 500,
+        "rel4_extreme": 500,
+        "rel4_pairwise": 500,
+        "val2_relation": 500,
+        "val2_which": 500,
+        "val3_extreme": 500,
+        "val4_rank": 500
+      },
+      "attributes": {
+        "age": 855,
+        "height": 826,
+        "length": 790,
+        "marks": 853,
+        "price": 813,
+        "weight": 863
+      },
+      "hops": {
+        "0": 2500,
+        "1": 1500,
+        "2": 1000
+      },
+      "answers_distinct": 59,
+      "held_out_phrasing": 0,
+      "mean_prompt_chars": 114.5
     }
   },
   "leakage": {
     "train_test_shared_entities": [],
     "train_test_shared_prompts": 0,
     "val_test_shared_prompts": 0,
-    "train_val_shared_prompts": 0
+    "train_val_shared_prompts": 0,
+    "test_seen_shared_prompts_with_train": 0,
+    "test_seen_shared_prompts_with_val": 0,
+    "test_seen_shared_prompts_with_test": 0,
+    "test_seen_entities_outside_train_pool": []
   },
   "tokenizer": {
     "available": true,
@@ -123,13 +158,20 @@
       "mean_direct_answer_tokens": 3.37,
       "mean_rationale_answer_tokens": 18.65,
       "mean_numeral_tokens": 2.044
+    },
+    "test_seen": {
+      "mean_prompt_tokens": 36.76,
+      "max_prompt_tokens": 66,
+      "mean_direct_answer_tokens": 3.37,
+      "mean_rationale_answer_tokens": 18.68,
+      "mean_numeral_tokens": 2.043
     }
   },
   "provenance": {
     "module": "src.reasoning.generate",
-    "generated_at": "2026-09-09T07:35:40+00:00",
-    "command": "python -m src.reasoning.generate --language hindi --out-dir data/hindi/reasoning --train 40000 --val 5000 --test 5000 --seed 42",
-    "git_commit": "d1deaa82b644aee611a728bc0354062eb45ac5de",
+    "generated_at": "2026-09-14T13:35:13+00:00",
+    "command": "python -m src.reasoning.generate --language hindi --out-dir data/hindi/reasoning --train 40000 --val 5000 --test 5000 --test-seen 5000 --seed 42",
+    "git_commit": "a8b78df2abe5391ac6936971451defc5ffca2f1c",
     "git_branch": "phase-3",
     "git_dirty": true,
     "python": "3.14.4",

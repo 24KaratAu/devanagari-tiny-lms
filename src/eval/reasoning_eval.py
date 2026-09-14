@@ -46,6 +46,16 @@ from src.eval import provenance
 from src.model.transformer_lm import TransformerLM, TransformerLMConfig
 from src.reasoning.answers import extract_answer, normalise
 
+# Generation budget per answer style. "direct" needs only the answer line;
+# "rationale" must also emit the restated chain before it.
+MAX_NEW = {"direct": 12, "rationale": 48}
+
+# Answer parsing lives in src/reasoning/answers.py, next to the generator that
+# defines the format; re-exported here because this is where callers look.
+__all__ = ["extract_answer", "normalise", "greedy_continuations", "score",
+           "MAX_NEW"]
+
+
 def build_fewshot_preamble(demos: list, language: str,
                            answer_style: str) -> str:
     """Concatenate ``k`` worked examples into an in-context preamble.
@@ -244,6 +254,11 @@ def main():
         "shots": args.shots if args.mode == "fewshot" else 0,
         "language": args.language, "checkpoint_step": meta["step"],
         "max_new_tokens": MAX_NEW[args.answer_style],
+        # Which split was scored. Needed downstream: "test" and "test_seen"
+        # differ only in their entity pool, and a comparison table that could
+        # not tell them apart would present the control as the real result.
+        "test_split": Path(args.test).stem,
+        "seed": args.seed,
     }
     result["provenance"] = provenance.build(
         "src.eval.reasoning_eval",

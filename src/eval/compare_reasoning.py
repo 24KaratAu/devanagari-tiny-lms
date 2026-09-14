@@ -7,7 +7,21 @@ mislabelling a run is not possible -- and produces the three things the brief's
 Phase 3 deliverables ask for: pretrained versus finetuned accuracy, a comparison
 between Model H and Model L, and an error analysis.
 
-Three cuts are reported, because a single pooled exact match hides all of them:
+The headline breakdown is the **three test sets**, which have to be read
+together because they degrade independently and each isolates a different
+failure:
+
+    split                 entities   wording    a low score means
+    test_seen             seen       seen       training did not fit at all
+    test, seen wording    unseen     seen       it memorised entity names
+    test, held-out wording unseen    unseen     it memorised the template
+
+A model can pass any one of those and fail the next, so a single pooled accuracy
+is not just less informative -- it actively conflates three diagnoses. The first
+is the control: distributionally identical to training, never used to select a
+checkpoint.
+
+Three further cuts follow, because a pooled number hides all of them too:
 
   * **by reasoning depth** (0, 1, 2 transitive hops). A model that has learned
     the answer format but not the relation scores at chance on every depth; a
@@ -103,6 +117,10 @@ def headline_table(rows: list) -> str:
            "0 hops | 1 hop | 2 hops |",
            "| :--- | :--- | :--- | ---: | ---: | ---: | ---: | ---: |"]
     for setup, r in rows:
+        # The control split has its own table; mixing it in here would put a
+        # seen-entity number in the same column as held-out-entity ones.
+        if setup.get("test_split", "test") != "test":
+            continue
         h = r.get("by_hops", {})
         out.append(
             f"| {LANG_LABEL[setup['language']]} | {setup['answer_style']} | "
@@ -120,6 +138,8 @@ def generalisation_table(rows: list) -> str:
            "Gap | Value premises | Relation premises |",
            "| :--- | :--- | :--- | ---: | ---: | ---: | ---: | ---: |"]
     for setup, r in rows:
+        if setup.get("test_split", "test") != "test":
+            continue
         ph = r.get("by_phrasing", {})
         seen, held = ph.get("seen"), ph.get("held_out")
         gap = (f"{seen - held:+.4f}" if seen is not None and held is not None
@@ -139,9 +159,95 @@ def generalisation_table(rows: list) -> str:
     return "\n".join(out)
 
 
+def three_test_table(rows: list) -> str:
+    """The three-test-set diagnosis, finetuned runs only.
+
+    Columns 1 and 2 come from a dedicated ``test_seen`` run; columns 3 and 4
+    are the seen / held-out phrasing halves of the ordinary ``test`` run, which
+    already carries the flag per example.
+
+    Args:
+        rows: ``(setup, result)`` pairs.
+
+    Returns:
+        A Markdown table, or a note when the control run is absent.
+    """
+    ft = [(s, r) for s, r in rows if s["mode"] == "finetuned"]
+    if not ft:
+        return "_No finetuned runs supplied._"
+
+    by = {}
+    for s, r in ft:
+        key = (s["language"], s["answer_style"], s.get("seed", 42))
+        by.setdefault(key, {})[s.get("test_split", "test")] = r
+
+    out = ["| Model | Style | Seen entities, seen wording | Unseen entities, "
+           "seen wording | Unseen wording | Memorisation gap | Template gap |",
+           "| :--- | :--- | ---: | ---: | ---: | ---: | ---: |"]
+    for (lang, style, seed), runs in sorted(by.items()):
+        ctrl = runs.get("test_seen")
+        main = runs.get("test")
+        if main is None:
+            continue
+        ph = main.get("by_phrasing", {})
+        seen_w, held_w = ph.get("seen"), ph.get("held_out")
+        c = ctrl["exact_match"] if ctrl else None
+
+        def f(x):
+            return f"{x:.4f}" if isinstance(x, (int, float)) else "—"
+
+        # Each gap attributes the drop to the thing that changed between the
+        # two columns it spans: entities for the first, wording for the second.
+        mem = (f"{c - seen_w:+.4f}" if c is not None and seen_w is not None
+               else "—")
+        tpl = (f"{seen_w - held_w:+.4f}" if seen_w is not None
+               and held_w is not None else "—")
+        label = LANG_LABEL[lang] + (f" (seed {seed})" if seed != 42 else "")
+        out.append(f"| {label} | {style} | {f(c)} | {f(seen_w)} | {f(held_w)} "
+                   f"| {mem} | {tpl} |")
+    if len(out) == 2:
+        return ("_No `test_seen` control run supplied — generate it with "
+                "`--test-seen 5000` and score it alongside `test`._")
+    return "\n".join(out)
+
+
+def seed_spread(rows: list) -> str:
+    """Exact-match range across seeds, where more than one was run.
+
+    A single run reports a number; two runs report a number and an idea of how
+    much of it was the seed. Without this the per-family differences below have
+    no scale to be judged against.
+
+    Args:
+        rows: ``(setup, result)`` pairs.
+
+    Returns:
+        A Markdown table, or a note when every configuration has one seed.
+    """
+    groups = {}
+    for s, r in rows:
+        if s["mode"] != "finetuned" or s.get("test_split", "test") != "test":
+            continue
+        groups.setdefault((s["language"], s["answer_style"]), []).append(
+            (s.get("seed", 42), r["exact_match"]))
+    multi = {k: sorted(v) for k, v in groups.items() if len(v) > 1}
+    if not multi:
+        return ("_One seed per configuration; no spread to report. The Phase 3 "
+                "brief asks for more than one, so this is a stated limitation._")
+    out = ["| Model | Style | Seeds | Exact match per seed | Range |",
+           "| :--- | :--- | ---: | :--- | ---: |"]
+    for (lang, style), vals in sorted(multi.items()):
+        ems = [e for _, e in vals]
+        out.append(f"| {LANG_LABEL[lang]} | {style} | {len(vals)} | "
+                   + ", ".join(f"{s}: {e:.4f}" for s, e in vals)
+                   + f" | {max(ems) - min(ems):.4f} |")
+    return "\n".join(out)
+
+
 def family_table(rows: list) -> str:
     """Per-family accuracy, finetuned runs only -- the error-analysis grid."""
-    ft = [(s, r) for s, r in rows if s["mode"] == "finetuned"]
+    ft = [(s, r) for s, r in rows if s["mode"] == "finetuned"
+          and s.get("test_split", "test") == "test"]
     if not ft:
         return "_No finetuned runs supplied._"
     fams = sorted({k for _, r in ft for k in r.get("by_family", {})})
@@ -160,11 +266,14 @@ def confusion_section(rows: list) -> str:
     """The most frequent wrong answers, per finetuned run."""
     parts = []
     for setup, r in rows:
-        if setup["mode"] != "finetuned":
+        if setup["mode"] != "finetuned" or \
+                setup.get("test_split", "test") != "test":
             continue
+        seed = setup.get("seed", 42)
         parts.append(f"**{LANG_LABEL[setup['language']]}, "
-                     f"{setup['answer_style']} answers** - most frequent "
-                     f"errors (gold -> predicted):\n")
+                     f"{setup['answer_style']} answers"
+                     + (f", seed {seed}" if seed != 42 else "")
+                     + "** - most frequent errors (gold -> predicted):\n")
         for pair, n in r.get("confusions", [])[:8]:
             parts.append(f"- `{pair}` x {n}")
         parts.append("")
@@ -178,7 +287,8 @@ def plot_accuracy(rows: list, path: Path):
         rows: ``(setup, result)`` pairs.
         path: PNG destination.
     """
-    runs = [(s, r) for s, r in rows if s["answer_style"] == "direct"] or rows
+    runs = [(s, r) for s, r in rows if s["answer_style"] == "direct"
+            and s.get("test_split", "test") == "test"] or rows
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.4), sharey=True)
     for ax, lang in zip(axes, ("hindi", "nepali")):
         sub = [(s, r) for s, r in runs if s["language"] == lang]
@@ -191,13 +301,20 @@ def plot_accuracy(rows: list, path: Path):
         # One hue per language, shade increasing with how much help the model
         # got: zero-shot palest, finetuned solid. Two setups at the same alpha
         # are indistinguishable in the legend, so the ramp spans the runs shown.
-        shades = ([0.35, 0.65, 1.0] if len(sub) == 3
-                  else [0.4 + 0.6 * i / max(len(sub) - 1, 1)
-                        for i in range(len(sub))])
+        shades = {3: [0.35, 0.65, 1.0],
+                  4: [0.3, 0.55, 0.8, 1.0]}.get(
+                      len(sub),
+                      [0.4 + 0.6 * i / max(len(sub) - 1, 1)
+                       for i in range(len(sub))])
         for i, (s, r) in enumerate(sub):
             vals = [r.get("by_hops", {}).get(d, 0.0) for d in depths]
             xs = [j + i * width for j in range(len(depths))]
-            ax.bar(xs, vals, width * 0.92, label=MODE_LABEL[s["mode"]],
+            # Two finetuned runs differing only by seed would otherwise get
+            # the same legend entry twice.
+            seed = s.get("seed", 42)
+            label = MODE_LABEL[s["mode"]] + (f" (seed {seed})" if seed != 42
+                                             else "")
+            ax.bar(xs, vals, width * 0.92, label=label,
                    alpha=shades[i], color=COLORS[lang],
                    edgecolor="white", linewidth=0.6)
             for x, v in zip(xs, vals):
@@ -233,6 +350,10 @@ def main():
               f"EM {r['exact_match']:.4f}  fmt {r['format_rate']:.4f}")
 
     md = "\n\n".join([
+        "### The three test sets",
+        three_test_table(rows),
+        "### Seed spread",
+        seed_spread(rows),
         "### Pretrained vs finetuned exact match",
         headline_table(rows),
         "### Generalisation: unseen phrasing, and premise form",
@@ -255,7 +376,9 @@ def main():
                   "by_family": r.get("by_family"),
                   "by_phrasing": r.get("by_phrasing"),
                   "by_attribute": r.get("by_attribute"),
-                  "premise_split": premise_split(r), "source": r["_path"]}
+                  "premise_split": premise_split(r), "source": r["_path"],
+                  "test_split": s.get("test_split", "test"),
+                  "seed": s.get("seed", 42)}
                  for s, r in rows],
         "provenance": provenance.build(
             "src.eval.compare_reasoning",

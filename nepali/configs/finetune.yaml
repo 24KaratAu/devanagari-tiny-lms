@@ -16,9 +16,7 @@ seed: 42
 # directly comparable; only the supervision differs.
 answer_style: direct
 
-# rclone-copied from Drive at session start; /kaggle/input would
-# require publishing the checkpoint as a Kaggle dataset first.
-init_from: /kaggle/working/pretrained/checkpoint_best.pt
+init_from: /content/drive/MyDrive/24KaratAu/nepali/checkpoints/checkpoint_best.pt
 
 data:
   tokenizer: tokenizers/nepali/nepali_bpe_8k.model
@@ -58,13 +56,13 @@ eval:
   batch_size: 64
 
 checkpoint:
-  dir: /kaggle/working/checkpoints_ft_direct
+  dir: /content/drive/MyDrive/24KaratAu/nepali/checkpoints_ft_direct
   save_latest_every: 200
   keep_best: true          # selection is on validation EXACT MATCH, not loss
   keep_milestones: 4
-  mirror_to: "gdrive:24KaratAu/nepali/checkpoints_ft_direct"
+  mirror_to: ""           # Colab writes straight to Drive; no mirror needed
 
 log:
-  jsonl: /kaggle/working/logs/finetune_direct.jsonl
-  mirror_to: "gdrive:24KaratAu/nepali/checkpoints_ft_direct"
+  jsonl: /content/drive/MyDrive/24KaratAu/nepali/logs/finetune_direct.jsonl
+  mirror_to: ""           # Colab writes straight to Drive; no mirror needed
   every: 25

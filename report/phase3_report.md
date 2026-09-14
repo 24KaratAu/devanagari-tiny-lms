@@ -21,15 +21,25 @@ Phase 3 finetunes each pretrained model on a synthetic comparative-reasoning
 corpus in its own language, measures exact-match accuracy against the
 pretrained model, and compares attention before and after.
 
-**What was built.** A generator (`src/reasoning/`) that produces 50,000
+**What was built.** A generator (`src/reasoning/`) that produces 55,000
 examples per language across ten template families, spanning direct comparison
 through two-hop transitive chains, with three independent leakage controls. A
 supervised finetuning path (`src/train/reasoning_dataset.py`,
 `src/train/finetune.py`) that masks the loss to the answer span. An evaluator
-(`src/eval/reasoning_eval.py`) that scores exact match under three setups, and
-a pretrain-versus-finetune attention comparator
+(`src/eval/reasoning_eval.py`) that scores exact match under three setups on
+three separate test sets, and a pretrain-versus-finetune attention comparator
 (`src/eval/attention_reasoning.py`) that reuses the Phase 2 toolkit on
 reasoning prompts.
+
+**Three things are measured that a single accuracy number would hide.** The
+three test sets of §3.3 — seen entities and wording, unseen entities, unseen
+wording — separate "training did not fit" from "it memorised the names" from
+"it memorised the template", and they degrade independently. A second seed on
+the headline configurations bounds reseeding noise (§8.3). And §5.5 measures
+pretraining validation perplexity before and against after, because supervised
+finetuning on a narrow task can destroy general next-token prediction — the
+course material's worked example moves perplexity 1.33 → 194.7 — and a
+reasoning gain reported without that number is an incomplete result.
 
 **Two findings that do not require the finetuning runs**, because they are
 properties of the Phase 1 tokenizers measured against the Phase 3 corpus, and
@@ -132,7 +142,19 @@ scores at chance on them while scoring well on `rel2_which`. Reporting accuracy
 against hop count separates those two abilities; a single pooled number does
 not.
 
-Three details prevent shortcuts:
+**Surface realisations, and where the coverage is uneven.** Each premise and
+question type has several phrasings, and one of each is reserved for the test
+split. The relative-premise family carries four — `plain`, `inverted`,
+`adjectival` trained, `alt_lexical` held back — which is the full
+train-three-hold-one design. The value-premise and superlative-question types
+carry only two each, and the `which`, `relation` and `rank` question types carry
+**one, with no held-out variant at all**. Every held-out test example therefore
+has unseen *premise* wording, but three of the four question types are never
+reworded. The unseen-wording number in §5 should be read as a test of premise
+phrasing rather than of phrasing in general, and closing the gap is the clearest
+single improvement available to this dataset.
+
+Three further details prevent shortcuts:
 
 - **Premise order is shuffled** before rendering. Without it the first premise
   would always mention the largest entity and the task would be solvable from
@@ -176,6 +198,29 @@ Validation deliberately shares the *train* entity pool. Validation selects
 checkpoints, and selecting on out-of-distribution entities would make early
 stopping measure generalisation instead of convergence.
 
+**Three test sets, because one number conflates three failures.** The controls
+above define a grid, and the corpus ships all three cells of it:
+
+| Split | Entities | Wording | A low score means | Size |
+| :--- | :--- | :--- | :--- | ---: |
+| `test_seen` | seen | seen | training did not fit the distribution at all | 5,000 |
+| `test`, seen phrasing | unseen | seen | it memorised entity names | 3,786 |
+| `test`, held-out phrasing | unseen | unseen | it memorised the template | 1,214 |
+
+These degrade independently, so a pooled accuracy does not merely lose
+information — it makes three different diagnoses look identical. `test_seen` is
+the control: distributionally identical to training, drawn from the train entity
+pool with only the shared realisations. Two properties make it trustworthy.
+It is deduplicated against train, val and test like everything else, so it is
+not a slice of the training data. And unlike `val` — which is also seen/seen,
+and was the obvious candidate — it never selected a checkpoint, so its accuracy
+carries no selection optimism.
+
+Adding it did not disturb anything: `test_seen` is generated *last*, after
+train, so the original three splits draw the identical random stream they drew
+before it existed. Their token files are byte-for-byte unchanged, which was
+verified by hashing them across the change.
+
 **These are not the only checks.** `tests/test_reasoning_data.py` re-derives
 every answer by parsing the rendered Devanagari back into an ordering, rather
 than by reading the generator's own metadata. Checking a label against the
@@ -185,7 +230,7 @@ corpus. Parsing the text is the only check that closes it. 26 tests pass.
 
 ### 3.4 Corpus statistics
 
-50,000 examples per language, generated with seed 42 and reproducible
+55,000 examples per language, generated with seed 42 and reproducible
 byte-for-byte.
 
 | | Hindi train | Hindi val | Hindi test | Nepali train | Nepali val | Nepali test |
@@ -199,9 +244,14 @@ byte-for-byte.
 | Mean prompt (characters) | 114.4 | 114.3 | 116.9 | 114.6 | 114.5 | 115.6 |
 | Mean prompt (tokens) | 36.77 | — | 37.91 | 35.24 | — | 35.93 |
 
+Plus `test_seen`: 5,000 examples per language, all ten families, no held-out
+phrasing, and 59 distinct answers — the train-pool count, as its purpose
+requires.
+
 The distinct-answer counts are a useful consistency check: 40 people + 16
-objects + 3 relation words = 59 in train, and 20 + 8 + 3 = 31 in test, exactly
-as the disjoint pools require.
+objects + 3 relation words = 59 in train, `val` and `test_seen`, and 20 + 8 + 3
+= 31 in `test`, exactly as the disjoint pools require. A `test_seen` that had
+leaked held-out names would show 31 or some number between, not 59.
 
 Entity domains carry six attributes each — height, age, weight and marks for
 people; price, length and weight for objects — with per-attribute genitive and
@@ -347,14 +397,50 @@ held-out entity pool is never shown to the model.
 wrongly and a model that never emits an answer at all both score 0 exact match,
 and they are not the same failure.
 
+Each setup is scored on the three test sets of §3.3 separately, never pooled.
+
 ---
+
+### 4.5 How much of the model is updated, and why all of it
+
+Finetuning offers three choices for the trainable set: update everything, freeze
+most of it and train a head, or freeze all of it and train small added modules —
+the PEFT family, of which LoRA is the best known. **This project updates
+everything**, and the reason is a memory calculation rather than a preference.
+
+Full finetuning holds four numbers per parameter: the weight, its gradient, and
+AdamW's two moments. At fp32 that is 16 bytes:
+
+| | 25.4M parameters (this project) | 7B parameters |
+| :--- | ---: | ---: |
+| Weights | 102 MB | 28 GB |
+| Gradients | 102 MB | 28 GB |
+| AdamW moments (two) | 203 MB | 56 GB |
+| **Total before activations** | **406 MB** | **112 GB** |
+
+LoRA exists because the right-hand column does not fit on available hardware,
+and because storing one full copy per task is impractical when a copy is tens of
+gigabytes. Neither problem exists at 406 MB on a 15 GB T4 — the whole optimizer
+state is under 3% of the card. Choosing LoRA here would add a rank
+hyperparameter to sweep and a low-rank constraint on the update, in exchange for
+saving memory that is not scarce.
+
+There is one genuine argument for PEFT that is not about memory: freezing the
+base weights **reduces drift** from the pretrained model, which is the
+forgetting measured in §5.5. But it reduces rather than prevents it, and
+measuring how much a full finetune actually drifts is more informative here than
+constraining it in advance and not knowing. §5.5 reports that measurement.
+
+**What this means for the results.** Every parameter receives gradient from the
+answer-span loss, so the reasoning behaviour and whatever happens to general
+language modelling are consequences of the same update. They are not separable
+by construction, only by measurement.
 
 ## 5. Reasoning Results
 
 ### 5.1 Finetuning dynamics
 
-**[pending run]** — produced by `notebooks/finetune_hindi_colab.ipynb` and
-`notebooks/finetune_nepali_kaggle.ipynb`; curves from
+**[pending run]** — produced by `notebooks/phase3_colab.ipynb`; curves from
 `hindi/logs/finetune_*.jsonl` and `nepali/logs/finetune_*.jsonl`.
 
 The specific thing to read off these curves is **whether validation loss and
@@ -368,7 +454,7 @@ exact match in the first place.
 
 **[pending run]** — generated verbatim from
 `report/figures/reasoning_comparison.md` by
-`notebooks/phase3_consolidate_colab.ipynb`:
+`notebooks/phase3_colab.ipynb`:
 
 ```
 python -m src.eval.compare_reasoning \
@@ -378,9 +464,14 @@ python -m src.eval.compare_reasoning \
     --figure report/figures/reasoning_accuracy.png
 ```
 
-The table reports, for each of Model H and Model L and each answer style:
-exact match, format rate, and accuracy split by 0, 1 and 2 transitive hops.
-Figure: `report/figures/reasoning_accuracy.png`.
+Four tables come out of that command. **The three test sets** (§3.3) with a
+*memorisation gap* — seen-entity accuracy minus unseen-entity accuracy at the
+same wording — and a *template gap* — seen-wording minus held-out-wording at the
+same entity pool. Each gap attributes the drop to the one thing that changed
+between the columns it spans. **Seed spread**, where a second seed was run
+(§8.3). **Pretrained versus finetuned**, with exact match, format rate, and
+accuracy split by 0, 1 and 2 transitive hops. And **per-family accuracy** plus
+the error analysis of §5.3. Figure: `report/figures/reasoning_accuracy.png`.
 
 **What each shape of result would mean**, stated before the run so the reading
 is not fitted to the numbers:
@@ -431,6 +522,51 @@ families, and its weaker out-of-domain fertility predicts the opposite
 everywhere else.
 
 ---
+
+### 5.5 Did finetuning damage the language model?
+
+Supervised finetuning on a narrow task can destroy general next-token
+prediction. This is not hypothetical: the course material's worked example moves
+perplexity from **1.33 to 194.7** across an SFT run, a factor of 146. Since §4.5
+chose full finetuning precisely so the drift would be measurable rather than
+constrained, measuring it is obligatory.
+
+**Method.** The same `src/eval/intrinsic.py` that produced the Phase 2 headline
+numbers, pointed at the pretrained and finetuned checkpoints in turn, over the
+*pretraining* validation split — ordinary Hindi and Nepali web text, with no
+reasoning content in it. Nothing about the metric or the data changes between
+the two runs; only the weights do.
+
+A 2M-token slice rather than the full 26M split, via a `--max-tokens` flag added
+for this purpose. The flag defaults to off, so the Phase 2 full-split figures
+remain reproducible byte-for-byte, and every result records its own budget so a
+partial score cannot be mistaken for a complete one. The distinction between
+"unchanged" and "destroyed" does not need twelve minutes per checkpoint.
+
+**[pending run]** — `{hindi,nepali}/eval/intrinsic_{pretrained,finetuned}_ft.json`.
+Phase 2's full-split baselines for reference: Model H perplexity 26.77 on
+validation, Model L 30.64.
+
+What each outcome would mean, stated before the run:
+
+- **Perplexity roughly unchanged** — 1,875 steps at a peak 1e-4 is a small
+  perturbation next to 14,329 steps at 3e-4, and the answer-span mask means most
+  positions in each sequence contribute no gradient at all. This is the outcome
+  the hyperparameters were chosen to produce, and it would say the reasoning
+  behaviour was added rather than traded for.
+- **Perplexity up by tens of percent** — real drift. The model has moved towards
+  the template distribution and away from general text. Worth reporting against
+  the reasoning gain as an explicit trade.
+- **Perplexity up by orders of magnitude** — the course example's failure mode.
+  It would mean the learning rate or epoch count was too aggressive for a model
+  this size, and the honest response is to say so rather than to report only the
+  reasoning number.
+
+**Why this matters beyond diagnostics.** Phase 2 established that perplexity is
+tokenizer-dependent and cannot rank Model H against Model L. That argument is
+about *cross-model* comparison. Here the comparison is *within* one model,
+before and after, on the same split with the same tokenizer — the one
+configuration in which a perplexity difference is unambiguous.
 
 ## 6. Attention Analysis, Post-Finetune
 
@@ -604,11 +740,12 @@ SHA-256 for each named input.
 ### 8.1 Full pipeline
 
 ```bash
-# 1. Reasoning corpora (~10 s per language, CPU only, no GPU needed)
-python -m src.reasoning.generate --language hindi \
-    --out-dir data/hindi/reasoning --train 40000 --val 5000 --test 5000 --seed 42
-python -m src.reasoning.generate --language nepali \
-    --out-dir data/nepali/reasoning --train 40000 --val 5000 --test 5000 --seed 42
+# 1. Reasoning corpora (~10 s per language, CPU only, no GPU needed).
+#    --test-seen adds the seen-entities/seen-wording control split of SS3.3.
+python -m src.reasoning.generate --language hindi --out-dir data/hindi/reasoning \
+    --train 40000 --val 5000 --test 5000 --test-seen 5000 --seed 42
+python -m src.reasoning.generate --language nepali --out-dir data/nepali/reasoning \
+    --train 40000 --val 5000 --test 5000 --test-seen 5000 --seed 42
 
 # 2. Verify labels and leakage before spending GPU time
 python -m pytest tests/ -q
@@ -619,10 +756,23 @@ python -m src.train.finetune --config hindi/configs/finetune_rationale.yaml
 python -m src.train.finetune --config nepali/configs/finetune.yaml
 python -m src.train.finetune --config nepali/configs/finetune_rationale.yaml
 
-# 4. Evaluate: three setups per model
+# 4. Evaluate: three setups per model, on the held-out-entity test split
 python -m src.eval.reasoning_eval --checkpoint <pretrained> --mode zeroshot ...
 python -m src.eval.reasoning_eval --checkpoint <pretrained> --mode fewshot --shots 4 ...
 python -m src.eval.reasoning_eval --checkpoint <finetuned> --mode finetuned ...
+
+# 4b. The same finetuned checkpoint on the control split (SS3.3), so the three
+#     test-set numbers can be read side by side
+python -m src.eval.reasoning_eval --checkpoint <finetuned> --mode finetuned \
+    --test data/hindi/reasoning/test_seen.jsonl ...
+
+# 4c. Forgetting: pretraining validation perplexity before and after (SS5.5).
+#     --max-tokens defaults to off, so Phase 2's full-split numbers still
+#     reproduce exactly.
+python -m src.eval.intrinsic --checkpoint <pretrained> --splits val \
+    --max-tokens 2000000 --tokens-dir <drive>/hindi/tokens --language hindi ...
+python -m src.eval.intrinsic --checkpoint <finetuned> --splits val \
+    --max-tokens 2000000 --tokens-dir <drive>/hindi/tokens --language hindi ...
 
 # 5. Attention, pretrained vs finetuned
 python -m src.eval.attention_reasoning --pretrained <p> --finetuned <f> ...
@@ -631,10 +781,13 @@ python -m src.eval.attention_reasoning --pretrained <p> --finetuned <f> ...
 python -m src.eval.compare_reasoning --inputs */eval/reasoning_*.json ...
 ```
 
-Notebooks that run the above end-to-end on the platforms actually used:
-[`notebooks/finetune_hindi_colab.ipynb`](../notebooks/finetune_hindi_colab.ipynb),
-[`notebooks/finetune_nepali_kaggle.ipynb`](../notebooks/finetune_nepali_kaggle.ipynb),
-[`notebooks/phase3_consolidate_colab.ipynb`](../notebooks/phase3_consolidate_colab.ipynb).
+All of the above runs end-to-end in one notebook on the platform actually
+used: [`notebooks/phase3_colab.ipynb`](../notebooks/phase3_colab.ipynb), a
+single Colab T4 session of about 55 minutes. Unlike Phase 2, which split the
+two models across Colab and Kaggle because Nepali pretraining alone ran 4.87
+hours, Phase 3's whole GPU cost is under an hour — so both models are finetuned
+in the same session from the same code copy, which is a tighter guarantee of
+identical treatment than two platforms could give.
 
 ### 8.2 Determinism
 
@@ -642,13 +795,32 @@ The corpora derive entirely from `--seed` through a single `random.Random`;
 regenerating with the same seed reproduces them byte-for-byte, and
 `test_generation_is_deterministic_under_a_seed` asserts it. Finetuning is seeded
 and uses the same resume-capable checkpoint format as pretraining, so an
-interrupted Colab or Kaggle session continues from `finetune_latest.pt` rather
+interrupted Colab session continues from `finetune_latest.pt` rather
 than restarting.
 
-### 8.3 Test coverage
+### 8.3 Seeds
 
-`python -m pytest tests/ -q` — 26 tests run without torch (the reasoning corpus,
-its labels, its leakage controls and answer extraction), and the remaining
+Every configuration is trained at seed 42. `direct`-style runs are additionally
+trained at seed 7, redirected to their own checkpoint directory and log through
+`--override`, so the two do not overwrite each other:
+
+```bash
+python -m src.train.finetune --config hindi/configs/finetune.yaml \
+    --override seed=7 checkpoint.dir=<drive>/hindi/checkpoints_ft_direct_s7 \
+      log.jsonl=<drive>/hindi/logs/finetune_direct_s7.jsonl
+```
+
+Two seeds is not an error bar. It gives a *range*, which is the minimum needed
+to know whether the per-family and per-hop differences in §5 are larger than
+reseeding noise — a three-point gap means nothing if reseeding moves the headline
+by five. `compare_reasoning` reports the range where a second seed exists and
+says so explicitly where it does not.
+
+### 8.4 Test coverage
+
+`python -m pytest tests/ -q` — 28 tests run without torch (the reasoning corpus,
+its labels, its leakage controls, the control split's distribution, and answer
+extraction), and the remaining
 suites covering model shapes, causal masking, checkpoint resume, the packed
 dataset and the finetuning mask run wherever torch is installed. The torch
 imports in the Phase 2 suites were made conditional in this phase so the whole
@@ -658,9 +830,12 @@ suite still collects on a machine without a GPU stack.
 
 ## 9. Limitations
 
-1. **Two models, no error bars.** One run per configuration, one seed. Every
-   H-versus-L difference is a single observation, and the factors that could
-   explain it are confounded (§7.4).
+1. **Two models, and a range rather than error bars.** The `direct`
+   configurations are run at two seeds and report a range (§8.3); the
+   `rationale` configurations are single runs. Two seeds bound reseeding noise
+   but do not give a confidence interval, and every H-versus-L difference
+   remains a single pair of observations whose explanatory factors are
+   confounded (§7.4).
 2. **The reasoning task is narrow.** Comparative and transitive ordering over
    templated sentences is a small, well-defined slice of reasoning. Success
    here is evidence about ordering relations, not about reasoning generally,
@@ -669,10 +844,15 @@ suite still collects on a machine without a GPU stack.
    (§3.5). Some of the difficulty in this phase is the encoding of templated
    sentences rather than the reasoning in them, and the two effects are not
    separable with the evidence collected here.
-4. **Held-out phrasing is a weaker control than held-out entities.** The
-   reserved realisations are lexical variants within the same frames; a model
-   could generalise across them without generalising to genuinely new phrasing.
-   Entity disjointness is the stronger guarantee, and it is exact.
+4. **Held-out phrasing is a weaker control than held-out entities, and its
+   coverage is uneven.** The reserved realisations are lexical variants within
+   the same frames, so a model could generalise across them without
+   generalising to genuinely new phrasing. Worse, the coverage is not uniform:
+   relative premises carry the full four forms with one held back, but the
+   `which`, `relation` and `rank` question types carry a single form and are
+   never reworded (§3.2). The unseen-wording column therefore tests premise
+   phrasing, not question phrasing. Entity disjointness is the stronger
+   guarantee, and it is exact.
 5. **25M parameters is small for multi-hop reasoning.** A ceiling on the 2-hop
    families would be an unremarkable result at this scale and should not be read
    as a statement about the languages or the corpora.
@@ -680,6 +860,11 @@ suite still collects on a machine without a GPU stack.
    labels come from crude thresholds (Phase 2 §6.1) chosen to make 64 heads
    discussable, not to make a scientific claim; a change in mean distance is
    consistent with several mechanisms and identifies none of them.
+7. **The forgetting measurement is a 2M-token slice**, not the full 26M
+   validation split (§5.5). That is ample to separate "unchanged" from
+   "degraded", but a small real drift and sampling noise are not distinguishable
+   at that budget, and the figures are not directly comparable to Phase 2's
+   full-split numbers.
 
 ---
 

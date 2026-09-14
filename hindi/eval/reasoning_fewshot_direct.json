@@ -1,0 +1,300 @@
+{
+  "n": 5000,
+  "exact_match": 0.0,
+  "format_rate": 0.9998,
+  "by_family": {
+    "eq3_relation": 0.0,
+    "rel2_which": 0.0,
+    "rel3_extreme": 0.0,
+    "rel3_pairwise": 0.0,
+    "rel4_extreme": 0.0,
+    "rel4_pairwise": 0.0,
+    "val2_relation": 0.0,
+    "val2_which": 0.0,
+    "val3_extreme": 0.0,
+    "val4_rank": 0.0
+  },
+  "by_hops": {
+    "0": 0.0,
+    "1": 0.0,
+    "2": 0.0
+  },
+  "by_attribute": {
+    "age": 0.0,
+    "height": 0.0,
+    "length": 0.0,
+    "marks": 0.0,
+    "price": 0.0,
+    "weight": 0.0
+  },
+  "by_phrasing": {
+    "held_out": 0.0,
+    "seen": 0.0
+  },
+  "confusions": [
+    [
+      "कम -> कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+      806
+    ],
+    [
+      "अधिक -> कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+      804
+    ],
+    [
+      "बराबर -> कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+      219
+    ],
+    [
+      "बाल्टी -> कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+      135
+    ],
+    [
+      "संदूक -> कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+      116
+    ],
+    [
+      "करण -> कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+      115
+    ],
+    [
+      "दरी -> कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+      115
+    ],
+    [
+      "साइकिल -> कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+      112
+    ],
+    [
+      "अर्चना -> कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+      112
+    ],
+    [
+      "सुधा -> कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+      110
+    ],
+    [
+      "पंखा -> कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+      108
+    ],
+    [
+      "कुरता -> कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+      107
+    ],
+    [
+      "हेमा -> कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+      101
+    ],
+    [
+      "बबीता -> कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+      100
+    ],
+    [
+      "सचिन -> कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+      99
+    ]
+  ],
+  "examples": {
+    "correct": [],
+    "incorrect": [
+      {
+        "family": "rel2_which",
+        "gold": "भरत",
+        "pred": "कम प्रश्न: सीता का वज़न ४० किलोग्राम",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कम प्रश्न: सीता का वज़न ४० किलोग्राम"
+      },
+      {
+        "family": "val2_relation",
+        "gold": "अधिक",
+        "pred": "कम है। वज़न ५० रुपये है",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कम है। वज़न ५० रुपये है।"
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "अधिक",
+        "pred": "कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: कम प्रश्न: कम प्रश्न: कम प्रश्न: कम"
+      },
+      {
+        "family": "val2_which",
+        "gold": "अरुण",
+        "pred": "कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कम प्रश्न: कम प्रश्न: कम प्रश्न: कम"
+      },
+      {
+        "family": "val2_which",
+        "gold": "भरत",
+        "pred": "कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कम प्रश्न: कम प्रश्न: कम प्रश्न: कम"
+      },
+      {
+        "family": "val2_relation",
+        "gold": "बराबर",
+        "pred": "कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कम प्रश्न: कम प्रश्न: कम प्रश्न: कम"
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "अधिक",
+        "pred": "कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: कम प्रश्न: कम प्रश्न: कम प्रश्न: कम"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "अधिक",
+        "pred": "कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: कम प्रश्न: कम प्रश्न: कम प्रश्न: कम"
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "अधिक",
+        "pred": "कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: कम प्रश्न: कम प्रश्न: कम प्रश्न: कम"
+      },
+      {
+        "family": "rel4_extreme",
+        "gold": "संदूक",
+        "pred": "कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+        "correct": false,
+        "hops": 2,
+        "continuation": "उत्तर: कम प्रश्न: कम प्रश्न: कम प्रश्न: कम"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "कम",
+        "pred": "कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: कम प्रश्न: कम प्रश्न: कम प्रश्न: कम"
+      },
+      {
+        "family": "rel3_extreme",
+        "gold": "तरुण",
+        "pred": "कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: कम प्रश्न: कम प्रश्न: कम प्रश्न: कम"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "कम",
+        "pred": "कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+        "correct": false,
+        "hops": 2,
+        "continuation": "उत्तर: कम प्रश्न: कम प्रश्न: कम प्रश्न: कम"
+      },
+      {
+        "family": "rel4_extreme",
+        "gold": "साइकिल",
+        "pred": "कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+        "correct": false,
+        "hops": 2,
+        "continuation": "उत्तर: कम प्रश्न: कम प्रश्न: कम प्रश्न: कम"
+      },
+      {
+        "family": "rel2_which",
+        "gold": "मनीष",
+        "pred": "कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कम प्रश्न: कम प्रश्न: कम प्रश्न: कम"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "कम",
+        "pred": "कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: कम प्रश्न: कम प्रश्न: कम प्रश्न: कम"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "अधिक",
+        "pred": "कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+        "correct": false,
+        "hops": 2,
+        "continuation": "उत्तर: कम प्रश्न: कम प्रश्न: कम प्रश्न: कम"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "कम",
+        "pred": "कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+        "correct": false,
+        "hops": 2,
+        "continuation": "उत्तर: कम प्रश्न: कम प्रश्न: कम प्रश्न: कम"
+      },
+      {
+        "family": "val2_which",
+        "gold": "करण",
+        "pred": "कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कम प्रश्न: कम प्रश्न: कम प्रश्न: कम"
+      },
+      {
+        "family": "rel2_which",
+        "gold": "तनुजा",
+        "pred": "कम प्रश्न: कम प्रश्न: कम प्रश्न: कम",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कम प्रश्न: कम प्रश्न: कम प्रश्न: कम"
+      }
+    ]
+  },
+  "setup": {
+    "mode": "fewshot",
+    "answer_style": "direct",
+    "shots": 4,
+    "language": "hindi",
+    "checkpoint_step": 14329,
+    "max_new_tokens": 12,
+    "test_split": "test",
+    "seed": 42
+  },
+  "provenance": {
+    "module": "src.eval.reasoning_eval",
+    "generated_at": "2026-09-14T14:51:00+00:00",
+    "command": "python -m src.eval.reasoning_eval --checkpoint /content/drive/MyDrive/24KaratAu/hindi/checkpoints/checkpoint_best.pt --model-config hindi/configs/model.yaml --tokenizer tokenizers/hindi/hindi_bpe_8k.model --test data/hindi/reasoning/test.jsonl --language hindi --mode fewshot --shots 4 --train data/hindi/reasoning/train.jsonl --answer-style direct --out hindi/eval/reasoning_fewshot_direct.json",
+    "git_commit": null,
+    "git_branch": null,
+    "git_dirty": false,
+    "python": "3.13.15",
+    "inputs": {
+      "checkpoint": {
+        "path": "/content/drive/MyDrive/24KaratAu/hindi/checkpoints/checkpoint_best.pt",
+        "bytes": 304694939,
+        "mtime": "2026-09-02T13:38:36+00:00",
+        "digested": false
+      },
+      "test": {
+        "path": "data/hindi/reasoning/test.jsonl",
+        "bytes": 4974026,
+        "sha256": "c5b920ae9e76c11f34fc68c33cc8b30e02c480f1c06f64224c4e382b60871508",
+        "digested": true
+      },
+      "tokenizer": {
+        "path": "tokenizers/hindi/hindi_bpe_8k.model",
+        "bytes": 422881,
+        "sha256": "f96162b6db4db4d58ac8f4758ad77ba050adac5616e53fb7af832144aaaea9a3",
+        "digested": true
+      }
+    }
+  }
+}

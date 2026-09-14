@@ -93,11 +93,27 @@ def load_sidecar(tokens_dir, language: str, split: str) -> dict:
 
 @torch.no_grad()
 def evaluate_split(model, bin_path, ctx_len: int, batch_size: int,
-                   device: str, amp_dtype=None) -> dict:
-    """Token-weighted mean cross-entropy over an entire split.
+                   device: str, amp_dtype=None, max_tokens: int = None) -> dict:
+    """Token-weighted mean cross-entropy over a split.
 
     Averaging must be weighted by token count, not by batch: the final batch is
     usually short, and treating it as a full one biases the result.
+
+    Args:
+        model: A ``TransformerLM``.
+        bin_path: Packed ``.bin`` for the split.
+        ctx_len: Window length.
+        batch_size: Windows per forward pass.
+        device: Device string.
+        amp_dtype: Autocast dtype, or None for full precision.
+        max_tokens: Score only the first N tokens of the split instead of all
+            of it. None (the default) scores the whole split, which is what the
+            Phase 2 headline numbers used -- leaving them reproducible
+            byte-for-byte. A budget exists because Phase 3 measures this metric
+            four times (two checkpoints x two languages) purely to detect
+            forgetting, where a 2M-token slice separates "unchanged" from
+            "destroyed" just as well as 26M does and costs a minute instead of
+            twelve.
 
     Returns:
         {"cross_entropy", "n_tokens", "n_windows"}.
@@ -105,7 +121,8 @@ def evaluate_split(model, bin_path, ctx_len: int, batch_size: int,
     model.eval()
     total_nats, total_tokens, windows = 0.0, 0, 0
 
-    for x, y in iter_eval_batches(bin_path, ctx_len, batch_size, None, device):
+    for x, y in iter_eval_batches(bin_path, ctx_len, batch_size, max_tokens,
+                                  device):
         with torch.autocast(device_type=device.split(":")[0], dtype=amp_dtype,
                             enabled=amp_dtype is not None):
             _, loss, _ = model(x, targets=y)
@@ -160,6 +177,9 @@ def main():
     ap.add_argument("--language", required=True)
     ap.add_argument("--splits", default="val,test")
     ap.add_argument("--batch-size", type=int, default=16)
+    ap.add_argument("--max-tokens", type=int, default=None,
+                    help="score only the first N tokens of each split; omit "
+                         "for the full split, as the Phase 2 results used")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
 
@@ -185,14 +205,18 @@ def main():
              "amp_dtype": str(amp), "batch_size": args.batch_size}),
         "language": args.language, "checkpoint": str(args.checkpoint),
         "checkpoint_step": meta["step"], "n_params": model.num_params(),
-        "ctx_len": cfg.ctx_len, "vocab_size": cfg.vocab_size, "splits": {}}
+        "ctx_len": cfg.ctx_len, "vocab_size": cfg.vocab_size,
+        "max_tokens": args.max_tokens, "splits": {}}
 
     for split in args.splits.split(","):
         stats = load_sidecar(args.tokens_dir, args.language, split)
         bin_path = Path(args.tokens_dir) / f"{args.language}_{split}.bin"
-        run = evaluate_split(model, bin_path, cfg.ctx_len, args.batch_size, device, amp)
+        run = evaluate_split(model, bin_path, cfg.ctx_len, args.batch_size,
+                             device, amp, max_tokens=args.max_tokens)
         m = derive_metrics(run["cross_entropy"], stats)
-        m.update(n_tokens_scored=run["n_tokens"], n_windows=run["n_windows"])
+        m.update(n_tokens_scored=run["n_tokens"], n_windows=run["n_windows"],
+                 token_budget=args.max_tokens,
+                 full_split=args.max_tokens is None)
         results["splits"][split] = m
 
         print(f"  {split:5} CE {m['cross_entropy_nats']:.4f} nats  "

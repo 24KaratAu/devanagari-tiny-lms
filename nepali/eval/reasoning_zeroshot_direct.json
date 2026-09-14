@@ -1,0 +1,300 @@
+{
+  "n": 5000,
+  "exact_match": 0.0,
+  "format_rate": 0.0,
+  "by_family": {
+    "eq3_relation": 0.0,
+    "rel2_which": 0.0,
+    "rel3_extreme": 0.0,
+    "rel3_pairwise": 0.0,
+    "rel4_extreme": 0.0,
+    "rel4_pairwise": 0.0,
+    "val2_relation": 0.0,
+    "val2_which": 0.0,
+    "val3_extreme": 0.0,
+    "val4_rank": 0.0
+  },
+  "by_hops": {
+    "0": 0.0,
+    "1": 0.0,
+    "2": 0.0
+  },
+  "by_attribute": {
+    "age": 0.0,
+    "height": 0.0,
+    "length": 0.0,
+    "marks": 0.0,
+    "price": 0.0,
+    "weight": 0.0
+  },
+  "by_phrasing": {
+    "held_out": 0.0,
+    "seen": 0.0
+  },
+  "confusions": [
+    [
+      "कम -> <no answer>",
+      891
+    ],
+    [
+      "बढी -> <no answer>",
+      868
+    ],
+    [
+      "बराबर -> <no answer>",
+      241
+    ],
+    [
+      "बाल्टिन -> <no answer>",
+      148
+    ],
+    [
+      "ऐना -> <no answer>",
+      132
+    ],
+    [
+      "साइकल -> <no answer>",
+      126
+    ],
+    [
+      "बाकस -> <no answer>",
+      125
+    ],
+    [
+      "पंखा -> <no answer>",
+      124
+    ],
+    [
+      "सुरेन्द्र -> <no answer>",
+      118
+    ],
+    [
+      "प्रतिमा -> <no answer>",
+      116
+    ],
+    [
+      "दौरा -> <no answer>",
+      116
+    ],
+    [
+      "कुचो -> <no answer>",
+      116
+    ],
+    [
+      "उर्मिला -> <no answer>",
+      116
+    ],
+    [
+      "रोशनी -> <no answer>",
+      113
+    ],
+    [
+      "युवराज -> <no answer>",
+      111
+    ]
+  ],
+  "examples": {
+    "correct": [],
+    "incorrect": [
+      {
+        "family": "rel2_which",
+        "gold": "जीवन",
+        "pred": "",
+        "correct": false,
+        "hops": 0,
+        "continuation": "जीवनका अंक धेरै छन्। तर, जीवनका अंक धेरै"
+      },
+      {
+        "family": "val2_relation",
+        "gold": "बढी",
+        "pred": "",
+        "correct": false,
+        "hops": 0,
+        "continuation": ""
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "बढी",
+        "pred": "",
+        "correct": false,
+        "hops": 1,
+        "continuation": "ऐनाको लम्बाइको लम्बाइको लम्बाइको लम्"
+      },
+      {
+        "family": "val2_which",
+        "gold": "प्रेम",
+        "pred": "",
+        "correct": false,
+        "hops": 0,
+        "continuation": "प्रेमको उचाइ १२५ सेन्टिमिटर छ। प्रेमको"
+      },
+      {
+        "family": "val2_which",
+        "gold": "जीवन",
+        "pred": "",
+        "correct": false,
+        "hops": 0,
+        "continuation": ""
+      },
+      {
+        "family": "val2_relation",
+        "gold": "बराबर",
+        "pred": "",
+        "correct": false,
+        "hops": 0,
+        "continuation": "यो एक सानो आकारको छ। यो एक सानो आकारको"
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "बढी",
+        "pred": "",
+        "correct": false,
+        "hops": 1,
+        "continuation": "प्रेमको अंकमा प्रेमको अंकमा प्रेमको अंकमा"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "बढी",
+        "pred": "",
+        "correct": false,
+        "hops": 1,
+        "continuation": "प्रेमको उचाइ नबिनको उचाइ नबिनको उचाइ न"
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "बढी",
+        "pred": "",
+        "correct": false,
+        "hops": 1,
+        "continuation": "निर्मलालाई गह्रौँ छ। निर्मलालाई ग"
+      },
+      {
+        "family": "rel4_extreme",
+        "gold": "बाकस",
+        "pred": "",
+        "correct": false,
+        "hops": 2,
+        "continuation": "ताल्चाको लम्बाइको लम्बाइको लम्बाइ"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "कम",
+        "pred": "",
+        "correct": false,
+        "hops": 1,
+        "continuation": "सपनाको अंकमा सपनाको अंकमा सपनाको अंकमा"
+      },
+      {
+        "family": "rel3_extreme",
+        "gold": "दिलीप",
+        "pred": "",
+        "correct": false,
+        "hops": 1,
+        "continuation": "दिलीपले तौल घटाउनका लागि प्रयोग गर्ने क"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "कम",
+        "pred": "",
+        "correct": false,
+        "hops": 2,
+        "continuation": "ताल्चाको मूल्य पनि धेरै छ। तर, ताल"
+      },
+      {
+        "family": "rel4_extreme",
+        "gold": "साइकल",
+        "pred": "",
+        "correct": false,
+        "hops": 2,
+        "continuation": "साइकलको मूल्य कति छ? साइकलको मूल्य कति"
+      },
+      {
+        "family": "rel2_which",
+        "gold": "हेमन्त",
+        "pred": "",
+        "correct": false,
+        "hops": 0,
+        "continuation": "कुसुम र कुसुम दुवैको तौल कम छ"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "कम",
+        "pred": "",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उमेरले नै उमेरले नै उमेरलाई नै असर गर्छ।"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "बढी",
+        "pred": "",
+        "correct": false,
+        "hops": 2,
+        "continuation": "साइकलको मूल्य कति छ? साइकलको मूल्य कति"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "कम",
+        "pred": "",
+        "correct": false,
+        "hops": 2,
+        "continuation": "बाकसभन्दा बढी छ। बाकसभन्दा बढी"
+      },
+      {
+        "family": "val2_which",
+        "gold": "सुरेन्द्र",
+        "pred": "",
+        "correct": false,
+        "hops": 0,
+        "continuation": "जीवन र सुरेन्द्रको अंक ० छ। जीवन र सुरेन्द्रको"
+      },
+      {
+        "family": "rel2_which",
+        "gold": "निर्मला",
+        "pred": "",
+        "correct": false,
+        "hops": 0,
+        "continuation": ""
+      }
+    ]
+  },
+  "setup": {
+    "mode": "zeroshot",
+    "answer_style": "direct",
+    "shots": 0,
+    "language": "nepali",
+    "checkpoint_step": 17429,
+    "max_new_tokens": 12,
+    "test_split": "test",
+    "seed": 42
+  },
+  "provenance": {
+    "module": "src.eval.reasoning_eval",
+    "generated_at": "2026-09-14T14:56:41+00:00",
+    "command": "python -m src.eval.reasoning_eval --checkpoint /content/drive/MyDrive/24KaratAu/nepali/checkpoints/checkpoint_best.pt --model-config nepali/configs/model.yaml --tokenizer tokenizers/nepali/nepali_bpe_8k.model --test data/nepali/reasoning/test.jsonl --language nepali --mode zeroshot --answer-style direct --out nepali/eval/reasoning_zeroshot_direct.json",
+    "git_commit": null,
+    "git_branch": null,
+    "git_dirty": false,
+    "python": "3.13.15",
+    "inputs": {
+      "checkpoint": {
+        "path": "/content/drive/MyDrive/24KaratAu/nepali/checkpoints/checkpoint_best.pt",
+        "bytes": 304695065,
+        "mtime": "2026-09-02T16:10:31+00:00",
+        "digested": false
+      },
+      "test": {
+        "path": "data/nepali/reasoning/test.jsonl",
+        "bytes": 5102592,
+        "sha256": "f08589391b3e735e5518c8830bc7988937bb6166c8ef97a2b277754e7f5d8cfa",
+        "digested": true
+      },
+      "tokenizer": {
+        "path": "tokenizers/nepali/nepali_bpe_8k.model",
+        "bytes": 436007,
+        "sha256": "5ae234a4cbfa3d9e559a8468cc6ba32790453ce293460487a8d2c04011f60de1",
+        "digested": true
+      }
+    }
+  }
+}

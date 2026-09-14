@@ -1,0 +1,300 @@
+{
+  "n": 5000,
+  "exact_match": 0.0,
+  "format_rate": 0.5374,
+  "by_family": {
+    "eq3_relation": 0.0,
+    "rel2_which": 0.0,
+    "rel3_extreme": 0.0,
+    "rel3_pairwise": 0.0,
+    "rel4_extreme": 0.0,
+    "rel4_pairwise": 0.0,
+    "val2_relation": 0.0,
+    "val2_which": 0.0,
+    "val3_extreme": 0.0,
+    "val4_rank": 0.0
+  },
+  "by_hops": {
+    "0": 0.0,
+    "1": 0.0,
+    "2": 0.0
+  },
+  "by_attribute": {
+    "age": 0.0,
+    "height": 0.0,
+    "length": 0.0,
+    "marks": 0.0,
+    "price": 0.0,
+    "weight": 0.0
+  },
+  "by_phrasing": {
+    "held_out": 0.0,
+    "seen": 0.0
+  },
+  "confusions": [
+    [
+      "कम -> कम छ",
+      577
+    ],
+    [
+      "बढी -> कम छ",
+      556
+    ],
+    [
+      "बराबर -> कम छ",
+      158
+    ],
+    [
+      "साइकल -> <no answer>",
+      109
+    ],
+    [
+      "बाल्टिन -> <no answer>",
+      108
+    ],
+    [
+      "ऐना -> <no answer>",
+      107
+    ],
+    [
+      "बढी -> कम छ, कम छ, कम छ, कम",
+      102
+    ],
+    [
+      "पंखा -> <no answer>",
+      101
+    ],
+    [
+      "कम -> कम छ, कम छ, कम छ, कम",
+      98
+    ],
+    [
+      "कुचो -> <no answer>",
+      97
+    ],
+    [
+      "बाकस -> <no answer>",
+      93
+    ],
+    [
+      "प्रतिमा -> <no answer>",
+      92
+    ],
+    [
+      "दौरा -> <no answer>",
+      91
+    ],
+    [
+      "उर्मिला -> <no answer>",
+      85
+    ],
+    [
+      "सुरेन्द्र -> <no answer>",
+      84
+    ]
+  ],
+  "examples": {
+    "correct": [],
+    "incorrect": [
+      {
+        "family": "rel2_which",
+        "gold": "जीवन",
+        "pred": "",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कम छ? उत्तर: कम छ? उत्तर:"
+      },
+      {
+        "family": "val2_relation",
+        "gold": "बढी",
+        "pred": "कम छ",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कम छ वा कम छ? उत्तर: कम छ"
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "बढी",
+        "pred": "कम छ",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: कम छ वा कम छ? उत्तर: कम छ"
+      },
+      {
+        "family": "val2_which",
+        "gold": "प्रेम",
+        "pred": "",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कम छ? उत्तर: कम छ? उत्तर:"
+      },
+      {
+        "family": "val2_which",
+        "gold": "जीवन",
+        "pred": "",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कम छ? उत्तर: कम छ? उत्तर:"
+      },
+      {
+        "family": "val2_relation",
+        "gold": "बराबर",
+        "pred": "कम छ",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कम छ वा कम छ? उत्तर: कम छ"
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "बढी",
+        "pred": "कम छ, कम छ, कम छ, कम",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: कम छ, कम छ, कम छ, कम"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "बढी",
+        "pred": "कम छ",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: कम छ वा कम छ? उत्तर: कम छ"
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "बढी",
+        "pred": "कम छ",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: कम छ वा कम छ? उत्तर: कम छ"
+      },
+      {
+        "family": "rel4_extreme",
+        "gold": "बाकस",
+        "pred": "कम छ। किशोरको तौल: कम छ वा",
+        "correct": false,
+        "hops": 2,
+        "continuation": "उत्तर: कम छ। किशोरको तौल: कम छ वा"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "कम",
+        "pred": "कम छ",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: कम छ वा कम छ? उत्तर: कम छ"
+      },
+      {
+        "family": "rel3_extreme",
+        "gold": "दिलीप",
+        "pred": "",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: कम छ? उत्तर: कम छ? उत्तर:"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "कम",
+        "pred": "कम छ",
+        "correct": false,
+        "hops": 2,
+        "continuation": "उत्तर: कम छ वा बढी छ? उत्तर: कम छ"
+      },
+      {
+        "family": "rel4_extreme",
+        "gold": "साइकल",
+        "pred": "",
+        "correct": false,
+        "hops": 2,
+        "continuation": "उत्तर: कम छ? उत्तर: कम छ? उत्तर:"
+      },
+      {
+        "family": "rel2_which",
+        "gold": "हेमन्त",
+        "pred": "",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कम छ? उत्तर: कम छ? उत्तर:"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "कम",
+        "pred": "कम छ",
+        "correct": false,
+        "hops": 1,
+        "continuation": "उत्तर: कम छ वा कम छ? उत्तर: कम छ"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "बढी",
+        "pred": "कम छ",
+        "correct": false,
+        "hops": 2,
+        "continuation": "उत्तर: कम छ वा कम छ? उत्तर: कम छ"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "कम",
+        "pred": "कम छ",
+        "correct": false,
+        "hops": 2,
+        "continuation": "उत्तर: कम छ वा कम छ? उत्तर: कम छ"
+      },
+      {
+        "family": "val2_which",
+        "gold": "सुरेन्द्र",
+        "pred": "",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कम छ? उत्तर: कम छ? उत्तर:"
+      },
+      {
+        "family": "rel2_which",
+        "gold": "निर्मला",
+        "pred": "",
+        "correct": false,
+        "hops": 0,
+        "continuation": "उत्तर: कम छ? उत्तर: कम छ? उत्तर:"
+      }
+    ]
+  },
+  "setup": {
+    "mode": "fewshot",
+    "answer_style": "direct",
+    "shots": 4,
+    "language": "nepali",
+    "checkpoint_step": 17429,
+    "max_new_tokens": 12,
+    "test_split": "test",
+    "seed": 42
+  },
+  "provenance": {
+    "module": "src.eval.reasoning_eval",
+    "generated_at": "2026-09-14T15:01:03+00:00",
+    "command": "python -m src.eval.reasoning_eval --checkpoint /content/drive/MyDrive/24KaratAu/nepali/checkpoints/checkpoint_best.pt --model-config nepali/configs/model.yaml --tokenizer tokenizers/nepali/nepali_bpe_8k.model --test data/nepali/reasoning/test.jsonl --language nepali --mode fewshot --shots 4 --train data/nepali/reasoning/train.jsonl --answer-style direct --out nepali/eval/reasoning_fewshot_direct.json",
+    "git_commit": null,
+    "git_branch": null,
+    "git_dirty": false,
+    "python": "3.13.15",
+    "inputs": {
+      "checkpoint": {
+        "path": "/content/drive/MyDrive/24KaratAu/nepali/checkpoints/checkpoint_best.pt",
+        "bytes": 304695065,
+        "mtime": "2026-09-02T16:10:31+00:00",
+        "digested": false
+      },
+      "test": {
+        "path": "data/nepali/reasoning/test.jsonl",
+        "bytes": 5102592,
+        "sha256": "f08589391b3e735e5518c8830bc7988937bb6166c8ef97a2b277754e7f5d8cfa",
+        "digested": true
+      },
+      "tokenizer": {
+        "path": "tokenizers/nepali/nepali_bpe_8k.model",
+        "bytes": 436007,
+        "sha256": "5ae234a4cbfa3d9e559a8468cc6ba32790453ce293460487a8d2c04011f60de1",
+        "digested": true
+      }
+    }
+  }
+}

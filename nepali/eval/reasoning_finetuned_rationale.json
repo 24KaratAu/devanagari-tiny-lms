@@ -1,0 +1,461 @@
+{
+  "n": 5000,
+  "exact_match": 0.1992,
+  "format_rate": 0.9716,
+  "by_family": {
+    "eq3_relation": 0.604,
+    "rel2_which": 0.0,
+    "rel3_extreme": 0.0,
+    "rel3_pairwise": 0.438,
+    "rel4_extreme": 0.0,
+    "rel4_pairwise": 0.512,
+    "val2_relation": 0.438,
+    "val2_which": 0.0,
+    "val3_extreme": 0.0,
+    "val4_rank": 0.0
+  },
+  "by_hops": {
+    "0": 0.0876,
+    "1": 0.3473,
+    "2": 0.256
+  },
+  "by_attribute": {
+    "age": 0.1699,
+    "height": 0.1975,
+    "length": 0.2017,
+    "marks": 0.2358,
+    "price": 0.199,
+    "weight": 0.1913
+  },
+  "by_phrasing": {
+    "held_out": 0.1911,
+    "seen": 0.2018
+  },
+  "confusions": [
+    [
+      "बढी -> कम",
+      643
+    ],
+    [
+      "कम -> बढी",
+      202
+    ],
+    [
+      "रञ्जना -> रीता",
+      75
+    ],
+    [
+      "बाल्टिन -> डोरी",
+      49
+    ],
+    [
+      "साइकल -> डोरी",
+      45
+    ],
+    [
+      "बराबर -> कम",
+      42
+    ],
+    [
+      "बराबर -> बढी",
+      31
+    ],
+    [
+      "ऐना -> शान्ति",
+      29
+    ],
+    [
+      "दिलीप -> सुनिता",
+      26
+    ],
+    [
+      "दौरा -> डोरी",
+      24
+    ],
+    [
+      "कुचो -> डोरी",
+      23
+    ],
+    [
+      "सम्झना -> रीता",
+      23
+    ],
+    [
+      "ऐना -> डोरी",
+      21
+    ],
+    [
+      "कम -> बराबर",
+      20
+    ],
+    [
+      "बढी -> बराबर",
+      20
+    ]
+  ],
+  "examples": {
+    "correct": [
+      {
+        "family": "val2_relation",
+        "gold": "बढी",
+        "pred": "बढी",
+        "correct": true,
+        "hops": 0,
+        "continuation": "तर्क: डोरी = १८८५, दीपक = ४२० उत्तर: बढी"
+      },
+      {
+        "family": "val2_relation",
+        "gold": "बराबर",
+        "pred": "बराबर",
+        "correct": true,
+        "hops": 0,
+        "continuation": "तर्क: भाँडा = १८, = १८ उत्तर: बराबर"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "कम",
+        "pred": "कम",
+        "correct": true,
+        "hops": 1,
+        "continuation": "तर्क: राधिका > सुनिता, सुनिता > दीपक उत्तर: कम"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "कम",
+        "pred": "कम",
+        "correct": true,
+        "hops": 2,
+        "continuation": "तर्क: शान्ति >>> कुर्सी, कुर्सी >ता,ता >ता उत्तर: कम"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "कम",
+        "pred": "कम",
+        "correct": true,
+        "hops": 1,
+        "continuation": "तर्क:ती > रीता, रीता >ना उत्तर: कम"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "कम",
+        "pred": "कम",
+        "correct": true,
+        "hops": 2,
+        "continuation": "तर्क: राधिका > भीम, भीम >२,२५ उत्तर: कम"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "बराबर",
+        "pred": "बराबर",
+        "correct": true,
+        "hops": 1,
+        "continuation": "तर्क: शान्ति = दीपक, दीपक = सुनिता उत्तर: बराबर"
+      },
+      {
+        "family": "val2_relation",
+        "gold": "बराबर",
+        "pred": "बराबर",
+        "correct": true,
+        "hops": 0,
+        "continuation": "तर्क: चस्मा = ३५५, शान्ति = ३५५ उत्तर: बराबर"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "कम",
+        "pred": "कम",
+        "correct": true,
+        "hops": 2,
+        "continuation": "तर्क:ती >मला,मला >१,१४ उत्तर: कम"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "बराबर",
+        "pred": "बराबर",
+        "correct": true,
+        "hops": 1,
+        "continuation": "तर्क: कृष्ण = मनोज, मनोज = उत्तर: बराबर"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "कम",
+        "pred": "कम",
+        "correct": true,
+        "hops": 2,
+        "continuation": "तर्क: कमला > च, चस्मा >,, रीता > सीता उत्तर: कम"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "कम",
+        "pred": "कम",
+        "correct": true,
+        "hops": 2,
+        "continuation": "तर्क:ती >दा,दा >दा,दा > शान्ति उत्तर: कम"
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "कम",
+        "pred": "कम",
+        "correct": true,
+        "hops": 1,
+        "continuation": "तर्क: चस्मा > १४, १४१ उत्तर: कम"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "बढी",
+        "pred": "बढी",
+        "correct": true,
+        "hops": 2,
+        "continuation": "तर्क: कमला >मला,मला >मला,मला > डोरी उत्तर: बढी"
+      },
+      {
+        "family": "val2_relation",
+        "gold": "कम",
+        "pred": "कम",
+        "correct": true,
+        "hops": 0,
+        "continuation": "तर्क: कृष्ण = १९, मनोज = १९ उत्तर: कम"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "कम",
+        "pred": "कम",
+        "correct": true,
+        "hops": 1,
+        "continuation": "तर्क: पुस्तक > शान्ति, शान्ति > गोपाल उत्तर: कम"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "कम",
+        "pred": "कम",
+        "correct": true,
+        "hops": 1,
+        "continuation": "तर्क: शान्ति = मनोज, मनोज > बराबर उत्तर: कम"
+      },
+      {
+        "family": "val2_relation",
+        "gold": "बढी",
+        "pred": "बढी",
+        "correct": true,
+        "hops": 0,
+        "continuation": "तर्क: मनोज = ५९, श्याम = ५९ उत्तर: बढी"
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "कम",
+        "pred": "कम",
+        "correct": true,
+        "hops": 1,
+        "continuation": "तर्क:ती > माया, माया >दो उत्तर: कम"
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "कम",
+        "pred": "कम",
+        "correct": true,
+        "hops": 1,
+        "continuation": "तर्क: घडी > चस्मा, चस्मा > सुनिता उत्तर: कम"
+      }
+    ],
+    "incorrect": [
+      {
+        "family": "rel2_which",
+        "gold": "जीवन",
+        "pred": "डोरी",
+        "correct": false,
+        "hops": 0,
+        "continuation": "तर्क: डोरी > रीता उत्तर: डोरी"
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "बढी",
+        "pred": "कम",
+        "correct": false,
+        "hops": 1,
+        "continuation": "तर्क:, > शान्ति, शान्ति > ऐ उत्तर: कम"
+      },
+      {
+        "family": "val2_which",
+        "gold": "प्रेम",
+        "pred": "माया",
+        "correct": false,
+        "hops": 0,
+        "continuation": "तर्क: माया = १७८, शान्ति = १४९ उत्तर: माया"
+      },
+      {
+        "family": "val2_which",
+        "gold": "जीवन",
+        "pred": "कृष्ण",
+        "correct": false,
+        "hops": 0,
+        "continuation": "तर्क: शान्ति = ९०, भु = २७ उत्तर: कृष्ण"
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "बढी",
+        "pred": "कम",
+        "correct": false,
+        "hops": 1,
+        "continuation": "तर्क: > माया, माया >दो उत्तर: कम"
+      },
+      {
+        "family": "eq3_relation",
+        "gold": "बढी",
+        "pred": "कम",
+        "correct": false,
+        "hops": 1,
+        "continuation": "तर्क:म = माया, माया > कमला उत्तर: कम"
+      },
+      {
+        "family": "rel3_pairwise",
+        "gold": "बढी",
+        "pred": "कम",
+        "correct": false,
+        "hops": 1,
+        "continuation": "तर्क: मनोज > गीता, गीता >ह्र उत्तर: कम"
+      },
+      {
+        "family": "rel4_extreme",
+        "gold": "बाकस",
+        "pred": "डोरी",
+        "correct": false,
+        "hops": 2,
+        "continuation": "तर्क: डोरी > कलम, कलम > चस्मा, चस्मा > जुत्ता उत्तर: डोरी"
+      },
+      {
+        "family": "rel3_extreme",
+        "gold": "दिलीप",
+        "pred": "सुनिता",
+        "correct": false,
+        "hops": 1,
+        "continuation": "तर्क: सुनिता > माया, माया >दो उत्तर: सुनिता"
+      },
+      {
+        "family": "rel4_extreme",
+        "gold": "साइकल",
+        "pred": "कलम",
+        "correct": false,
+        "hops": 2,
+        "continuation": "तर्क: कलम >, >दा,दा > शान्ति उत्तर: कलम"
+      },
+      {
+        "family": "rel2_which",
+        "gold": "हेमन्त",
+        "pred": "चस्मा",
+        "correct": false,
+        "hops": 0,
+        "continuation": "तर्क: चस्मा >ला उत्तर: चस्मा"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "बढी",
+        "pred": "कम",
+        "correct": false,
+        "hops": 2,
+        "continuation": "तर्क: राधिका >मा,मा >मा,मा >मा उत्तर: कम"
+      },
+      {
+        "family": "val2_which",
+        "gold": "सुरेन्द्र",
+        "pred": "रीता",
+        "correct": false,
+        "hops": 0,
+        "continuation": "तर्क: शान्ति = ६७, रीता = ५८ उत्तर: रीता"
+      },
+      {
+        "family": "rel2_which",
+        "gold": "निर्मला",
+        "pred": "त्ता",
+        "correct": false,
+        "hops": 0,
+        "continuation": "तर्क:त्ता > रीता उत्तर:त्ता"
+      },
+      {
+        "family": "rel2_which",
+        "gold": "साइकल",
+        "pred": "रीता",
+        "correct": false,
+        "hops": 0,
+        "continuation": "तर्क: > उत्तर: रीता"
+      },
+      {
+        "family": "val2_relation",
+        "gold": "बढी",
+        "pred": "कम",
+        "correct": false,
+        "hops": 0,
+        "continuation": "तर्क: भाँडा = ६६५, दीपक = १९५ उत्तर: कम"
+      },
+      {
+        "family": "rel2_which",
+        "gold": "प्रतिमा",
+        "pred": "",
+        "correct": false,
+        "hops": 0,
+        "continuation": "तर्क: > गीता उत्तर:"
+      },
+      {
+        "family": "val4_rank",
+        "gold": "दौरा",
+        "pred": "राम",
+        "correct": false,
+        "hops": 0,
+        "continuation": "तर्क: डोरी = १७३, राम = १७३, किशोर = २४, शान्ति = २४ उत्तर: राम"
+      },
+      {
+        "family": "rel4_pairwise",
+        "gold": "बढी",
+        "pred": "कम",
+        "correct": false,
+        "hops": 2,
+        "continuation": "तर्क: रीता >ना,ना > रीता, रीता >ना उत्तर: कम"
+      },
+      {
+        "family": "rel4_extreme",
+        "gold": "ताल्चा",
+        "pred": "ना",
+        "correct": false,
+        "hops": 2,
+        "continuation": "तर्क: राधिका > सुनिता, सुनिता > रीता, रीता >ना उत्तर:ना"
+      }
+    ]
+  },
+  "setup": {
+    "mode": "finetuned",
+    "answer_style": "rationale",
+    "shots": 0,
+    "language": "nepali",
+    "checkpoint_step": 1625,
+    "max_new_tokens": 48,
+    "test_split": "test",
+    "seed": 42
+  },
+  "provenance": {
+    "module": "src.eval.reasoning_eval",
+    "generated_at": "2026-09-14T15:04:26+00:00",
+    "command": "python -m src.eval.reasoning_eval --checkpoint /content/drive/MyDrive/24KaratAu/nepali/checkpoints_ft_rationale/finetune_best.pt --model-config nepali/configs/model.yaml --tokenizer tokenizers/nepali/nepali_bpe_8k.model --test data/nepali/reasoning/test.jsonl --language nepali --mode finetuned --answer-style rationale --out nepali/eval/reasoning_finetuned_rationale.json",
+    "git_commit": null,
+    "git_branch": null,
+    "git_dirty": false,
+    "python": "3.13.15",
+    "inputs": {
+      "checkpoint": {
+        "path": "/content/drive/MyDrive/24KaratAu/nepali/checkpoints_ft_rationale/finetune_best.pt",
+        "bytes": 304696667,
+        "mtime": "2026-09-14T14:44:02+00:00",
+        "digested": false
+      },
+      "test": {
+        "path": "data/nepali/reasoning/test.jsonl",
+        "bytes": 5102592,
+        "sha256": "f08589391b3e735e5518c8830bc7988937bb6166c8ef97a2b277754e7f5d8cfa",
+        "digested": true
+      },
+      "tokenizer": {
+        "path": "tokenizers/nepali/nepali_bpe_8k.model",
+        "bytes": 436007,
+        "sha256": "5ae234a4cbfa3d9e559a8468cc6ba32790453ce293460487a8d2c04011f60de1",
+        "digested": true
+      }
+    }
+  }
+}

@@ -195,6 +195,28 @@ the generator's own metadata would only prove it agrees with itself; a premise
 renderer that stated an inequality backwards would pass that and silently
 invert part of the corpus.
 
+**Three test sets, not one.** A pooled accuracy makes three different failures
+look identical, so all three cells of the grid are generated and reported
+separately:
+
+| Split | Entities | Wording | A low score means |
+| :--- | :--- | :--- | :--- |
+| `test_seen` | seen | seen | training did not fit the distribution at all |
+| `test`, seen phrasing | unseen | seen | it memorised entity names |
+| `test`, held-out phrasing | unseen | unseen | it memorised the template |
+
+`test_seen` is the control — distributionally identical to training, and unlike
+`val` it never selected a checkpoint, so its accuracy carries no selection
+optimism. The comparison table derives a **memorisation gap** (seen minus unseen
+entities, same wording) and a **template gap** (seen minus held-out wording,
+same entities), each attributing the drop to the one thing that changed.
+
+**Finetuning is also checked for damage.** Supervised finetuning on a narrow
+task can destroy general next-token prediction, so `src/eval/intrinsic.py` —
+the Phase 2 evaluator, unchanged apart from a new `--max-tokens` budget — scores
+each model's *pretraining* validation split before and after. A reasoning gain
+reported without that number is an incomplete result.
+
 **A tokenizer finding that Phase 2 could not see.** Measured by encoding the
 Phase 3 corpus with each language's own Phase 1 tokenizer:
 
@@ -1217,15 +1239,16 @@ Full write-up in [report §7](report/phase2_report.md); figures in
 ## Reproducing Phase 3
 
 No GPU is needed for steps 1-2; the whole GPU cost of this phase is about
-**30 minutes** on a T4, most of it evaluation rather than training.
+**75 minutes** on a T4, most of it evaluation rather than training.
 
 ```bash
 # 1. Generate both reasoning corpora (~10 s each, CPU only).
 #    Deterministic: the same seed reproduces them byte-for-byte.
-python -m src.reasoning.generate --language hindi \
-    --out-dir data/hindi/reasoning --train 40000 --val 5000 --test 5000 --seed 42
-python -m src.reasoning.generate --language nepali \
-    --out-dir data/nepali/reasoning --train 40000 --val 5000 --test 5000 --seed 42
+#    --test-seen adds the seen-entities/seen-wording control split.
+python -m src.reasoning.generate --language hindi --out-dir data/hindi/reasoning \
+    --train 40000 --val 5000 --test 5000 --test-seen 5000 --seed 42
+python -m src.reasoning.generate --language nepali --out-dir data/nepali/reasoning \
+    --train 40000 --val 5000 --test 5000 --test-seen 5000 --seed 42
 
 # 2. Verify the labels and the leakage controls BEFORE spending GPU time.
 #    26 of these run without torch installed.
@@ -1251,6 +1274,28 @@ python -m src.eval.reasoning_eval \
 # ... repeat with --mode fewshot --shots 4 --train data/hindi/reasoning/train.jsonl
 # ... and --mode finetuned against the finetuned checkpoint
 
+# 4b. The control split, so the three test-set numbers read side by side
+python -m src.eval.reasoning_eval \
+    --checkpoint <finetuned> --model-config hindi/configs/model.yaml \
+    --tokenizer tokenizers/hindi/hindi_bpe_8k.model \
+    --test data/hindi/reasoning/test_seen.jsonl --language hindi \
+    --mode finetuned --answer-style direct \
+    --out hindi/eval/reasoning_finetuned_direct_seen.json
+
+# 4c. Forgetting check: pretraining validation perplexity before and after.
+#     --max-tokens defaults to off, so Phase 2's full-split figures still
+#     reproduce exactly.
+python -m src.eval.intrinsic --checkpoint <pretrained-or-finetuned> \
+    --model-config hindi/configs/model.yaml --language hindi --splits val \
+    --tokens-dir <drive>/hindi/tokens --max-tokens 2000000 \
+    --out hindi/eval/intrinsic_pretrained_ft.json
+
+# 4d. A second seed on the headline configuration, redirected so it does not
+#     overwrite the seed-42 run
+python -m src.train.finetune --config hindi/configs/finetune.yaml \
+    --override seed=7 checkpoint.dir=<drive>/hindi/checkpoints_ft_direct_s7 \
+      log.jsonl=<drive>/hindi/logs/finetune_direct_s7.jsonl
+
 # 5. Attention, pretrained vs finetuned, on the SAME reasoning prompts.
 #    One early layer (0) and one late layer (7) per model.
 python -m src.eval.attention_reasoning \
@@ -1270,14 +1315,23 @@ python -m src.eval.compare_reasoning \
     --figure report/figures/reasoning_accuracy.png
 ```
 
-**On the platforms actually used**, these are wrapped end-to-end in three
-notebooks, which also handle Drive mounting, rclone mirroring and archiving:
+**On the platform actually used**, all of the above is wrapped end-to-end in a
+single notebook — [`notebooks/phase3_colab.ipynb`](notebooks/phase3_colab.ipynb),
+one Colab T4 session, about **75 minutes** (61 without the optional second
+seed in §7) — which also mounts Drive, archives the
+corpora, and displays the comparison tables and figure inline.
 
-| Notebook | Platform | What it does |
-| :--- | :--- | :--- |
-| [`notebooks/finetune_hindi_colab.ipynb`](notebooks/finetune_hindi_colab.ipynb) | Colab T4 | Model H: corpus, both finetunes, all evaluations, attention |
-| [`notebooks/finetune_nepali_kaggle.ipynb`](notebooks/finetune_nepali_kaggle.ipynb) | Kaggle T4 | Model L: the same, with rclone in place of `drive.mount` |
-| [`notebooks/phase3_consolidate_colab.ipynb`](notebooks/phase3_consolidate_colab.ipynb) | Colab (no GPU) | Reads both models' results; writes the comparison tables and figure |
+Phase 2 split the two models across Colab and Kaggle because Nepali pretraining
+alone was 4.87 hours of T4 and two runs that long would not fit on one free
+tier. Phase 3's entire GPU cost is under an hour, so the split bought nothing
+and cost an rclone dependency, a Kaggle secret, and artifacts landing in two
+places. Everything here is on Drive, and both models are finetuned in the same
+session from the same code copy — which is also a tighter guarantee that they
+were treated identically.
+
+Every stage is resumable: corpus generation is deterministic from its seed,
+finetuning picks up from `finetune_latest.pt`, and evaluation only re-reads
+checkpoints. A disconnect costs the setup cells, not the run.
 
 ### Why finetuning is not just "training again"
 
@@ -1338,14 +1392,16 @@ source produced which file.
 | Model H milestones + latest | `hi` | `hindi/checkpoints/` | 2.4 GiB |
 | **Pretrained checkpoint — Model L** | `ne` | `nepali/checkpoints/checkpoint_best.pt` | 304.7 MB |
 | Model L milestones + latest | `ne` | `nepali/checkpoints/` | 3.0 GiB |
-| Synthetic reasoning corpus (50k examples) | `hi` | `hindi/reasoning/{train,val,test}.jsonl` | 46 MB |
-| Synthetic reasoning corpus (50k examples) | `ne` | `nepali/reasoning/{train,val,test}.jsonl` | 47 MB |
+| Synthetic reasoning corpus (55k examples) | `hi` | `hindi/reasoning/{train,val,test,test_seen}.jsonl` | 52 MB |
+| Synthetic reasoning corpus (55k examples) | `ne` | `nepali/reasoning/{train,val,test,test_seen}.jsonl` | 54 MB |
 | **Finetuned checkpoint — Model H, direct** | `hi` | `hindi/checkpoints_ft_direct/finetune_best.pt` | 304.7 MB |
 | **Finetuned checkpoint — Model H, rationale** | `hi` | `hindi/checkpoints_ft_rationale/finetune_best.pt` | 304.7 MB |
 | **Finetuned checkpoint — Model L, direct** | `ne` | `nepali/checkpoints_ft_direct/finetune_best.pt` | 304.7 MB |
 | **Finetuned checkpoint — Model L, rationale** | `ne` | `nepali/checkpoints_ft_rationale/finetune_best.pt` | 304.7 MB |
 | Finetuning logs (JSONL loss/EM curves) | H / L | `{hindi,nepali}/logs/finetune_*.jsonl` | < 1 MB |
-| Phase 3 evaluation results | H / L | `{hindi,nepali}/phase3/eval/` | < 5 MB |
+| Second-seed finetuned checkpoints (`direct`) | H / L | `{hindi,nepali}/checkpoints_ft_direct_s7/finetune_best.pt` | 304.7 MB |
+| Phase 3 evaluation results | H / L | `phase3/eval/` | < 5 MB |
+| Phase 3 figures (accuracy, attention heatmaps) | H / L | `phase3/figures/` | < 5 MB |
 
 ### Provenance files (Hindi collection)
 
