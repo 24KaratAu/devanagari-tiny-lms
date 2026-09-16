@@ -581,6 +581,10 @@ steps, exact match on a fixed 500-example prefix at the same interval.
 | L, direct | 0.329 -> 0.210 | 0.404 -> 0.514 | 0.5140 | 4.9 |
 | L, rationale | 0.216 -> 0.017 | 0.370 -> 0.924 | **0.9240** | 9.6 |
 
+![Finetuning curves — Hindi](figures/finetune_curves_hindi.png)
+
+![Finetuning curves — Nepali](figures/finetune_curves_nepali.png)
+
 **Nothing in these curves looks wrong.** Validation loss falls monotonically,
 validation exact match rises monotonically, and neither turns over by step 1,875
 in any of the four runs. There is no overfitting signal. §5.1's stated purpose
@@ -597,7 +601,9 @@ throughout, and they agree on the wrong answer.
 | L, rationale | 0.9240 | 0.1992 | 0.725 |
 
 The `rationale` runs look like triumphs on validation -- 92.4% exact match,
-validation loss 0.015 -- and are the *worst* two runs on test.
+validation loss 0.015 -- and are the *worst* two runs on test. In the figures
+above they are the purple curve: lowest validation loss of the three, highest
+validation exact match, and last on the metric that matters.
 
 **Why: the validation split shares the training entity pool, so selecting on it
 selected for memorisation.** §3.3 justified that choice on the grounds that
@@ -623,8 +629,9 @@ training; it is three lines in `validate_em`.
 
 ### 5.2 Pretrained versus finetuned exact match
 
-Full tables in [`report/figures/reasoning_comparison.md`](figures/reasoning_comparison.md);
-figure in [`report/figures/reasoning_accuracy.png`](figures/reasoning_accuracy.png).
+Full tables in [`report/figures/reasoning_comparison.md`](figures/reasoning_comparison.md).
+
+![Reasoning exact match by depth, pretrained vs finetuned](figures/reasoning_accuracy.png)
 
 | Model | Style | Setup | Exact match | Format rate |
 | :--- | :--- | :--- | ---: | ---: |
@@ -981,8 +988,28 @@ Head-role transitions (Phase 2's classifier):
   `content-based -> local` **9**, `sink -> content-based` 5,
   `local -> content-based` 3, `content-based -> content-based` 2, five singletons.
 
-Heatmaps: `report/figures/{hindi,nepali}_reasoning_attention_direct_layer{0,7}.png`,
-drawn on a `rel4_pairwise` prompt (49 tokens, 2 hops, answer `कम`).
+Heatmaps below, drawn on a `rel4_pairwise` prompt (49 tokens, 2 hops, answer
+`कम`). Each figure puts the pretrained checkpoint on the top row and the
+finetuned one beneath it, for four heads of the same layer, on the same prompt.
+
+**Model H, layer 0 (early):**
+
+![Hindi attention, layer 0, pretrained vs finetuned](figures/hindi_reasoning_attention_direct_layer0.png)
+
+**Model H, layer 7 (late):**
+
+![Hindi attention, layer 7, pretrained vs finetuned](figures/hindi_reasoning_attention_direct_layer7.png)
+
+**Model L, layer 0 (early):**
+
+![Nepali attention, layer 0, pretrained vs finetuned](figures/nepali_reasoning_attention_direct_layer0.png)
+
+**Model L, layer 7 (late):**
+
+![Nepali attention, layer 7, pretrained vs finetuned](figures/nepali_reasoning_attention_direct_layer7.png)
+
+The tokenised prompt behind each is recorded in
+`report/figures/{hindi,nepali}_reasoning_attention_direct_prompt.txt`.
 
 ### 6.3 Required discussion -- local versus long-range, and head specialisation
 
@@ -1260,6 +1287,13 @@ python -m src.eval.attention_reasoning --pretrained <p> --finetuned <f> ...
 
 # 6. Consolidated tables, error analysis and figure
 python -m src.eval.compare_reasoning --inputs */eval/reasoning_*.json ...
+
+# 7. Finetuning loss / exact-match curves (CPU only, reads the committed logs)
+python -m src.eval.plot_finetune_curves \
+    --logs hindi/logs/finetune_{direct,gentle,rationale}.jsonl \
+    --labels "3 epochs @ 1e-4 (direct)" "1 epoch @ 3e-5 (direct)" \
+             "3 epochs @ 1e-4 (rationale)" \
+    --language hindi --out report/figures/finetune_curves_hindi.png
 ```
 
 All of the above runs end-to-end in one notebook on the platform actually
