@@ -5,13 +5,20 @@ Model H = Hindi (higher-resource), Model L = Nepali (lower-resource).
 Two fully independent monolingual LMs: separate corpora, tokenizers,
 vocabularies and weights, at every phase.
 
-> **Status of the results in this report.** Sections 1, 3, 4, 8, 9 and the
-> dataset and tokenizer analysis in §5.1 are complete and every number in them
-> is measured. The finetuning and attention *results* — §5.2 onward, §6, and
-> the parts of §7 that depend on them — are marked **[pending run]** and are
-> filled by executing the three Phase 3 notebooks. Each pending block names the
-> command that produces it and states, in advance, what each possible outcome
-> would mean; nothing there is estimated or assumed.
+> **Status of the results in this report.** Every number is measured; nothing
+> is estimated, and no section is outstanding.
+>
+> Two configurations are reported. §5.2-5.4 and §6 describe the finetune
+> specified in §4.2 (3 epochs at 1e-4). §5.6 reports a gentler one (1 epoch at
+> 3e-5) that turned out better on every axis, and is what the conclusions treat
+> as the result.
+>
+> Several sections of §5 and §6 stated, before the runs, what each possible
+> outcome would mean. Where a prediction was contradicted — §4.1's expectation
+> that 1,875 steps would be "a small perturbation", §5.2's pre-registered
+> reading of the hop-count curve, §3.3's justification for the validation
+> split — the text now says so rather than being quietly revised. Those
+> paragraphs are the most useful part of this report.
 
 ---
 
@@ -30,6 +37,31 @@ supervised finetuning path (`src/train/reasoning_dataset.py`,
 three separate test sets, and a pretrain-versus-finetune attention comparator
 (`src/eval/attention_reasoning.py`) that reuses the Phase 2 toolkit on
 reasoning prompts.
+
+**The headline result.** Finetuning teaches both models the answer *format*
+almost perfectly and the *task* only partly. The clearest single number in the
+report is that the *pretrained* Model H, given four worked examples, produced a
+correctly formatted answer **99.98%** of the time and got **0.00%** of them
+right. Format and reasoning are separable, and here they separate completely.
+
+**The second result is that our own first configuration was simply wrong, and
+the report says so.** §4.2 specified 3 epochs at a peak 1e-4 and argued for it.
+That run reached exact match 0.2458 (H) / 0.2144 (L) while destroying most of
+each model's general language ability -- validation perplexity rose 55x and
+118x, leaving 33% and 18% of what pretraining had taught them. Repeating it at
+**1 epoch and 3e-5** was better on every axis at once: accuracy **0.2992** /
+**0.2320**, perplexity within **1.2x** of the pretrained model, **96%** of the
+language model retained, in a third of the time. There was no trade-off to
+find -- only a wasteful recipe (§5.6).
+
+**Both configurations fail the same way**, and the failure is diagnosable
+because of the design rather than the numbers. Both models learned to answer
+"who?" with a name from the *training* pool, so questions whose answer is a
+held-out name score near zero while three-way relation questions score 0.45-0.67
+against a 0.33 baseline. The aggressive recipe could not name an unseen entity
+at all; the gentle one sometimes can -- and every bit of its accuracy advantage
+comes from exactly those families, which is what ties the forgetting and the
+memorisation together into one mechanism (§5.6).
 
 **Three things are measured that a single accuracy number would hide.** The
 three test sets of §3.3 — seen entities and wording, unseen entities, unseen
@@ -64,6 +96,72 @@ uses the measured per-family accuracies to decide which effect dominates.
 **Total project cost so far:** 12.5 GPU-hours of pretraining (Phase 2 §3.6),
 plus roughly 0.5 GPU-hours of finetuning and evaluation in this phase.
 
+### 1.1 What happened, in plain terms
+
+This section deliberately avoids jargon. Everything in it is restated precisely,
+with the numbers, in §5 and §6.
+
+**What we tried to do.** Each model had already been trained to predict ordinary
+Hindi or Nepali text. We then trained it further on 40,000 made-up comparison
+questions in its own language — *"Ram is taller than Shyam, Shyam is taller than
+Mohan, who is tallest?"* — and checked whether it could answer questions of the
+same kind about **people it had never seen before**.
+
+**What the models learned.** The shape of an answer, almost perfectly. Asked a
+question, they reply `उत्तर:` followed by a name, in the right format, 96-100% of
+the time. What they mostly did not learn is *which* name.
+
+**The specific mistake they make.** They only ever answer with names from the
+training set. Ask Model H about भरत (a name held back for testing) and it answers
+सीता (a name it trained on). Sometimes it answers a question about a person with
+the name of an object. Because the test set deliberately uses only names the
+models never saw, a question whose answer is a name is one they can essentially
+never get right — the score on those is 0%.
+
+**Where they do succeed.** On questions whose answer is one of three fixed words
+— "more", "less" or "equal" — they score 45-67%, against 33% for guessing. So the
+models did learn something real about comparison. It only shows up where the
+answer does not require naming an entity.
+
+**The cost, at our first settings.** Teaching them this damaged their ordinary
+language ability badly.
+Before finetuning, Model H predicted ordinary Hindi text with a perplexity of 20;
+afterwards, 1,115 — about 55 times worse. Model L went from 24 to 2,802, about
+118 times worse. Both are still slightly better than random guessing, but only
+just. This is a known effect with a name, *catastrophic forgetting*, and the
+course material warns about it explicitly.
+
+**Then we tried training much more gently** -- one pass over the data instead of
+three, at a third the learning speed -- to see what preserving the language model
+would cost in accuracy. It cost nothing. The gentler version was **better at
+everything**: more questions right (30% vs 25% for Model H), the language ability
+almost untouched (96% kept instead of 33%), and three times faster to train. Our
+first settings were simply too aggressive, and §5.6 reports both so the
+comparison is on the record.
+
+**And the two problems turned out to be one problem.** The aggressively trained
+models could never name a person they had not seen before. Naming someone
+mentioned in the question means copying a word out of the text you were given --
+which is a language ability, and that is what the aggressive training destroyed.
+The gently trained models kept their language ability, and with it they can
+sometimes copy the right name. All of the gentle version's extra accuracy comes
+from exactly those questions.
+
+**Why we can say all this.** Three design decisions made the diagnosis possible,
+and without them the result would have looked like a single unexplained number:
+
+- **Separate name lists for training and testing.** This is what exposed the
+  memorisation. With shared names the models would have scored far higher and we
+  would have learned nothing.
+- **Three separate test sets** instead of one score (§3.3). The models get 62%
+  (H) and 45% (L) on questions about *familiar* names, against 25% and 21% on
+  unfamiliar ones. That gap is the memorisation, measured.
+- **Reporting how often the model produced a well-formed answer at all**, not
+  just how often it was right. The clearest single number in this report is that
+  the *pretrained* model, shown four worked examples, produced a correctly
+  formatted answer 99.98% of the time and got 0.00% of them right. Format and
+  reasoning are separate things, and that number separates them.
+
 ---
 
 ## 2. Where Phases 1 and 2 Left Off
@@ -95,6 +193,39 @@ bits-per-character by 14.0%, and the difference is tokenizer fertility rather
 than model quality. Exact-match accuracy on a reasoning task is the first metric
 in this project that is **tokenizer-independent** — a correct answer is a
 correct answer whatever it cost to encode. §7.2 returns to this.
+
+### 2.1 The bonus ablation, for completeness
+
+The brief places the optional ablation in a project-level section of its own,
+after the three phases, and asks for it "in the same project repository". It is
+reported in full in [`report/phase2_report.md`](phase2_report.md) §7, because it
+reuses the Phase 2 evaluation suite and compares against the Phase 2 Hindi
+model. It is summarised here so that this report consolidates the whole project
+as §3.3 of the brief requires.
+
+**Model H retrained with the positional embedding removed**, matched on seed,
+steps, batch composition and learning-rate schedule -- the only difference being
+`pos_encoding: learned` against `none`:
+
+| Hindi test split | Learned positions | No positions | Change |
+| :--- | ---: | ---: | ---: |
+| Cross-entropy (nats) | 3.2885 | 3.3216 | +0.0331 |
+| **Perplexity** | **26.80** | **27.70** | **+3.4%** |
+| Bits-per-character | 1.3636 | 1.3773 | +1.0% |
+
+**Removing positions entirely costs 3.4% perplexity, far less than expected, and
+the reason is the finding.** Under a causal mask the query at position *i*
+attends over exactly *i + 1* keys, so the count of visible tokens is itself a
+weak monotonic position signal that no ablation removes. The measured gap is
+"learned absolute positions versus whatever the causal mask leaks", not
+"positions versus none". For scale, the distance from the baseline to a model
+that has learned nothing (`ln 8000 = 8.99`) is 5.70 nats; the ablation gives up
+0.033 of that, or **0.6% of everything the baseline learned**. Generation
+metrics and attention statistics are essentially unchanged.
+
+Per the TA guidance in `doubts-answers.md`, the bonus is submitted on its own
+branch built on top of `phase-3`, so that branch carries all three phases plus
+the ablation.
 
 ---
 
@@ -438,135 +569,355 @@ by construction, only by measurement.
 
 ## 5. Reasoning Results
 
-### 5.1 Finetuning dynamics
+### 5.1 Finetuning dynamics -- and a selection metric that rewarded the wrong thing
 
-**[pending run]** — produced by `notebooks/phase3_colab.ipynb`; curves from
-`hindi/logs/finetune_*.jsonl` and `nepali/logs/finetune_*.jsonl`.
+Curves from `{hindi,nepali}/logs/finetune_*.jsonl`. Validation loss every 125
+steps, exact match on a fixed 500-example prefix at the same interval.
 
-The specific thing to read off these curves is **whether validation loss and
-validation exact match move together**. They measure different things (§4.1),
-and a divergence — loss still falling while exact match has plateaued — would
-mean the model is getting more confident about the answer format without
-getting more correct, which is the failure mode that motivated selecting on
-exact match in the first place.
+| Run | val loss, step 125 -> 1875 | val EM, step 125 -> 1875 | best val EM | minutes |
+| :--- | :--- | :--- | ---: | ---: |
+| H, direct | 0.331 -> 0.155 | 0.382 -> 0.626 | 0.6380 | 4.8 |
+| H, rationale | 0.234 -> 0.015 | 0.380 -> 0.916 | **0.9240** | 9.8 |
+| L, direct | 0.329 -> 0.210 | 0.404 -> 0.514 | 0.5140 | 4.9 |
+| L, rationale | 0.216 -> 0.017 | 0.370 -> 0.924 | **0.9240** | 9.6 |
+
+**Nothing in these curves looks wrong.** Validation loss falls monotonically,
+validation exact match rises monotonically, and neither turns over by step 1,875
+in any of the four runs. There is no overfitting signal. §5.1's stated purpose
+was to check whether loss and accuracy diverge; they do not -- they agree
+throughout, and they agree on the wrong answer.
+
+**The divergence is between validation and test, and it is enormous:**
+
+| Run | best val EM | test EM (unseen entities) | gap |
+| :--- | ---: | ---: | ---: |
+| H, direct | 0.6380 | 0.2458 | 0.392 |
+| H, rationale | **0.9240** | **0.1794** | **0.745** |
+| L, direct | 0.5140 | 0.2144 | 0.300 |
+| L, rationale | 0.9240 | 0.1992 | 0.725 |
+
+The `rationale` runs look like triumphs on validation -- 92.4% exact match,
+validation loss 0.015 -- and are the *worst* two runs on test.
+
+**Why: the validation split shares the training entity pool, so selecting on it
+selected for memorisation.** §3.3 justified that choice on the grounds that
+"selecting on out-of-distribution entities would make early stopping measure
+generalisation instead of convergence". That reasoning is defensible in the
+abstract and was wrong in practice: it made the selection metric blind to the
+one failure that dominates these results. A checkpoint chosen on `test_seen`-like
+data cannot distinguish a model that learned the relation from one that learned
+the name list, because on that data both score well.
+
+**What should have been done.** Select on a validation split drawn from a *third*
+entity pool -- disjoint from both train and test. That keeps selection
+out-of-distribution with respect to memorisation while keeping the test set
+untouched for reporting. The entity inventories have room: 60 people and 24
+objects per language, currently split 40/20 and 16/8. This is recorded as
+limitation 8 rather than fixed, because changing it now would invalidate every
+number above.
+
+**The cheap diagnostic that would have caught it during training.** Log exact
+match on a held-out-entity sample alongside the validation number. The gap
+between the two is visible from the first evaluation and needs no extra
+training; it is three lines in `validate_em`.
 
 ### 5.2 Pretrained versus finetuned exact match
 
-**[pending run]** — generated verbatim from
-`report/figures/reasoning_comparison.md` by
-`notebooks/phase3_colab.ipynb`:
+Full tables in [`report/figures/reasoning_comparison.md`](figures/reasoning_comparison.md);
+figure in [`report/figures/reasoning_accuracy.png`](figures/reasoning_accuracy.png).
 
-```
-python -m src.eval.compare_reasoning \
-    --inputs hindi/eval/reasoning_*.json nepali/eval/reasoning_*.json \
-    --out report/figures/reasoning_comparison.json \
-    --md  report/figures/reasoning_comparison.md \
-    --figure report/figures/reasoning_accuracy.png
-```
+| Model | Style | Setup | Exact match | Format rate |
+| :--- | :--- | :--- | ---: | ---: |
+| H | direct | pretrained, zero-shot | 0.0000 | 0.0040 |
+| H | direct | pretrained, few-shot (k=4) | 0.0000 | **0.9998** |
+| H | direct | finetuned | **0.2458** | 0.9614 |
+| H | direct | finetuned, seed 7 | 0.2584 | 0.9760 |
+| H | rationale | finetuned | 0.1794 | 0.8686 |
+| L | direct | pretrained, zero-shot | 0.0000 | 0.0000 |
+| L | direct | pretrained, few-shot (k=4) | 0.0000 | 0.5374 |
+| L | direct | finetuned | **0.2144** | 1.0000 |
+| L | direct | finetuned, seed 7 | 0.2170 | 1.0000 |
+| L | rationale | finetuned | 0.1992 | 0.9716 |
 
-Four tables come out of that command. **The three test sets** (§3.3) with a
-*memorisation gap* — seen-entity accuracy minus unseen-entity accuracy at the
-same wording — and a *template gap* — seen-wording minus held-out-wording at the
-same entity pool. Each gap attributes the drop to the one thing that changed
-between the columns it spans. **Seed spread**, where a second seed was run
-(§8.3). **Pretrained versus finetuned**, with exact match, format rate, and
-accuracy split by 0, 1 and 2 transitive hops. And **per-family accuracy** plus
-the error analysis of §5.3. Figure: `report/figures/reasoning_accuracy.png`.
+**The format rate is the most informative column in this report.** Model H's
+pretrained checkpoint, shown four worked examples, produced a correctly
+formatted answer **99.98%** of the time and scored **0.0000** exact match. Four
+demonstrations were enough to teach the output format completely and the task
+not at all. §4.4 predicted that few-shot prompting would separate formatting
+from reasoning; this is a cleaner separation than expected -- the two are not
+merely distinguishable here, they are fully decoupled.
 
-**What each shape of result would mean**, stated before the run so the reading
-is not fitted to the numbers:
+Zero-shot scores 0.0000 at a 0.0040 format rate, so the pretrained model has no
+notion of the task *or* its shape, exactly as predicted.
 
-- *Flat across hop counts* — the model learned the relation, and depth is not
-  the binding constraint at this scale.
-- *A cliff between 1 and 2 hops* — one-step comparison is learned, chaining is
-  not. This is the expected outcome for a 25M model and would be the honest
-  headline.
-- *High at 0 hops only* — the model is pattern-matching a stated comparison
-  and does no transitive work at all.
-- *Few-shot near finetuned* — finetuning taught format rather than reasoning,
-  and the accuracy gain is mostly a formatting gain. The format-rate column
-  distinguishes this case directly.
+**Accuracy against reasoning depth is not monotonic**, and the reason is not
+depth:
 
-### 5.3 Qualitative successes and failures
+| Hops | Model H | Model L |
+| ---: | ---: | ---: |
+| 0 | 0.1480 | 0.1072 |
+| 1 | **0.3933** | **0.3713** |
+| 2 | 0.2690 | 0.2470 |
 
-**[pending run]** — each `hindi/eval/reasoning_*.json` and
-`nepali/eval/reasoning_*.json` carries an `examples` block with 20 correct and
-20 incorrect decoded generations, and a `confusions` list of the most frequent
-gold → predicted pairs.
+One hop beats zero. §5.3 shows why: `hops` is confounded with *what the answer
+is*, and the answer type dominates everything else. The pre-registered readings
+in the previous draft of this section -- "a cliff between 1 and 2 hops",
+"high at 0 hops only" -- do not describe these data, and the family breakdown
+explains why.
 
-Two error signatures are worth separating when these land:
+**Both answer styles, resolved.** `rationale` loses to `direct` in both
+languages (0.1794 vs 0.2458; 0.1992 vs 0.2144) and has a lower format rate. At
+25M parameters the longer target -- restate the chain, then answer -- is harder
+to produce than the answer alone, and the extra supervision does not pay for
+itself. §4.3 built both because this was an empirical question; the answer is
+that the simpler target wins.
 
-- **Wrong entity, right form** (`राम -> श्याम`) — the model understood what was
-  asked and picked the wrong end of the ordering. On `min`-direction questions
-  this often means the superlative was ignored.
-- **Wrong relation** (`अधिक -> कम`, or anything `-> बराबर`) — the three-way
-  relation questions are where a model that has not learned equality will
-  concentrate its errors, since `बराबर` is only 12% of relation answers and is
-  the easiest class to never predict.
+**Seeds.** Range 0.0126 (H) and 0.0026 (L) across two seeds, so the H-vs-L gap
+of 0.0314 is about 2.5x the reseeding noise on Model H's side -- real, but not
+comfortably so, and stated that way in §7.2.
+
+### 5.3 Qualitative successes and failures -- the answer type is everything
+
+Per-family accuracy, finetuned `direct`, sorted:
+
+| Family | Answer is | Hops | Model H | Model L |
+| :--- | :--- | ---: | ---: | ---: |
+| `eq3_relation` | relation word | 1 | 0.6660 | 0.6600 |
+| `rel4_pairwise` | relation word | 2 | 0.5280 | 0.4940 |
+| `val2_relation` | relation word | 0 | 0.4760 | 0.5360 |
+| `rel3_pairwise` | relation word | 1 | 0.4640 | 0.4540 |
+| `rel2_which` | **entity name** | 0 | 0.2640 | 0.0000 |
+| `rel3_extreme` | **entity name** | 1 | 0.0500 | 0.0000 |
+| `rel4_extreme` | **entity name** | 2 | 0.0100 | 0.0000 |
+| `val2_which` | **entity name** | 0 | 0.0000 | 0.0000 |
+| `val3_extreme` | **entity name** | 0 | 0.0000 | 0.0000 |
+| `val4_rank` | **entity name** | 0 | 0.0000 | 0.0000 |
+
+The table splits perfectly on one variable, and it is not reasoning depth or
+premise form. **Where the answer is one of three relation words, both models
+score 0.45-0.67 against a 0.33 chance baseline. Where the answer is an entity
+name, they score at or near zero.**
+
+**The mechanism, read off the decoded generations.** Every wrong answer on an
+entity-naming family is a *training-pool* name:
+
+| Gold (held-out pool) | Predicted (train pool) | Raw output |
+| :--- | :--- | :--- |
+| भरत | सीता | `उत्तर: सीता` |
+| अरुण | मोहन | `उत्तर: मोहन` |
+| करण | आनंद | `उत्तर: आनंद` |
+| तनुजा | रस्सी | `उत्तर: रस्सी` |
+| ताला | अंजलि | `उत्तर: अंजलि` |
+
+The outputs are well formed and the answer marker is always present, so this is
+not an extraction failure. The model learned *"when asked who, emit one of the
+56 entity names I saw during training"*. The last two rows show it does not even
+respect the entity domain: तनुजा is a person and रस्सी is a rope; ताला is a
+padlock and अंजलि is a person.
+
+Because the test split draws only from the disjoint held-out pool, a
+name-answering question is one the model can essentially never get right. The
+exact 0.0000 in three families is therefore a real property of the model, not a
+bug -- and the control split confirms it from the other side: on `test_seen`,
+where the names *are* from the training pool, Model H scores 0.6226.
+
+**This is the failure the course material describes**, reproduced at 31x the
+parameter count of its demonstration model (25.4M against 824,064): "the model
+learned to answer with one of the twenty names it had trained on", training loss
+low, exact match on unseen names zero. Our numbers are not as extreme -- the
+relation-word families genuinely work -- but the mechanism is identical.
+
+**Relation errors are directional, not formatting.** The most frequent single
+confusion for Model H is `अधिक -> कम` (559 times) and its inverse `कम -> अधिक`
+(276). The model produces a valid relation word and picks the wrong direction.
+Confusions into `बराबर` are rarer (45 + 43), consistent with equality being 12%
+of relation answers and the easiest class to under-predict.
 
 ### 5.4 Model H versus Model L on reasoning
 
-**[pending run]** — from the same comparison table.
-
-This is the phase's central comparison, and the one place in the project where
+This is the phase's central comparison, and the only place in the project where
 the metric is **tokenizer-independent**: unlike perplexity and bits-per-byte in
-Phase 2, a correct answer is a correct answer regardless of how many tokens it
-cost to encode. Whatever gap appears here cannot be explained away as a
-fertility artefact, which makes it the cleanest resource-tier comparison the
-project produces.
+Phase 2, a correct answer is correct regardless of how many tokens it cost to
+encode. A gap here cannot be explained away as fertility.
 
-The two competing predictions from §3.5 are tested by the *value premises*
-versus *relation premises* columns of the generalisation table: Nepali's
-numeral advantage predicts it does relatively better on the four value-premise
-families, and its weaker out-of-domain fertility predicts the opposite
-everywhere else.
+| | Model H (Hindi) | Model L (Nepali) |
+| :--- | ---: | ---: |
+| Exact match, unseen entities, all wording | **0.2458** | 0.2144 |
+| Exact match, unseen entities, seen wording | 0.2456 | 0.2116 |
+| Exact match, seen entities (`test_seen`) | **0.6226** | 0.4542 |
+| **Memorisation gap** (matched wording) | **0.3770** | **0.2426** |
+| Template gap (unseen wording) | -0.0007 | -0.0116 |
+| Seed range | 0.0126 | 0.0026 |
+| Forgetting (val perplexity) | 55x | 118x |
 
----
+The memorisation gap is taken between the two *seen-wording* columns, so the
+only thing differing across it is the entity pool. Against the pooled
+unseen-entity figure it would be 0.3768 -- the distinction is immaterial here
+but the matched comparison is the defensible one.
 
-### 5.5 Did finetuning damage the language model?
+**Model H is ahead on every axis, and by a consistent margin.** It is 14.7%
+better on unseen entities, 37% better on seen ones, and was damaged half as much
+as Model L. Since the two models are identical in architecture and
+hyperparameters, this is a statement about the corpora.
 
-Supervised finetuning on a narrow task can destroy general next-token
-prediction. This is not hypothetical: the course material's worked example moves
-perplexity from **1.33 to 194.7** across an SFT run, a factor of 146. Since §4.5
-chose full finetuning precisely so the drift would be measurable rather than
-constrained, measuring it is obligatory.
+**The memorisation gap is the more interesting comparison.** Model H memorised
+*more* (0.3770 against 0.2426) and still generalised better. Those are not in
+tension: Model H learned the training names more thoroughly, and it also learned
+more of the relation. Model L learned less of both.
 
-**Method.** The same `src/eval/intrinsic.py` that produced the Phase 2 headline
-numbers, pointed at the pretrained and finetuned checkpoints in turn, over the
-*pretraining* validation split — ordinary Hindi and Nepali web text, with no
-reasoning content in it. Nothing about the metric or the data changes between
-the two runs; only the weights do.
+**The template gap is ~0 in both, and slightly negative.** Held-out premise
+phrasing costs nothing measurable -- Model H scores 0.2456 on seen wording and
+0.2463 on unseen. The models generalise across phrasing and fail across
+entities, which is the opposite of what a template-matching account would
+predict for phrasing and exactly what it predicts for entities. Note the caveat
+from §3.2: three of the four question types are never reworded, so this column
+tests premise phrasing only.
 
-A 2M-token slice rather than the full 26M split, via a `--max-tokens` flag added
-for this purpose. The flag defaults to off, so the Phase 2 full-split figures
-remain reproducible byte-for-byte, and every result records its own budget so a
-partial score cannot be mistaken for a complete one. The distinction between
-"unchanged" and "destroyed" does not need twelve minutes per checkpoint.
+**What this does not settle.** Two models, two seeds each, and every
+distinguishing factor -- corpus size, provenance mix, fertility, domain balance
+-- differs at once. The Model H advantage on unseen entities (0.0314) is about
+2.5x its own seed range (0.0126), which supports the direction but not a precise
+magnitude.
 
-**[pending run]** — `{hindi,nepali}/eval/intrinsic_{pretrained,finetuned}_ft.json`.
-Phase 2's full-split baselines for reference: Model H perplexity 26.77 on
-validation, Model L 30.64.
+### 5.5 Did finetuning damage the language model? -- yes, severely
 
-What each outcome would mean, stated before the run:
+**Method.** `src/eval/intrinsic.py`, the Phase 2 evaluator, pointed at the
+pretrained and finetuned checkpoints in turn over each model's *pretraining*
+validation split -- ordinary web text with no reasoning content. Only the
+weights differ between the two runs. A 2M-token slice via `--max-tokens`, so the
+figures are not interchangeable with Phase 2's full-split numbers; the
+before/after comparison is valid because both sides use the same slice.
 
-- **Perplexity roughly unchanged** — 1,875 steps at a peak 1e-4 is a small
-  perturbation next to 14,329 steps at 3e-4, and the answer-span mask means most
-  positions in each sequence contribute no gradient at all. This is the outcome
-  the hyperparameters were chosen to produce, and it would say the reasoning
-  behaviour was added rather than traded for.
-- **Perplexity up by tens of percent** — real drift. The model has moved towards
-  the template distribution and away from general text. Worth reporting against
-  the reasoning gain as an explicit trade.
-- **Perplexity up by orders of magnitude** — the course example's failure mode.
-  It would mean the learning rate or epoch count was too aggressive for a model
-  this size, and the honest response is to say so rather than to report only the
-  reasoning number.
+| | Model H | Model L |
+| :--- | ---: | ---: |
+| Cross-entropy before (nats) | 3.0053 | 3.1682 |
+| Cross-entropy after (nats) | 7.0168 | 7.9380 |
+| **Perplexity before** | **20.19** | **23.77** |
+| **Perplexity after** | **1,115.21** | **2,801.61** |
+| Degradation | **55x** | **118x** |
 
-**Why this matters beyond diagnostics.** Phase 2 established that perplexity is
-tokenizer-dependent and cannot rank Model H against Model L. That argument is
-about *cross-model* comparison. Here the comparison is *within* one model,
-before and after, on the same split with the same tokenizer — the one
+Uniform guessing over an 8,000-token vocabulary is 8.987 nats. Measured against
+that floor:
+
+| | learned over uniform, before | after | **retained** |
+| :--- | ---: | ---: | ---: |
+| Model H | 5.982 nats | 1.970 | **33%** |
+| Model L | 5.819 nats | 1.049 | **18%** |
+
+**Model H threw away two-thirds of everything pretraining taught it, and Model L
+four-fifths.** Both remain better than random, but barely. For comparison, the
+course material's worked example degrades 146x; ours are 55x and 118x, the same
+phenomenon at the same order of magnitude.
+
+**Why it is this severe.** Four choices compound, all of them made in
+`finetune.yaml`:
+
+1. **Full finetuning** -- every one of the 25.4M parameters moved. §4.5 argued
+   for this on memory grounds and stated the trade explicitly: freezing weights
+   "reduces rather than prevents" drift, and "measuring how much a full finetune
+   actually drifts is more informative here than constraining it in advance and
+   not knowing". This is that measurement, and it does not vindicate the choice.
+2. **1,875 steps at a peak 1e-4.** §4.1 called this "a small perturbation next
+   to 14,329 steps at 3e-4". It is 13% as many steps at a third the peak rate --
+   not small enough, and that prediction was wrong.
+3. **A very narrow target distribution** -- 40,000 examples from ten templates,
+   seen three times each.
+4. **No pretraining data mixed back in**, which is the standard mitigation.
+
+The answer-span mask narrows the gradient *signal* but not its *reach*: every
+parameter still receives it, exactly as §4.5 said.
+
+**This is the clean case for a perplexity comparison.** Phase 2 established that
+perplexity is tokenizer-dependent and cannot rank Model H against Model L. That
+argument is about *cross-model* comparison. Here the comparison is within one
+model, before and after, on the same split with the same tokenizer -- the one
 configuration in which a perplexity difference is unambiguous.
+
+### 5.6 A gentler recipe -- there was no trade-off, only a worse recipe
+
+§5.5 showed the configuration in §4.2 made a bad trade. The obvious question was
+whether a better trade existed, so the finetune was repeated at **1 epoch and a
+peak 3e-5** -- a third the learning rate, a third the steps, `direct` style
+only, everything else fixed through `--override`.
+
+The expectation was a trade-off curve. There is no curve, because the gentle
+recipe is **better on both axes at once**:
+
+| Model | Recipe | Reasoning EM | Format rate | val PPL | vs pretrained | LM retained |
+| :--- | :--- | ---: | ---: | ---: | ---: | ---: |
+| H | pretrained, no finetune | 0.0000 | 0.004 | 20.19 | 1.0x | 100% |
+| H | 3 epochs @ 1e-4 | 0.2458 | 0.961 | 1,115.21 | 55.2x | 33% |
+| H | **1 epoch @ 3e-5** | **0.2992** | **0.994** | **25.00** | **1.2x** | **96%** |
+| L | pretrained, no finetune | 0.0000 | 0.000 | 23.77 | 1.0x | 100% |
+| L | 3 epochs @ 1e-4 | 0.2144 | 1.000 | 2,801.61 | 117.9x | 18% |
+| L | **1 epoch @ 3e-5** | **0.2320** | **1.000** | **29.40** | **1.2x** | **96%** |
+
+The gentle recipe is **more accurate** (+0.053 Hindi, +0.018 Nepali), has an
+**equal or better format rate**, retains **96%** of pretraining against 33% and
+18%, and trains in **1.5 minutes instead of 4.8**. Of the three outcomes §5.6
+registered in advance, this is the first -- "the aggressive recipe was simply
+wasteful" -- and more strongly than that prediction allowed, since accuracy
+went *up* rather than staying similar.
+
+**The aggressive configuration was straightforwardly overfitted.** §5.1 found no
+overfitting signal in the validation curves, and that is still true -- but the
+validation split shares the training entity pool, so it could not see this
+either. The course Q&A anticipates exactly this failure: asked about a
+finetuning loss "constantly reducing to zero", the answer is *"your model might
+have overfit on to one exact kind of template"*. Our `rationale` runs reached a
+validation loss of 0.015 and scored 0.18 on test, which is that diagnosis with
+numbers attached. Three epochs over 40,000 examples from ten templates drove the model
+onto the template distribution; the extra 1,250 steps bought nothing and cost
+almost everything.
+
+#### Where the extra accuracy came from
+
+Not from better reasoning. Splitting by what the answer is:
+
+| Family group | Model H aggr -> gentle | Model L aggr -> gentle |
+| :--- | :--- | :--- |
+| Answer is a relation word | 0.5335 -> 0.5155 | 0.5360 -> 0.5070 |
+| Answer is an entity name | **0.0540 -> 0.1550** | **0.0000 -> 0.0487** |
+
+Relation-word accuracy is flat, in fact marginally *down*. **Every bit of the
+gain is on the families that require naming an entity the model has never
+seen** -- Hindi `val2_which` goes 0.0000 -> 0.3100, `rel2_which` 0.2640 ->
+0.3500, `rel3_extreme` 0.0500 -> 0.1580; Nepali's six name-answering families go
+from uniformly 0.0000 to 0.02-0.10.
+
+**This links the two failures into one.** §5.3 showed the aggressive models
+could only ever emit a training-pool name. Naming an entity from the prompt is a
+*language-modelling* act -- copying a token out of context -- and the aggressive
+recipe destroyed the language model. The gentle recipe keeps 96% of it, and with
+it enough of the copying ability to sometimes name a held-out entity. Forgetting
+and the memorisation failure are not two findings; they are one mechanism seen
+from two sides.
+
+**How far that claim carries.** Within each model the relationship is monotone
+(Hindi 33% -> 96% retained gives 0.054 -> 0.155; Nepali 18% -> 96% gives 0.000
+-> 0.049). *Across* models it is not: Nepali at 96% retention scores 0.0487 on
+name-answering, slightly below Hindi at 33% retention on 0.0540. So language-model
+retention predicts name-answering ability *within* a model and does not
+transfer across the two. Four points, two of them confounded with language. This
+is a mechanism consistent with the evidence, not an established dose-response.
+
+**One family moved the other way.** `val2_relation` -- the only value-premise
+family whose answer is a relation word -- fell in both models (0.4760 -> 0.4260
+Hindi, 0.5360 -> 0.4020 Nepali). It is the family that most requires comparing
+two numerals, and it is the one thing the longer run did better. §7.3 returns to
+this.
+
+**Which configuration the report treats as the result.** The gentle one. It is
+better on every measured axis and cheaper to train. The aggressive run is
+retained and reported in full because the comparison is the finding -- and
+because §4.2's reasoning for the aggressive settings was explicit and wrong,
+which is more useful on the record than silently replaced.
+
+**What was not re-run at the gentle setting.** The control split (`test_seen`),
+the attention comparison, the `rationale` style, and the second seed. Their
+numbers in §5.2-5.4 and §6 all describe the aggressive checkpoints. The
+memorisation gap, the seed range and every attention statistic should therefore
+be read as properties of that configuration; §9 records this as a limitation.
 
 ## 6. Attention Analysis, Post-Finetune
 
@@ -596,47 +947,101 @@ tokens, where it must reach back to whichever premise is relevant.
 
 ### 6.2 Results
 
-**[pending run]** — `hindi/eval/attention_reasoning.json` and
-`nepali/eval/attention_reasoning.json`, with heatmaps at
-`report/figures/{hindi,nepali}_reasoning_attention_direct_layer{0,7}.png`.
-Layer 0 is the early layer and layer 7 the late one, satisfying the brief's
-"at least one early and one late layer per model".
+512 prompts, 19-65 tokens wide, 59 unpadded batches, **18,689 query positions
+for each checkpoint** -- identical counts, which is the guarantee that both saw
+exactly the same input. Full detail in
+`{hindi,nepali}/eval/attention_reasoning.json`.
 
-Reported per layer: normalised entropy, mean distance, previous-token mass and
-first-position (sink) mass, pretrained against finetuned; plus the twelve heads
-whose mean distance moved most, and a confusion table of head roles before
-against after using the Phase 2 classifier (`sink`, `previous-token`, `local`,
-`diffuse`, `content-based`).
+| | Model H | Model L |
+| :--- | ---: | ---: |
+| Mean attention distance, pretrained | 8.76 | 8.20 |
+| Mean attention distance, finetuned | **7.70** | **7.70** |
+| Layers where distance fell | **8 of 8** | **8 of 8** |
+| Heads that changed role | 21 / 64 | 20 / 64 |
 
-### 6.3 Required discussion — local versus long-range, and head specialisation
+Per-layer, Model H:
 
-**[pending run].** The brief asks specifically whether finetuning changed local
-versus long-range attention or head specialisation. The measurements that answer
-it, and what each direction would mean:
+| Layer | distance pre -> ft | normalised entropy pre -> ft |
+| ---: | :--- | :--- |
+| 0 | 9.01 -> 8.90 (-0.10) | 0.910 -> 0.933 (+0.023) |
+| 1 | 10.02 -> 9.34 (-0.68) | 0.806 -> 0.832 (+0.026) |
+| 2 | 8.86 -> 7.53 (-1.33) | 0.749 -> 0.742 (-0.007) |
+| 3 | 4.66 -> 4.14 (-0.52) | 0.684 -> 0.599 (-0.085) |
+| 4 | 4.95 -> 4.19 (-0.76) | 0.550 -> 0.464 (-0.086) |
+| 5 | 10.88 -> 8.14 (**-2.74**) | 0.489 -> 0.518 (+0.029) |
+| 6 | 11.16 -> 9.63 (-1.52) | 0.578 -> 0.541 (-0.037) |
+| 7 | 10.53 -> 9.73 (-0.81) | 0.662 -> 0.594 (-0.068) |
 
-- **Mean distance increases in late layers** — the model learned to reach back
-  to the premises from the question, which is what the task requires. This is
-  the outcome consistent with actual chaining.
-- **Mean distance decreases, entropy falls** — the model sharpened onto local
-  template structure (the fixed `प्रश्न:` / `उत्तर:` frame) rather than onto
-  content. Combined with a high format rate and a low exact match, this would
-  be direct evidence that finetuning taught format rather than reasoning.
-- **Previous-token mass largely unchanged** — the induction-style heads Phase 2
-  found are general-purpose and survive finetuning intact; specialisation, if
-  any, happened elsewhere.
-- **Head roles mostly stable** — 1,875 finetuning steps at 1e-4 is a small
-  perturbation next to 14,329 pretraining steps at 3e-4, so *stability is the
-  expected result*, and a large reshuffle would be the surprising finding. The
-  `roles_changed / heads_total` count is reported so this is a number rather
-  than an impression.
+Head-role transitions (Phase 2's classifier):
 
----
+- **Model H**: `local -> local` 33, `content-based -> local` **10**,
+  `previous-token -> previous-token` 7, `sink -> local` 4,
+  `sink -> content-based` 4, `content-based -> content-based` 3, three singletons.
+- **Model L**: `local -> local` 31, `previous-token -> previous-token` 9,
+  `content-based -> local` **9**, `sink -> content-based` 5,
+  `local -> content-based` 3, `content-based -> content-based` 2, five singletons.
+
+Heatmaps: `report/figures/{hindi,nepali}_reasoning_attention_direct_layer{0,7}.png`,
+drawn on a `rel4_pairwise` prompt (49 tokens, 2 hops, answer `कम`).
+
+### 6.3 Required discussion -- local versus long-range, and head specialisation
+
+**Finetuning made attention narrower and more local, in both models, at every
+layer.** Mean distance fell at all eight layers in both, the largest single
+movement being Model H's layer 5 (10.88 -> 8.14). Normalised entropy fell in the
+middle and late layers -- most at layers 3 and 4 (-0.085, -0.086) -- so the
+heads are not merely looking closer, they are concentrating on fewer positions.
+
+The role transitions say the same thing in a different vocabulary. The dominant
+non-identity transition in both models is **`content-based -> local`** (10 in H,
+9 in L): heads that had been selecting on *what the tokens are* moved to
+selecting on *where they are*. Nothing moved the other way in any quantity --
+`local -> content-based` accounts for 1 head in H and 3 in L.
+
+**§6.3 pre-registered four readings before the run. The data picked the second:**
+
+> *"Mean distance decreases, entropy falls -- the model sharpened onto local
+> template structure (the fixed `प्रश्न:` / `उत्तर:` frame) rather than onto
+> content. Combined with a high format rate and a low exact match, this would be
+> direct evidence that finetuning taught format rather than reasoning."*
+
+All three conditions hold: distance down at every layer, entropy down in the
+middle and late layers, format rate 0.96-1.00 against exact match 0.21-0.25.
+The reading that would have indicated genuine chaining -- *"mean distance
+increases in late layers... the model learned to reach back to the premises"* --
+is contradicted: layer 7 moved the other way in both models.
+
+**Head specialisation was largely preserved, as expected.** 21/64 and 20/64
+heads changed label, so roughly two-thirds kept their role. §6.3 predicted this
+and said stability would be the unsurprising outcome: 1,875 steps at 1e-4 is a
+small perturbation next to 14,329 at 3e-4. It is worth noting that this
+prediction held for *attention structure* while the equivalent prediction for
+*language-modelling ability* failed badly (§5.5) -- the same update left most
+heads doing the same job and still destroyed two-thirds of the model's grip on
+its language.
+
+**The `previous-token` heads are the most stable group**: 7/7 in Model H and 9/9
+in Model L kept their role, with none acquired or lost. Phase 2 identified these
+as structural, offset-fixed heads; they are unaffected by what the model is
+being asked to do, which is consistent with that reading.
+
+**Both models converge on 7.70.** Two models sharing no data, no vocabulary and
+no weights land on the same mean attention distance after finetuning, to three
+significant figures, having started 0.56 apart. Phase 2 found the same
+near-identity on corpus windows and drew the same conclusion: these statistics
+are dominated by the architecture and the objective rather than by the corpus.
+With two observations this is an observation, not a result.
+
+**Caveat, restated.** Mean distance scales with sequence length, and these
+prompts average ~37 tokens against Phase 2's 512-token windows. The numbers
+above are comparable pretrained-against-finetuned only, never against §6 of the
+Phase 2 report.
 
 ## 7. The Four Required Questions
 
 ### 7.1 How did data scale and quality differ between Model H and Model L?
 
-**Answered in full; this does not depend on the pending runs.**
+**Answered in full; this does not depend on any outstanding run.**
 
 Not in the direction the labels suggest. "L" denotes Nepali's resource level in
 the world, not the size of this corpus: Model L trained on **more** tokens
@@ -659,21 +1064,47 @@ in the source mix, in bits-per-character, and in out-of-domain fertility loss.
 
 ### 7.2 How do language-modeling and reasoning results compare across the two resource tiers?
 
-**Language modelling: answered. Reasoning: [pending run].**
+**Both answered.**
 
-The Phase 2 language-modelling comparison is genuinely ambiguous, and the
-ambiguity is the finding. Hindi wins per-token perplexity by 14.4% (26.80
-against 30.65); Nepali wins bits-per-character by 14.0% (1.1964 against 1.3636).
-Both are true, and reading either alone gives the wrong answer, because Nepali's
-tokenizer packs 18.6% more text into each token — so predicting a Nepali token
-is a strictly harder problem, which perplexity charges it for and
-bits-per-character credits it for.
+The Phase 2 language-modelling comparison was genuinely ambiguous, and the
+ambiguity was the finding. Hindi won per-token perplexity by 14.4% (26.80
+against 30.65); Nepali won bits-per-character by 14.0% (1.1964 against 1.3636).
+Both were true, because Nepali's tokenizer packs 18.6% more text into each
+token -- so predicting a Nepali token is a strictly harder problem, which
+perplexity charges it for and bits-per-character credits it for.
 
-**Reasoning accuracy resolves that ambiguity in a way no Phase 2 metric could**,
-because exact match is tokenizer-independent. This is the single most valuable
-comparison in the project, and the pending run supplies it. Whatever the
-direction, the result is interpretable: a gap here cannot be attributed to
-fertility, so it points at the corpus or the model rather than at the encoding.
+**Reasoning accuracy resolves that ambiguity, because exact match is
+tokenizer-independent.** A correct answer is correct regardless of how many
+tokens it cost to encode, so a gap here cannot be attributed to fertility. The
+result:
+
+| | Model H | Model L |
+| :--- | ---: | ---: |
+| Exact match, 3 epochs @ 1e-4 | **0.2458** | 0.2144 |
+| Exact match, 1 epoch @ 3e-5 (§5.6) | **0.2992** | 0.2320 |
+| Exact match, seen entities (aggressive) | **0.6226** | 0.4542 |
+| Seed range (aggressive) | 0.0126 | 0.0026 |
+| LM retained, aggressive | **33%** | 18% |
+| LM retained, gentle | 96% | 96% |
+
+**Model H is ahead on reasoning under both recipes, and it is the more robust of
+the two.** It scores 14.7% higher on unseen entities at the aggressive setting
+and 29% higher at the gentle one, 37% higher on seen entities, and it kept
+nearly twice as much of its language modelling through the aggressive finetune
+(33% against 18%). At the gentle setting both retain 96%, so that particular gap
+is a property of how hard the models were pushed rather than of the models.
+
+So the two tiers rank *consistently* on reasoning where they ranked
+*contradictorily* on language modelling. That is the cleanest statement this
+project can make about the resource gap: once the metric stops depending on the
+tokenizer, the higher-resource model is better -- modestly on the task, clearly
+on robustness.
+
+**With the honest qualifier.** The reasoning gap on unseen entities (0.0314) is
+about 2.5x Model H's own seed range (0.0126). The direction is supported; a
+precise magnitude is not. And both models are poor in absolute terms (§5.3), so
+this is a comparison between two weak models, not a demonstration that either
+works.
 
 ### 7.3 What tokenizer / corpus factors most affected the lower-resource model?
 
@@ -695,41 +1126,91 @@ Three measured factors, two of which are already settled:
    fertility on this synthetic text against Hindi's 10.6%. Its tokenizer is
    more corpus-specialised, which is a direct cost of corpus homogeneity.
 
-Factors 2 and 3 point in **opposite directions**, and which dominates is the
-pending sub-question: the value-premise versus relation-premise split in the
-generalisation table decides it. If Nepali's relative accuracy is better on the
-four value-premise families than on the six relation-premise ones, the numeral
-advantage is doing real work; if not, out-of-domain fragmentation dominates and
-the numeral advantage is too small a share of the sequence to matter. A third
-outcome — no difference between the splits — would say the models are not
-limited by tokenization here at all, which given 25M parameters and two-hop
-chains is a live possibility.
+Factors 2 and 3 point in **opposite directions**, and §3.5 registered a test to
+decide which dominates: compare Nepali's relative accuracy on the four
+value-premise families against the six relation-premise ones. The measurement:
+
+| Family group | Model H | Model L | L / H |
+| :--- | ---: | ---: | ---: |
+| Value premises (quantities stated) | 0.1190 | 0.1340 | **1.126** |
+| Relation premises (inequalities stated) | 0.3303 | 0.2680 | 0.811 |
+
+**The prediction holds in direction.** Nepali does relatively *better* exactly
+where numerals must be read — 12.6% ahead of Hindi — and relatively worse
+everywhere else, by 19%. The numeral-segmentation advantage measured in §3.5
+(1.46 against 2.04 tokens per quantity) appears to do real work.
+
+**But the evidence is thin, and saying so matters more than the result.** Three
+of the four value-premise families score exactly 0.0000 in both languages,
+because their answers are entity names and neither model can produce an unseen
+one (§5.3). The whole value-premise average therefore rests on `val2_relation`
+alone — 0.4760 against 0.5360 — which is one family, and the only value family
+whose answer is a relation word rather than a name. So the comparison is
+confounded with answer type, the very variable that dominates everything else in
+these results.
+
+**And at the gentler setting the sign reverses.** Repeating the same test on the
+§5.6 checkpoints:
+
+| Recipe | value-premise L/H | relation-premise L/H | numeral advantage |
+| :--- | ---: | ---: | :--- |
+| 3 epochs @ 1e-4 | 1.126 | 0.811 | supported |
+| 1 epoch @ 3e-5 | **0.629** | 0.830 | **contradicted** |
+
+**Verdict: not established.** A conclusion that flips sign when the learning
+rate changes is a property of the training recipe, not of the tokenizer. The
+entity-naming failure is large enough to swamp any numeral effect, and at the
+gentle setting -- where name-answering partly works -- Nepali does relatively
+*worse* on the families that state quantities, not better.
+
+The one consistent trace of a numeral effect is `val2_relation`, the single
+family that both states quantities and asks for a relation word. It is also the
+only family the *longer* run did better in both languages (0.4760 -> 0.4260
+Hindi, 0.5360 -> 0.4020 Nepali, §5.6). Comparing numerals appears to be the one
+thing that benefits from more training, which is consistent with it being the
+hardest thing in the corpus -- but it is one family, and it is not enough.
+
+**What a clean test would need**, and this is the most concrete improvement
+available to the dataset: for every family that states quantities, a variant
+whose answer is a relation word rather than a name. That would separate numeral
+handling from entity naming instead of confounding the two, and the templates
+already exist to build it.
+
+
 
 ### 7.4 What evidence explains the observed differences?
 
-**Partly answered; completed by the pending runs.**
-
-Evidence that already exists, and its strength:
+**Answered.** The table states each claim with its evidence and how far that
+evidence actually carries.
 
 | Claim | Evidence | Strength |
 | :--- | :--- | :--- |
 | The two models differ in data, not capacity | Identical architecture, 25,379,840 parameters each, identical hyperparameters | **Controlled by construction** |
-| Perplexity favours H for tokenizer reasons | Fertility 3.481 vs 4.126 chars/token, measured on the split files | Strong, directly measured |
-| Nepali's corpus is more homogeneous | Manual share 21.20% vs 26.87%; `sangraha` 77.5% vs 71.6% of validation docs | Strong, but correlational |
-| Homogeneity makes text easier to model | Nepali's better bits-per-character | **Suggestive only** — corpus size and domain mix differ simultaneously |
-| Nepali's tokenizer is more specialised | 21.2% vs 10.6% out-of-domain fertility loss | Strong, directly measured, new in Phase 3 |
-| Training-step cost does not differ by language | Throughput 36,898 vs 36,457 tok/s, a 1.2% spread on identical shapes | **Clean negative control** (Phase 2 §3.6) |
+| Both models memorised entity names rather than learning the relation | Every wrong answer on a name-answering family is a *training-pool* name; 0.6226 on seen entities against 0.2456 on unseen | **Direct, from the decoded generations** |
+| Finetuning taught format, not reasoning | Pretrained + 4 examples: format rate 0.9998, exact match 0.0000. Finetuned: format 0.96-1.00, exact match 0.21-0.25 | **Direct** |
+| Attention moved to local template structure | Distance fell at 8/8 layers in both models; `content-based -> local` the dominant role shift | **Direct, same batches both checkpoints** |
+| Finetuning destroyed most language modelling | Perplexity 20.19 -> 1,115.21 (H), 23.77 -> 2,801.61 (L), same split, same slice | **Direct** |
+| Results are not seed artefacts | Two seeds: range 0.0126 (H), 0.0026 (L) | **Strong for stability**, weak as an interval |
+| Perplexity favoured H in Phase 2 for tokenizer reasons | Fertility 3.481 vs 4.126 chars/token, measured on the split files | Strong, directly measured |
+| Nepali's corpus is more homogeneous | Manual share 21.20% vs 26.87%; `sangraha` 77.5% vs 71.6% of validation docs; 21.2% vs 10.6% out-of-domain fertility loss | Strong as measurement, **correlational** as explanation |
+| Nepali's numeral advantage helps it where quantities are read | L/H ratio 1.126 on value premises against 0.811 on relation premises | **Suggestive only** -- rests on one family (§7.3) |
+| Model H is better at the task than Model L | 0.2458 vs 0.2144 unseen; consistent across seen entities and forgetting | Supported in direction, **magnitude not established** (2.5x seed range) |
 
-**The honest limit.** With two models there are two data points, and every
-distinguishing factor — corpus size, provenance mix, fertility, domain balance —
-differs simultaneously. Nothing in this project can attribute an H-versus-L gap
-to a single cause, and no result here has error bars: each number is one run at
-one seed. The per-hop and per-family breakdowns are the closest thing to a
-controlled comparison available, because within a single model they vary
-reasoning depth and premise form while holding the corpus, tokenizer and weights
-fixed.
+**Three things the design contributed that the numbers alone would not have.**
+Disjoint entity pools turned an unexplained 0.25 into a diagnosed memorisation
+failure. The three test sets separated "did not learn" from "memorised names"
+from "memorised wording", and the answer was unambiguously the middle one.
+Reporting format rate alongside accuracy is what made the few-shot result --
+99.98% well-formed, 0.00% correct -- legible at all.
 
----
+**The honest limit.** With two models there are two data points, and corpus
+size, provenance mix, fertility and domain balance all differ at once. Nothing
+here attributes an H-vs-L gap to a single cause. The closest thing to a
+controlled comparison in this phase is *within* one model: the per-family and
+per-test-set breakdowns vary answer type, entity familiarity and wording while
+holding corpus, tokenizer and weights fixed. Those comparisons are where the
+strong claims above come from; the cross-model ones are weaker and are labelled
+as such.
 
 ## 8. Reproducibility
 
@@ -860,7 +1341,22 @@ suite still collects on a machine without a GPU stack.
    labels come from crude thresholds (Phase 2 §6.1) chosen to make 64 heads
    discussable, not to make a scientific claim; a change in mean distance is
    consistent with several mechanisms and identifies none of them.
-7. **The forgetting measurement is a 2M-token slice**, not the full 26M
+7. **Checkpoint selection rewarded memorisation.** The validation split shares
+   the training entity pool, so selecting on validation exact match could not
+   see the dominant failure -- and picked the `rationale` checkpoints, which
+   scored 0.924 on validation and 0.18 on test (§5.1). A validation split drawn
+   from a *third*, disjoint entity pool would fix this; the inventories have the
+   names for it. Not changed after the fact, because it would invalidate every
+   number reported here.
+8. **The gentler configuration was not fully evaluated.** §5.6 found 1 epoch at
+   3e-5 better on every axis measured, but only the main test split and the
+   forgetting check were re-run on it. The control split, the attention
+   comparison, the `rationale` style and the second seed all describe the
+   aggressive checkpoints, so the memorisation gap, the seed range and every
+   number in §6 belong to a configuration the report itself recommends against.
+   Re-running those four is about 20 GPU-minutes and is the first thing to do
+   with more time.
+9. **The forgetting measurement is a 2M-token slice**, not the full 26M
    validation split (§5.5). That is ample to separate "unchanged" from
    "degraded", but a small real drift and sampling noise are not distinguishable
    at that budget, and the figures are not directly comparable to Phase 2's
@@ -870,13 +1366,56 @@ suite still collects on a machine without a GPU stack.
 
 ## 10. Conclusion
 
-**[to be completed once §5 and §6 are populated.]** The determinate part:
-Phase 3 delivers two independent synthetic reasoning corpora with verified
-labels and three enforced leakage controls, a finetuning path that supervises
-the answer span alone, an evaluation that separates formatting failure from
-reasoning failure, and an attention comparison that holds its input fixed
-across checkpoints. It also adds a measured tokenizer finding that Phase 2
-could not see: the lower-resource tokenizer is simultaneously *better* at
-numerals (1.46 against 2.04 tokens per quantity) and *less robust* off its own
-corpus (78.8% against 89.4% fertility retained) — two consequences of the same
-corpus homogeneity, pulling in opposite directions.
+Phase 3 finetuned two independent 25.4M-parameter models on synthetic
+comparative-reasoning corpora in Hindi and Nepali, and the honest summary is
+that **both models learned the shape of the task and little of the task itself**.
+
+**What was measured.** Finetuning takes exact match from 0.0000 to 0.2992
+(Model H) and 0.2320 (Model L) on held-out entities, with format compliance at
+0.99-1.00. Accuracy splits cleanly on one variable that is neither reasoning
+depth nor premise form: where the answer is one of three relation words both
+models reach 0.45-0.67 against a 0.33 chance baseline, and where the answer is
+an entity name they reach 0.02-0.35. Attention moved closer in at all eight
+layers of both models, with `content-based -> local` the dominant head-role
+shift. Model H leads Model L on every axis, by 29% on accuracy at the gentle
+setting and by a factor of two on language-model retention at the aggressive
+one.
+
+**The three design decisions that made any of this legible.** Disjoint entity
+pools, which turned an unexplained 0.25 into a diagnosed memorisation failure.
+Three test sets rather than one score, which separated "did not learn" from
+"memorised the names" from "memorised the wording" and identified the middle
+one. And reporting format rate beside accuracy, without which the sharpest
+number in the report -- a pretrained model that formats 99.98% of answers
+correctly and gets 0.00% right -- would have been invisible.
+
+**Two predictions this report made and got wrong**, both left on the record
+rather than revised:
+
+- §4.2 specified 3 epochs at a peak 1e-4 and §4.1 called it "a small
+  perturbation". It destroyed 67% and 82% of what pretraining had taught the two
+  models, and a third of the training at a third the learning rate was better on
+  every axis measured (§5.6).
+- §3.3 justified drawing the validation split from the training entity pool. That
+  made checkpoint selection structurally blind to the dominant failure and
+  selected the `rationale` runs, which scored 0.92 on validation and 0.18 on
+  test (§5.1).
+
+**The finding that connects everything.** Naming an entity from the prompt is a
+language-modelling act -- copying a token out of context. The aggressive recipe
+destroyed the language model and with it the copying, so those families scored
+zero; the gentle recipe kept 96% of it and they partly work, which is where all
+of its accuracy advantage comes from. Catastrophic forgetting and the
+memorisation failure are one mechanism observed from two directions, not two
+results.
+
+**What the project as a whole shows about the two resource tiers.** Phase 2's
+comparison was ambiguous by construction: Hindi won per-token perplexity, Nepali
+won bits-per-character, and the difference was tokenizer fertility rather than
+model quality. Exact match is the first metric in this project that does not
+depend on the tokenizer, and it ranks the two models consistently, with Hindi
+ahead. That is the clearest statement available here -- and it is a comparison
+between two weak models on a narrow task, from two runs with no confidence
+intervals and every corpus factor varying at once. The instrumentation is
+trustworthy; the conclusions it supports are correspondingly narrow, and §9 says
+where each one stops.

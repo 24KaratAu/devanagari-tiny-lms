@@ -3,18 +3,18 @@
 | Model | Style | Seen entities, seen wording | Unseen entities, seen wording | Unseen wording | Memorisation gap | Template gap |
 | :--- | :--- | ---: | ---: | ---: | ---: | ---: |
 | Model H (Hindi) (seed 7) | direct | — | 0.2665 | 0.2331 | — | +0.0334 |
-| Model H (Hindi) | direct | 0.6226 | 0.2456 | 0.2463 | +0.3770 | -0.0007 |
+| Model H (Hindi) | direct | 0.6226 | 0.3035 | 0.2858 | +0.3191 | +0.0177 |
 | Model H (Hindi) | rationale | — | 0.1836 | 0.1664 | — | +0.0172 |
 | Model L (Nepali) (seed 7) | direct | — | 0.2211 | 0.2043 | — | +0.0168 |
-| Model L (Nepali) | direct | 0.4542 | 0.2116 | 0.2232 | +0.2426 | -0.0116 |
+| Model L (Nepali) | direct | 0.4542 | 0.2272 | 0.2471 | +0.2270 | -0.0199 |
 | Model L (Nepali) | rationale | — | 0.2018 | 0.1911 | — | +0.0107 |
 
 ### Seed spread
 
 | Model | Style | Seeds | Exact match per seed | Range |
 | :--- | :--- | ---: | :--- | ---: |
-| Model H (Hindi) | direct | 2 | 7: 0.2584, 42: 0.2458 | 0.0126 |
-| Model L (Nepali) | direct | 2 | 7: 0.2170, 42: 0.2144 | 0.0026 |
+| Model H (Hindi) | direct | 3 | 7: 0.2584, 42: 0.2458, 42: 0.2992 | 0.0534 |
+| Model L (Nepali) | direct | 3 | 7: 0.2170, 42: 0.2144, 42: 0.2320 | 0.0176 |
 
 ### Pretrained vs finetuned exact match
 
@@ -24,11 +24,13 @@
 | Model H (Hindi) | direct | pretrained, few-shot (k=4) | **0.0000** | 0.9998 | 0.0000 | 0.0000 | 0.0000 |
 | Model H (Hindi) | direct | finetuned | **0.2458** | 0.9614 | 0.1480 | 0.3933 | 0.2690 |
 | Model H (Hindi) | direct | finetuned | **0.2584** | 0.9760 | 0.1644 | 0.4093 | 0.2670 |
+| Model H (Hindi) | direct | finetuned | **0.2992** | 0.9936 | 0.2328 | 0.4253 | 0.2760 |
 | Model H (Hindi) | rationale | finetuned | **0.1794** | 0.8686 | 0.0660 | 0.3547 | 0.2000 |
 | Model L (Nepali) | direct | pretrained, zero-shot | **0.0000** | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
 | Model L (Nepali) | direct | pretrained, few-shot (k=4) | **0.0000** | 0.5374 | 0.0000 | 0.0000 | 0.0000 |
 | Model L (Nepali) | direct | finetuned | **0.2144** | 1.0000 | 0.1072 | 0.3713 | 0.2470 |
 | Model L (Nepali) | direct | finetuned | **0.2170** | 1.0000 | 0.1044 | 0.3787 | 0.2560 |
+| Model L (Nepali) | direct | finetuned | **0.2320** | 1.0000 | 0.1232 | 0.3927 | 0.2630 |
 | Model L (Nepali) | rationale | finetuned | **0.1992** | 0.9716 | 0.0876 | 0.3473 | 0.2560 |
 
 ### Generalisation: unseen phrasing, and premise form
@@ -39,27 +41,29 @@
 | Model H (Hindi) | direct | pretrained, few-shot | 0.0000 | 0.0000 | +0.0000 | 0.0000 | 0.0000 |
 | Model H (Hindi) | direct | finetuned | 0.2456 | 0.2463 | -0.0007 | 0.1190 | 0.3303 |
 | Model H (Hindi) | direct | finetuned | 0.2665 | 0.2331 | +0.0334 | 0.1450 | 0.3340 |
+| Model H (Hindi) | direct | finetuned | 0.3035 | 0.2858 | +0.0177 | 0.2035 | 0.3630 |
 | Model H (Hindi) | rationale | finetuned | 0.1836 | 0.1664 | +0.0172 | 0.0795 | 0.2460 |
 | Model L (Nepali) | direct | pretrained, zero-shot | 0.0000 | 0.0000 | +0.0000 | 0.0000 | 0.0000 |
 | Model L (Nepali) | direct | pretrained, few-shot | 0.0000 | 0.0000 | +0.0000 | 0.0000 | 0.0000 |
 | Model L (Nepali) | direct | finetuned | 0.2116 | 0.2232 | -0.0116 | 0.1340 | 0.2680 |
 | Model L (Nepali) | direct | finetuned | 0.2211 | 0.2043 | +0.0168 | 0.1305 | 0.2747 |
+| Model L (Nepali) | direct | finetuned | 0.2272 | 0.2471 | -0.0199 | 0.1280 | 0.3013 |
 | Model L (Nepali) | rationale | finetuned | 0.2018 | 0.1911 | +0.0107 | 0.1095 | 0.2590 |
 
 ### Per-family accuracy (finetuned)
 
-| Family | H direct | H direct | H rationale | L direct | L direct | L rationale |
-| :--- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `eq3_relation` | 0.6660 | 0.6740 | 0.5580 | 0.6600 | 0.6760 | 0.6040 |
-| `rel2_which` | 0.2640 | 0.2420 | 0.0120 | 0.0000 | 0.0000 | 0.0000 |
-| `rel3_extreme` | 0.0500 | 0.0960 | 0.0020 | 0.0000 | 0.0000 | 0.0000 |
-| `rel3_pairwise` | 0.4640 | 0.4580 | 0.5040 | 0.4540 | 0.4600 | 0.4380 |
-| `rel4_extreme` | 0.0100 | 0.0140 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
-| `rel4_pairwise` | 0.5280 | 0.5200 | 0.4000 | 0.4940 | 0.5120 | 0.5120 |
-| `val2_relation` | 0.4760 | 0.5800 | 0.3140 | 0.5360 | 0.5220 | 0.4380 |
-| `val2_which` | 0.0000 | 0.0000 | 0.0020 | 0.0000 | 0.0000 | 0.0000 |
-| `val3_extreme` | 0.0000 | 0.0000 | 0.0020 | 0.0000 | 0.0000 | 0.0000 |
-| `val4_rank` | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| Family | H direct | H direct | H direct | H rationale | L direct | L direct | L direct | L rationale |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `eq3_relation` | 0.6660 | 0.6740 | 0.6600 | 0.5580 | 0.6600 | 0.6760 | 0.6700 | 0.6040 |
+| `rel2_which` | 0.2640 | 0.2420 | 0.3500 | 0.0120 | 0.0000 | 0.0000 | 0.1040 | 0.0000 |
+| `rel3_extreme` | 0.0500 | 0.0960 | 0.1580 | 0.0020 | 0.0000 | 0.0000 | 0.0500 | 0.0000 |
+| `rel3_pairwise` | 0.4640 | 0.4580 | 0.4580 | 0.5040 | 0.4540 | 0.4600 | 0.4580 | 0.4380 |
+| `rel4_extreme` | 0.0100 | 0.0140 | 0.0340 | 0.0000 | 0.0000 | 0.0000 | 0.0280 | 0.0000 |
+| `rel4_pairwise` | 0.5280 | 0.5200 | 0.5180 | 0.4000 | 0.4940 | 0.5120 | 0.4980 | 0.5120 |
+| `val2_relation` | 0.4760 | 0.5800 | 0.4260 | 0.3140 | 0.5360 | 0.5220 | 0.4020 | 0.4380 |
+| `val2_which` | 0.0000 | 0.0000 | 0.3100 | 0.0020 | 0.0000 | 0.0000 | 0.0620 | 0.0000 |
+| `val3_extreme` | 0.0000 | 0.0000 | 0.0600 | 0.0020 | 0.0000 | 0.0000 | 0.0280 | 0.0000 |
+| `val4_rank` | 0.0000 | 0.0000 | 0.0180 | 0.0000 | 0.0000 | 0.0000 | 0.0200 | 0.0000 |
 
 ### Error analysis
 
@@ -84,6 +88,17 @@
 - `तरुण -> नरेश` x 38
 - `प्रवीण -> वंदना` x 30
 - `सुधा -> सोहन` x 29
+
+**Model H (Hindi), direct answers** - most frequent errors (gold -> predicted):
+
+- `अधिक -> कम` x 814
+- `बराबर -> कम` x 90
+- `झाड़ू -> छाता` x 78
+- `पंखा -> छाता` x 74
+- `कुरता -> छाता` x 54
+- `कम -> अधिक` x 52
+- `हिमांशु -> रेखा` x 39
+- `तरुण -> सरिता` x 38
 
 **Model H (Hindi), rationale answers** - most frequent errors (gold -> predicted):
 
@@ -117,6 +132,17 @@
 - `उर्मिला -> रीता` x 43
 - `जीवन -> रीता` x 40
 - `हेमन्त -> रीता` x 39
+
+**Model L (Nepali), direct answers** - most frequent errors (gold -> predicted):
+
+- `बढी -> कम` x 536
+- `कम -> बढी` x 350
+- `प्रेम -> माया` x 55
+- `सुरेन्द्र -> भीम` x 51
+- `बराबर -> कम` x 50
+- `बराबर -> बढी` x 50
+- `बाल्टिन -> डोको` x 47
+- `साइकल -> डोको` x 45
 
 **Model L (Nepali), rationale answers** - most frequent errors (gold -> predicted):
 

@@ -252,6 +252,56 @@
     {
       "setup": {
         "mode": "finetuned",
+        "answer_style": "direct",
+        "shots": 0,
+        "language": "hindi",
+        "checkpoint_step": 500,
+        "max_new_tokens": 12,
+        "test_split": "test",
+        "seed": 42
+      },
+      "exact_match": 0.2992,
+      "format_rate": 0.9936,
+      "by_hops": {
+        "0": 0.2328,
+        "1": 0.4253,
+        "2": 0.276
+      },
+      "by_family": {
+        "eq3_relation": 0.66,
+        "rel2_which": 0.35,
+        "rel3_extreme": 0.158,
+        "rel3_pairwise": 0.458,
+        "rel4_extreme": 0.034,
+        "rel4_pairwise": 0.518,
+        "val2_relation": 0.426,
+        "val2_which": 0.31,
+        "val3_extreme": 0.06,
+        "val4_rank": 0.018
+      },
+      "by_phrasing": {
+        "held_out": 0.2858,
+        "seen": 0.3035
+      },
+      "by_attribute": {
+        "age": 0.2852,
+        "height": 0.3048,
+        "length": 0.3144,
+        "marks": 0.2878,
+        "price": 0.3059,
+        "weight": 0.2966
+      },
+      "premise_split": {
+        "value_premises": 0.2035,
+        "relation_premises": 0.363
+      },
+      "source": "hindi/eval/reasoning_gentle_direct.json",
+      "test_split": "test",
+      "seed": 42
+    },
+    {
+      "setup": {
+        "mode": "finetuned",
         "answer_style": "rationale",
         "shots": 0,
         "language": "hindi",
@@ -551,6 +601,56 @@
     {
       "setup": {
         "mode": "finetuned",
+        "answer_style": "direct",
+        "shots": 0,
+        "language": "nepali",
+        "checkpoint_step": 625,
+        "max_new_tokens": 12,
+        "test_split": "test",
+        "seed": 42
+      },
+      "exact_match": 0.232,
+      "format_rate": 1.0,
+      "by_hops": {
+        "0": 0.1232,
+        "1": 0.3927,
+        "2": 0.263
+      },
+      "by_family": {
+        "eq3_relation": 0.67,
+        "rel2_which": 0.104,
+        "rel3_extreme": 0.05,
+        "rel3_pairwise": 0.458,
+        "rel4_extreme": 0.028,
+        "rel4_pairwise": 0.498,
+        "val2_relation": 0.402,
+        "val2_which": 0.062,
+        "val3_extreme": 0.028,
+        "val4_rank": 0.02
+      },
+      "by_phrasing": {
+        "held_out": 0.2471,
+        "seen": 0.2272
+      },
+      "by_attribute": {
+        "age": 0.2233,
+        "height": 0.2402,
+        "length": 0.21,
+        "marks": 0.2684,
+        "price": 0.2297,
+        "weight": 0.2203
+      },
+      "premise_split": {
+        "value_premises": 0.128,
+        "relation_premises": 0.3013
+      },
+      "source": "nepali/eval/reasoning_gentle_direct.json",
+      "test_split": "test",
+      "seed": 42
+    },
+    {
+      "setup": {
+        "mode": "finetuned",
         "answer_style": "rationale",
         "shots": 0,
         "language": "nepali",
@@ -601,12 +701,12 @@
   ],
   "provenance": {
     "module": "src.eval.compare_reasoning",
-    "generated_at": "2026-09-14T16:28:46+00:00",
-    "command": "python -m src.eval.compare_reasoning --inputs hindi/eval/reasoning_fewshot_direct.json hindi/eval/reasoning_finetuned_direct.json hindi/eval/reasoning_finetuned_direct_s7.json hindi/eval/reasoning_finetuned_direct_seen.json hindi/eval/reasoning_finetuned_rationale.json hindi/eval/reasoning_zeroshot_direct.json nepali/eval/reasoning_fewshot_direct.json nepali/eval/reasoning_finetuned_direct.json nepali/eval/reasoning_finetuned_direct_s7.json nepali/eval/reasoning_finetuned_direct_seen.json nepali/eval/reasoning_finetuned_rationale.json nepali/eval/reasoning_zeroshot_direct.json --out report/figures/reasoning_comparison.json --md report/figures/reasoning_comparison.md --figure report/figures/reasoning_accuracy.png",
-    "git_commit": "a8b78df2abe5391ac6936971451defc5ffca2f1c",
-    "git_branch": "phase-3",
-    "git_dirty": true,
-    "python": "3.14.4",
+    "generated_at": "2026-09-16T09:49:32+00:00",
+    "command": "python -m src.eval.compare_reasoning --inputs hindi/eval/reasoning_fewshot_direct.json hindi/eval/reasoning_finetuned_direct.json hindi/eval/reasoning_finetuned_direct_s7.json hindi/eval/reasoning_finetuned_direct_seen.json hindi/eval/reasoning_finetuned_rationale.json hindi/eval/reasoning_gentle_direct.json hindi/eval/reasoning_zeroshot_direct.json nepali/eval/reasoning_fewshot_direct.json nepali/eval/reasoning_finetuned_direct.json nepali/eval/reasoning_finetuned_direct_s7.json nepali/eval/reasoning_finetuned_direct_seen.json nepali/eval/reasoning_finetuned_rationale.json nepali/eval/reasoning_gentle_direct.json nepali/eval/reasoning_zeroshot_direct.json --out report/figures/reasoning_comparison.json --md report/figures/reasoning_comparison.md --figure report/figures/reasoning_accuracy.png",
+    "git_commit": null,
+    "git_branch": null,
+    "git_dirty": false,
+    "python": "3.13.15",
     "inputs": {
       "reasoning_fewshot_direct.json": {
         "path": "nepali/eval/reasoning_fewshot_direct.json",
@@ -636,6 +736,12 @@
         "path": "nepali/eval/reasoning_finetuned_rationale.json",
         "bytes": 14161,
         "sha256": "ab42fda6b2107fd8fe3d5c906f03a64fca5977174f06b0ede21c815166848b6c",
+        "digested": true
+      },
+      "reasoning_gentle_direct.json": {
+        "path": "nepali/eval/reasoning_gentle_direct.json",
+        "bytes": 11590,
+        "sha256": "33261ea6e9d144626222f076ab062b7bc007611c90b466e7cceeb0da3f34632e",
         "digested": true
       },
       "reasoning_zeroshot_direct.json": {

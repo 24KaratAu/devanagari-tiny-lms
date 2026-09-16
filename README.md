@@ -217,6 +217,65 @@ the Phase 2 evaluator, unchanged apart from a new `--max-tokens` budget — scor
 each model's *pretraining* validation split before and after. A reasoning gain
 reported without that number is an incomplete result.
 
+### What we found, in plain terms
+
+Full detail in [report §1.1](report/phase3_report.md) and §5. In short:
+
+**The models learned the shape of an answer, not the answer.** Asked a
+comparison question, they reply `उत्तर:` followed by a name, correctly
+formatted, 96–100% of the time. They just pick the wrong name.
+
+**They memorised names.** They only ever answer with names from the training
+set. Ask about भरत — a name held back for testing — and Model H answers सीता,
+a name it trained on. Sometimes it answers a question about a person with the
+name of an object. Since the test set uses only unseen names, questions whose
+answer *is* a name score **0%**.
+
+**Where the answer is one of three words** — "more", "less", "equal" — they
+score **45–67%**, against 33% for guessing. So they did learn something real
+about comparison. It only shows where naming isn't required.
+
+| | Model H (Hindi) | Model L (Nepali) |
+| :--- | ---: | ---: |
+| Exact match, unseen names | 0.2458 | 0.2144 |
+| Exact match, familiar names | 0.6226 | 0.4542 |
+| **Memorisation gap** \* | **0.3770** | **0.2426** |
+| Unseen *wording* costs | ~0 | ~0 |
+
+\* measured between splits that match on wording, so only the name pool differs.
+
+**It cost them their language ability.** Before finetuning, Model H predicted
+ordinary Hindi with a perplexity of 20; afterwards, 1,115 — **55× worse**. Model
+L went 24 → 2,802, **118× worse**. Both keep only 33% and 18% of what
+pretraining taught them. This effect has a name — *catastrophic forgetting* —
+and the course material warns about it explicitly.
+
+**The clearest single number:** the *pretrained* Model H, shown four worked
+examples, produced a correctly formatted answer **99.98%** of the time and got
+**0.00%** right. Format and reasoning are separate things, and that number
+separates them.
+
+**Our first training settings were too aggressive — and the gentler ones were
+better at everything.** Repeating the finetune at 1 epoch and a third the
+learning rate:
+
+| Model | Recipe | Questions right | Language ability kept | Train time |
+| :--- | :--- | ---: | ---: | ---: |
+| H | 3 epochs @ 1e-4 | 0.2458 | 33% | 4.8 min |
+| H | **1 epoch @ 3e-5** | **0.2992** | **96%** | **1.5 min** |
+| L | 3 epochs @ 1e-4 | 0.2144 | 18% | 4.9 min |
+| L | **1 epoch @ 3e-5** | **0.2320** | **96%** | **1.7 min** |
+
+There was no trade-off to find — only a wasteful recipe. Both are reported
+(§5.6), because the comparison is the finding and because the reasoning for the
+aggressive settings was written down in advance and turned out to be wrong.
+
+**The two problems are one problem.** The aggressively trained models could
+never name a person they hadn't seen before. Naming someone mentioned in the
+question means copying a word out of the text you were given — a language
+ability, and exactly what the aggressive training destroyed. The gentle models
+keep theirs, and every bit of their extra accuracy comes from those questions.
+
 **A tokenizer finding that Phase 2 could not see.** Measured by encoding the
 Phase 3 corpus with each language's own Phase 1 tokenizer:
 
@@ -1399,7 +1458,8 @@ source produced which file.
 | **Finetuned checkpoint — Model L, direct** | `ne` | `nepali/checkpoints_ft_direct/finetune_best.pt` | 304.7 MB |
 | **Finetuned checkpoint — Model L, rationale** | `ne` | `nepali/checkpoints_ft_rationale/finetune_best.pt` | 304.7 MB |
 | Finetuning logs (JSONL loss/EM curves) | H / L | `{hindi,nepali}/logs/finetune_*.jsonl` | < 1 MB |
-| Second-seed finetuned checkpoints (`direct`) | H / L | `{hindi,nepali}/checkpoints_ft_direct_s7/finetune_best.pt` | 304.7 MB |
+| Second-seed finetuned checkpoints (`direct`, seed 7) | H / L | `{hindi,nepali}/checkpoints_ft_direct_s7/finetune_best.pt` | 304.7 MB |
+| Gentle-recipe finetuned checkpoints (1 epoch @ 3e-5) | H / L | `{hindi,nepali}/checkpoints_ft_gentle/finetune_best.pt` | 304.7 MB |
 | Phase 3 evaluation results | H / L | `phase3/eval/` | < 5 MB |
 | Phase 3 figures (accuracy, attention heatmaps) | H / L | `phase3/figures/` | < 5 MB |
 
