@@ -1,8 +1,47 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/Q6gOCxoh)
+# Devanagari Tiny LMs: Hindi & Nepali Transformers from Scratch
 
-# Monolingual Transformer Language Models from Scratch: Hindi & Nepali
-**Language Models and Agents (CL3-410) — Monsoon 2026**  
-*Individual Project: Building, Training, and Evaluating Independent Monolingual LMs*
+Two identical 25.4M-parameter GPT-style language models, one trained on Hindi
+and one on Nepali, with every stage built from scratch: corpus collection and
+cleaning, BPE tokenizers, a Transformer written from primitive PyTorch layers
+(no `nn.Transformer`, no HuggingFace, no pretrained weights), pretraining,
+synthetic reasoning finetuning, and attention analysis. Because the two models
+share an architecture and nothing else, the differences between them can be
+traced back to the data and the tokenizer.
+
+**Highlights**
+
+- **1.15B tokens collected and cleaned** (520M Hindi, 633M Nepali) from
+  Wikimedia dumps, news, government and literary sites, and AI4Bharat Sangraha.
+  Content-hash deduplication caught 1,718 identical articles that shared no URLs.
+- **Transformer from first principles**: multi-head causal attention, pre-norm
+  blocks, weight tying, a closed-form parameter-count assertion, and tests that
+  prove the causal mask hides the future and that checkpoint resume is bit-exact.
+- **A metric that disagrees with itself**: Hindi wins perplexity (26.80 vs 30.65),
+  Nepali wins bits per character (1.196 vs 1.364). The tokenizer explains the gap.
+- **Synthetic reasoning benchmark**: a reproducible generator of 55,000
+  comparison and transitive-ordering puzzles per language, with held-out names
+  and phrasings. Finetuned models learned the answer format (96–100%) but
+  memorised entity names: the Hindi model scored 0.62 on names seen in training and 0.30 on new ones.
+- **Catastrophic forgetting, measured and fixed**: an aggressive finetune raised
+  perplexity 55× (Hindi) and 118× (Nepali). A gentler recipe kept about 96% of
+  language-modelling ability and scored higher on reasoning.
+
+<p align="center"><img src="report/figures/loss_curves.png" alt="Training and validation loss for both models" width="760"></p>
+
+**Read more**: [final report (PDF)](report/final_report.pdf) ·
+[Phase 1 report](report/phase1_report.md) ·
+[Phase 2 report](report/phase2_report.md) ·
+[data and checkpoints on Google Drive](https://drive.google.com/drive/folders/19EANSjwyIp-z36jwCvKhwlWdcwA1Ohhq)
+
+**Quick check** (CPU is enough):
+
+```bash
+pip install -r requirements.txt torch numpy pyyaml matplotlib pytest
+python -m pytest -q tests
+```
+
+*Built as the individual project for Language Models and Agents (CL3-410),
+Monsoon 2026. The rest of this README is the full project write-up, phase by phase.*
 
 ---
 
