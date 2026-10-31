@@ -1,10 +1,21 @@
-# Phase 1 — data collection, cleaning, and tokenizer construction.
-# Python 3.11+ (developed on 3.11 locally and on Colab's 3.11 runtime).
+# All phases: data collection and cleaning, tokenizer, model, training,
+# finetuning, and evaluation. Python 3.11+.
 # Everything else the pipeline uses is in the standard library
 # (bz2, gzip, hashlib, xml.etree, unicodedata, concurrent.futures, fcntl).
 
+# --- Model, training, finetuning -------------------------------------------
+torch>=2.1.0                # Transformer, AdamW, fp16 autocast; CPU build is enough for tests
+numpy>=1.24.0               # packed uint16 token arrays, attention statistics
+pyyaml>=6.0                 # model / train / finetune configs
+
 # --- Tokenizer -------------------------------------------------------------
 sentencepiece>=0.2.0        # BPE / Unigram training and encoding
+
+# --- Evaluation and plots --------------------------------------------------
+matplotlib>=3.7.0           # loss curves, attention heatmaps, reasoning plots
+
+# --- Tests -----------------------------------------------------------------
+pytest>=7.4.0               # python -m pytest -q tests
 
 # --- Web collection --------------------------------------------------------
 requests>=2.31.0            # sitemap + article fetching
@@ -20,7 +31,12 @@ pandas>=2.0.0               # notebook-side tabulation of shard statistics
 tqdm>=4.66.0
 tabulate>=0.9.0             # ledger and statistics tables in the notebooks
 
-# --- Colab only ------------------------------------------------------------
+# --- Optional --------------------------------------------------------------
+# Early Hugging Face collectors in src/data/collect/ (process_hf_corpus.py,
+# collect_sangraha_nepali.py) were replaced by the pyarrow path above; install
+# this only to run them:
+#   datasets>=2.18.0
+#
 # Preinstalled on Google Colab; install only if running those notebooks
 # elsewhere. Used for the Drive API resumable uploads described in report 8.1.
 #   google-api-python-client>=2.100.0

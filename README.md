@@ -36,7 +36,7 @@ traced back to the data and the tokenizer.
 **Quick check** (CPU is enough):
 
 ```bash
-pip install -r requirements.txt torch numpy pyyaml matplotlib pytest
+pip install -r requirements.txt
 python -m pytest -q tests
 ```
 
@@ -1055,7 +1055,7 @@ token budget and retrain the 8k BPE tokenizer:
 ### Option B: Local CLI Execution
 ```bash
 # 1. Install dependencies
-pip install -r requirements.txt  # sentencepiece, pyarrow, pandas, trafilatura, requests
+pip install -r requirements.txt  # torch, sentencepiece, pyarrow, trafilatura, requests, ...
 
 # 2. Process Wikipedia XML Dump (Manual Collection)
 python -m src.data.collect.process_wiki_dump \
